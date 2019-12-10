@@ -4,10 +4,8 @@
 #include "main.h"
 
 typedef struct EventNode {
-  uint32_t duration;       // the duration of the EventNode in microseconds
   uint16_t startPos;         // the point in time in which the EventNode occured
   uint16_t endPos;           // the point in time the EventNode finishes
-  uint8_t step;           // which step the EventNode occurs within clocks loop
   bool triggered;          // has the EventNode been triggered
   struct EventNode *next;      // pointer to the 'next' EventNode to occur (linked list)
 } EventNode;
@@ -16,13 +14,13 @@ typedef struct EventNode {
 class ChannelEventList {
   private:
     EventNode* head;
-    EventNode* temp;
-    EventNode* queued;
+    EventNode* newEvent;  // to be created and deleted everytime an user presses event create button
+    EventNode* queued;    // the currently active / next / ensuing / succeeding event
 
   public:
     ChannelEventList() {
       head=NULL;
-      temp=NULL;
+      newEvent=NULL;
       queued=NULL;
     }
 

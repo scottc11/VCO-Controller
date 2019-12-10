@@ -11,6 +11,7 @@ InterruptIn extClockInput(PB_10);
 BeatClock bClock(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
 ChannelEventList chEventList;
 
+bool ETL = false;       // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
 int newClockPeriod;
 int oldClockPeriod;
 int clockPeriod;
@@ -39,8 +40,10 @@ int main() {
   while(1) {
     newButtonState = button.read();
     if (newButtonState != oldButtonState) {
-            // BUTTON PRESSED
+
+      // BUTTON PRESSED
       if (newButtonState == HIGH) {
+        ETL = false; // deactivate event triggering loop
         eventLed.write(HIGH);
         chEventList.createEvent(bClock.position);
       }
@@ -49,13 +52,14 @@ int main() {
       else if (newButtonState == LOW) {     
         eventLed.write(LOW);
         chEventList.addEvent(bClock.position);
+        ETL = true; // activate event triggering loop
       }
 
       oldButtonState = newButtonState;
       wait_ms(5); // debounce
     }
 
-    if (chEventList.hasEventInQueue()) {
+    if (chEventList.hasEventInQueue() && ETL ) {
       chEventList.handleQueuedEvent(bClock.position);
     }
   }
