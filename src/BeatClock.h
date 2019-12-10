@@ -1,7 +1,7 @@
 #ifndef BEAT_CLOCK_H
 #define BEAT_CLOCK_H
 
-#include <mbed.h>
+#include "main.h"
 
 class BeatClock {
   public:
@@ -20,15 +20,12 @@ class BeatClock {
     uint32_t pulseDuration;    // how long, in microseconds, the clock led will be lit
     uint32_t lastClock;        // time of the last clocked event
 
+    DigitalOut* startLed;      // digital out
+    DigitalOut* stepLed;       // digital out
+
     void init();
-
-    void toggle() {
-      startLed->write(!startLed->read());
-    };
-
-  private:
-    DigitalOut* startLed;
-    DigitalOut* stepLed;
+    void tick();
+    void reset();
 };
 
 

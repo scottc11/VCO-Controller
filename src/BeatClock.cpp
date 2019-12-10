@@ -1,10 +1,36 @@
 #include "BeatClock.h"
 
+// clock initialization
 void BeatClock::init() {
   bpm = 120;
   currStep = 1;
   numSteps = 8;
-  ticksPerStep = 24;
+  ticksPerStep = PPQ;
   currTick = 1;
   pulseDuration = 5;
+}
+
+
+void BeatClock::tick() {
+  currTick += 1;
+  position += 1;
+
+  if (currTick > 2) {
+    stepLed->write(LOW);
+    startLed->write(LOW);
+  }
+  
+  // reset tick count and increment step by 1
+  if (currTick > ticksPerStep) {
+    currTick = 1;
+    currStep += 1;
+    stepLed->write(HIGH);
+    
+    // reset step count / reset loop
+    if (currStep > numSteps) {
+      currStep = 1;
+      position = 1;
+      startLed->write(HIGH);
+    }
+  }
 }
