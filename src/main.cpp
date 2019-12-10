@@ -1,5 +1,7 @@
 #include "main.h"
 #include "BeatClock.h"
+#include "ChannelEventList.h"
+
 
 DigitalOut eventLed(PB_5);
 DigitalIn button(PA_7);
@@ -7,6 +9,7 @@ Ticker ticker;
 Timer timer;
 InterruptIn extClockInput(PB_10);
 BeatClock bClock(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
+ChannelEventList chEventList;
 
 int newClockPeriod;
 int oldClockPeriod;
@@ -39,15 +42,21 @@ int main() {
             // BUTTON PRESSED
       if (newButtonState == HIGH) {
         eventLed.write(HIGH);
+        chEventList.createEvent(bClock.position);
       }
 
       // BUTTON RELEASED
       else if (newButtonState == LOW) {     
         eventLed.write(LOW);
+        chEventList.addEvent(bClock.position);
       }
 
       oldButtonState = newButtonState;
       wait_ms(5); // debounce
+    }
+
+    if (chEventList.hasEventInQueue()) {
+      chEventList.handleQueuedEvent(bClock.position);
     }
   }
 }
