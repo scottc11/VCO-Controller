@@ -6,11 +6,11 @@
 typedef struct EventNode {
   uint16_t startPos;         // the point in time in which the EventNode occured
   uint16_t endPos;           // the point in time the EventNode finishes
-  bool triggered;          // has the EventNode been triggered
-  struct EventNode *next;      // pointer to the 'next' EventNode to occur (linked list)
+  bool triggered;            // has the EventNode been triggered
+  struct EventNode *next;    // pointer to the 'next' EventNode to occur (linked list)
 } EventNode;
 
-
+// Linked List
 class ChannelEventList {
   private:
     EventNode* head;
