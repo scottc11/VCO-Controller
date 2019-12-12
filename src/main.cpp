@@ -56,7 +56,7 @@ int main() {
       }
 
       oldButtonState = newButtonState;
-      wait_ms(5); // debounce
+      wait_us(2); // debounce
     }
 
     if (chEventList.hasEventInQueue() && ETL ) {
