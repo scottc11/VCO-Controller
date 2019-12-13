@@ -5,8 +5,10 @@
 
 I2C i2c(I2C_SDA, I2C_SCL);  // PB_8, PB_9
 DigitalOut eventLed(PB_5);
-DigitalIn button(PA_7);
 DigitalOut boardLED(LED1);
+DigitalOut led3(MISC_LED_1);
+DigitalOut led4(MISC_LED_2);
+DigitalIn button(PA_7);
 Ticker ticker;
 Timer timer;
 InterruptIn extClockInput(PB_10);
@@ -21,6 +23,11 @@ int oldClockPeriod;
 int clockPeriod;
 int newButtonState;
 int oldButtonState;
+
+// bitNum starts at 0-7 for 8-bits
+bool getBitStatus(int b, int bitNum) {
+  return (b & (1 << bitNum));
+}
 
 void tick() {
   bClock.tick();
@@ -62,6 +69,20 @@ int main() {
 
     touched = cap.touched();
     if (touched != prevTouched) {
+      for (int i=0; i<8; i++) {
+        // it if *is* touched and *wasnt* touched before, alert!
+        if (getBitStatus(touched, i) && !getBitStatus(prevTouched, i)) {
+          if (i == 2) {
+            led3.write(HIGH);
+          }
+        }
+        // if it *was* touched and now *isnt*, alert!
+        if (!getBitStatus(touched, i) && getBitStatus(prevTouched, i)) {
+          if (i == 2) {
+            led3.write(LOW);
+          }
+        }
+      }
       prevTouched = touched;
     }
 
