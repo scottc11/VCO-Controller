@@ -1,13 +1,17 @@
 #include "main.h"
 #include "BeatClock.h"
 #include "ChannelEventList.h"
+#include "CAP1208.h"
 
-
+I2C i2c(I2C_SDA, I2C_SCL);  // PB_8, PB_9
 DigitalOut eventLed(PB_5);
 DigitalIn button(PA_7);
+DigitalOut boardLED(LED1);
 Ticker ticker;
 Timer timer;
 InterruptIn extClockInput(PB_10);
+
+CAP1208 cap;
 BeatClock bClock(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
 ChannelEventList chEventList;
 
@@ -30,6 +34,23 @@ void extTick() {
 }
 
 int main() {
+  boardLED.write(HIGH);
+  
+  cap.init(&i2c);
+
+  if (!cap.isConnected()) {
+    boardLED.write(HIGH);
+  } else {
+    boardLED.write(LOW);
+  }
+
+
+  cap.getControlStatus();
+  cap.getGeneralStatus();
+  cap.calibrate();
+  int touched = 0;
+  int prevTouched = 0;
+
   timer.start();
   newClockPeriod = timer.read_us();
   bClock.init();
@@ -38,6 +59,14 @@ int main() {
   extClockInput.rise(&extTick);
   
   while(1) {
+
+    touched = cap.touched();
+    if (touched != prevTouched) {
+      prevTouched = touched;
+    }
+
+
+
     newButtonState = button.read();
     if (newButtonState != oldButtonState) {
 
