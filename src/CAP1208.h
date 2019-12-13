@@ -33,6 +33,11 @@ class CAP1208 {
       connected = true;
     }
 
+    // speed up sampling time
+    data_write[0] = 0x24; // AVERAGING AND SAMPLING CONFIGURATION REGISTER
+    data_write[1] = 0b00000000;  // default: 0b00111001
+    i2c->write(address, data_write, 2);
+
     // allow multiple touches
     data_write[0] = 0x2A;
     data_write[1] = 0x00;
