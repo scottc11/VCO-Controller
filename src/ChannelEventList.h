@@ -3,6 +3,7 @@
 
 #include "main.h"
 #include "ShiftRegister.h"
+#include "MIDI.h"
 
 typedef struct EventNode {
   uint8_t index;             // note index :: one of 0..7
@@ -20,15 +21,17 @@ class ChannelEventList {
     EventNode* queued;    // the currently active / next / ensuing / succeeding event
 
   public:
-    ChannelEventList(PinName gateOutPin, ShiftRegister *reg_p) : gateOut(gateOutPin) {
+    ChannelEventList(PinName gateOutPin, ShiftRegister *reg_p, MIDI *midi_p) : gateOut(gateOutPin) {
       head=NULL;
       newEvent=NULL;
       queued=NULL;
       reg = reg_p;
+      midi = midi_p;
     }
 
     DigitalOut gateOut;
-    ShiftRegister *reg;
+    ShiftRegister *reg;  // pointer to shift register instance
+    MIDI *midi;          // pointer to midi instance
 
     void createEvent(int position, int noteIndex);
     void addEvent(int position);

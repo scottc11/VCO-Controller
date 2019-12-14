@@ -11,5 +11,8 @@
 #define SHIFT_REG_DATA       PB_13
 #define SHIFT_REG_CLOCK      PB_14
 #define CHANNEL_GATE         PA_7
+#define MIDI_TX              PA_11
+#define MIDI_RX              PA_12
+#define MIDI_BAUD            31250
 
 #endif

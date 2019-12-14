@@ -3,6 +3,7 @@
 #include "ChannelEventList.h"
 #include "CAP1208.h"
 #include "ShiftRegister.h"
+#include "MIDI.h"
 
 
 I2C i2c(I2C_SDA, I2C_SCL);  // PB_8, PB_9
@@ -12,10 +13,11 @@ Ticker ticker;
 Timer timer;
 InterruptIn extClockInput(PB_10);
 
+MIDI midi;
 ShiftRegister reg(SHIFT_REG_DATA, SHIFT_REG_CLOCK);
 CAP1208 cap;
 BeatClock bClock(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
-ChannelEventList chEventList(CHANNEL_GATE, &reg);
+ChannelEventList chEventList(CHANNEL_GATE, &reg, &midi);
 
 bool ETL = false;       // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
 int newClockPeriod;
