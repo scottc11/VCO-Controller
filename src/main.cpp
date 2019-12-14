@@ -2,17 +2,19 @@
 #include "BeatClock.h"
 #include "ChannelEventList.h"
 #include "CAP1208.h"
+#include "ShiftRegister.h"
+
 
 I2C i2c(I2C_SDA, I2C_SCL);  // PB_8, PB_9
 DigitalOut eventLed(PB_5);
 DigitalOut boardLED(LED1);
-DigitalOut led3(MISC_LED_1);
-DigitalOut led4(MISC_LED_2);
 DigitalIn button(PA_7);
+
 Ticker ticker;
 Timer timer;
 InterruptIn extClockInput(PB_10);
 
+ShiftRegister reg(SHIFT_REG_DATA, SHIFT_REG_CLOCK);
 CAP1208 cap;
 BeatClock bClock(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
 ChannelEventList chEventList;
@@ -72,15 +74,11 @@ int main() {
       for (int i=0; i<8; i++) {
         // it if *is* touched and *wasnt* touched before, alert!
         if (getBitStatus(touched, i) && !getBitStatus(prevTouched, i)) {
-          if (i == 2) {
-            led3.write(HIGH);
-          }
+          reg.writeByte(touched);
         }
         // if it *was* touched and now *isnt*, alert!
         if (!getBitStatus(touched, i) && getBitStatus(prevTouched, i)) {
-          if (i == 2) {
-            led3.write(LOW);
-          }
+          reg.writeByte(touched);
         }
       }
       prevTouched = touched;

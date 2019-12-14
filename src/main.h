@@ -8,7 +8,7 @@
 #define PPQ                  24
 #define LOOP_START_LED_PIN   PA_9
 #define LOOP_STEP_LED_PIN    PA_8
-#define MISC_LED_1           PB_13
-#define MISC_LED_2           PB_14
+#define SHIFT_REG_DATA       PB_13
+#define SHIFT_REG_CLOCK      PB_14
 
 #endif
