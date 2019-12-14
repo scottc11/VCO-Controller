@@ -18,11 +18,13 @@ class ChannelEventList {
     EventNode* queued;    // the currently active / next / ensuing / succeeding event
 
   public:
-    ChannelEventList() {
+    ChannelEventList(PinName gateOutPin) : gateOut(gateOutPin) {
       head=NULL;
       newEvent=NULL;
       queued=NULL;
     }
+
+    DigitalOut gateOut;
 
     void createEvent(int position);
     void addEvent(int position);

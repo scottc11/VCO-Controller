@@ -1,6 +1,5 @@
 #include "ChannelEventList.h"
 
-DigitalOut channelGate(PA_10);
 
 void ChannelEventList::createEvent(int position) {
   newEvent = new EventNode;
@@ -100,13 +99,13 @@ bool ChannelEventList::hasEventInQueue() {
 void ChannelEventList::handleQueuedEvent(int position) {
   if (queued->triggered == false ) {
     if (position == queued->startPos) {
-      channelGate.write(HIGH);
+      gateOut.write(HIGH);
       // send midi note
       queued->triggered = true;
     }
   }
   else if (position == queued->endPos) {
-    channelGate.write(LOW);
+    gateOut.write(LOW);
     queued->triggered = false;
     if (queued->next != NULL) {
       queued = queued->next;

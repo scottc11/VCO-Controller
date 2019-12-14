@@ -10,5 +10,6 @@
 #define LOOP_STEP_LED_PIN    PA_8
 #define SHIFT_REG_DATA       PB_13
 #define SHIFT_REG_CLOCK      PB_14
+#define CHANNEL_GATE         PA_7
 
 #endif

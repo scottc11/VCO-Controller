@@ -6,9 +6,7 @@
 
 
 I2C i2c(I2C_SDA, I2C_SCL);  // PB_8, PB_9
-DigitalOut eventLed(PB_5);
 DigitalOut boardLED(LED1);
-DigitalIn button(PA_7);
 
 Ticker ticker;
 Timer timer;
@@ -17,7 +15,7 @@ InterruptIn extClockInput(PB_10);
 ShiftRegister reg(SHIFT_REG_DATA, SHIFT_REG_CLOCK);
 CAP1208 cap;
 BeatClock bClock(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
-ChannelEventList chEventList;
+ChannelEventList chEventList(CHANNEL_GATE);
 
 bool ETL = false;       // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
 int newClockPeriod;
@@ -75,36 +73,17 @@ int main() {
         // it if *is* touched and *wasnt* touched before, alert!
         if (getBitStatus(touched, i) && !getBitStatus(prevTouched, i)) {
           reg.writeByte(touched);
+          ETL = false; // deactivate event triggering loop
+          chEventList.createEvent(bClock.position);
         }
         // if it *was* touched and now *isnt*, alert!
         if (!getBitStatus(touched, i) && getBitStatus(prevTouched, i)) {
           reg.writeByte(touched);
+          chEventList.addEvent(bClock.position);
+          ETL = true; // activate event triggering loop
         }
       }
       prevTouched = touched;
-    }
-
-
-
-    newButtonState = button.read();
-    if (newButtonState != oldButtonState) {
-
-      // BUTTON PRESSED
-      if (newButtonState == HIGH) {
-        ETL = false; // deactivate event triggering loop
-        eventLed.write(HIGH);
-        chEventList.createEvent(bClock.position);
-      }
-
-      // BUTTON RELEASED
-      else if (newButtonState == LOW) {     
-        eventLed.write(LOW);
-        chEventList.addEvent(bClock.position);
-        ETL = true; // activate event triggering loop
-      }
-
-      oldButtonState = newButtonState;
-      wait_us(2); // debounce
     }
 
     if (chEventList.hasEventInQueue() && ETL ) {

@@ -22,7 +22,6 @@ class ShiftRegister {
         clock = 1;
         wait_us(2);
         clock = 0;
-        wait_us(2);
       }
     }
 
