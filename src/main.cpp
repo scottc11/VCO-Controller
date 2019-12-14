@@ -15,7 +15,7 @@ InterruptIn extClockInput(PB_10);
 ShiftRegister reg(SHIFT_REG_DATA, SHIFT_REG_CLOCK);
 CAP1208 cap;
 BeatClock bClock(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
-ChannelEventList chEventList(CHANNEL_GATE);
+ChannelEventList chEventList(CHANNEL_GATE, &reg);
 
 bool ETL = false;       // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
 int newClockPeriod;
@@ -25,6 +25,7 @@ int newButtonState;
 int oldButtonState;
 
 // bitNum starts at 0-7 for 8-bits
+// https://stackoverflow.com/questions/47981/how-do-you-set-clear-and-toggle-a-single-bit
 bool getBitStatus(int b, int bitNum) {
   return (b & (1 << bitNum));
 }
@@ -70,19 +71,18 @@ int main() {
     touched = cap.touched();
     if (touched != prevTouched) {
       for (int i=0; i<8; i++) {
-        // it if *is* touched and *wasnt* touched before, alert!
+        // if it *is* touched and *wasnt* touched before, alert!
         if (getBitStatus(touched, i) && !getBitStatus(prevTouched, i)) {
-          reg.writeByte(touched);
           ETL = false; // deactivate event triggering loop
-          chEventList.createEvent(bClock.position);
+          chEventList.createEvent(bClock.position, i);
         }
         // if it *was* touched and now *isnt*, alert!
         if (!getBitStatus(touched, i) && getBitStatus(prevTouched, i)) {
-          reg.writeByte(touched);
           chEventList.addEvent(bClock.position);
           ETL = true; // activate event triggering loop
         }
       }
+      reg.writeByte(touched); // toggle channel LEDs
       prevTouched = touched;
     }
 

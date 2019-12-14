@@ -26,14 +26,22 @@ class ShiftRegister {
     }
 
     //Writes a bit to the shift register UNTESTED
-    void writeBit(unsigned char bit){
-      data = bit & 0x01;
-      clock = 1;
-      wait_us(2);
-      clock = 0;
-      wait_us(2);
+    void clearBit(int position){
+      writeByte((0x00 & ~(1 << position)));
+    }
+
+    void setBit(int position){
+      writeByte((0x00 | (1 << position)));
     }
 
 };
+
+/*
+set --> set bit to 1
+get --> get value of bit
+clear --> set bit to 0
+toggle --> flip bit
+*/
+
 
 #endif

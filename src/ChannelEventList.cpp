@@ -1,8 +1,9 @@
 #include "ChannelEventList.h"
 
 
-void ChannelEventList::createEvent(int position) {
+void ChannelEventList::createEvent(int position, int noteIndex) {
   newEvent = new EventNode;
+  newEvent->index = noteIndex;
   newEvent->startPos = position;
   newEvent->triggered = false;
   newEvent->next = NULL;
@@ -100,12 +101,14 @@ void ChannelEventList::handleQueuedEvent(int position) {
   if (queued->triggered == false ) {
     if (position == queued->startPos) {
       gateOut.write(HIGH);
+      reg->setBit(queued->index);
       // send midi note
       queued->triggered = true;
     }
   }
   else if (position == queued->endPos) {
     gateOut.write(LOW);
+    reg->clearBit(queued->index);
     queued->triggered = false;
     if (queued->next != NULL) {
       queued = queued->next;
