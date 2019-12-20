@@ -3,6 +3,8 @@
 
 #include "main.h"
 
+const int MIDI_NOTE_MAP[8] = { 60, 62, 64, 65, 67, 69, 71, 72 };
+
 class MIDI {
   private:
     RawSerial serial;

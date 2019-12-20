@@ -5,16 +5,17 @@
 #include "ShiftRegister.h"
 #include "MIDI.h"
 
-
-I2C i2c(I2C_SDA, I2C_SCL);  // PB_8, PB_9
+I2C i2c(I2C_SDA, I2C_SCL);
 DigitalOut boardLED(LED1);
 
 Ticker ticker;
 Timer timer;
-InterruptIn extClockInput(PB_10);
+InterruptIn extClockInput(EXT_CLOCK_INPUT);
 
 MIDI midi;
-ShiftRegister reg(SHIFT_REG_DATA, SHIFT_REG_CLOCK);
+ShiftRegister reg(SHIFT_REG_DATA, SHIFT_REG_CLOCK, SHIFT_REG_LATCH);
+ShiftRegister display(DISPLAY_DATA, DISPLAY_CLK, DISPLAY_LATCH);
+DigitalOut latch(DISPLAY_LATCH);
 CAP1208 cap;
 BeatClock bClock(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
 ChannelEventList chEventList(CHANNEL_GATE, &reg, &midi);
@@ -25,6 +26,8 @@ int oldClockPeriod;
 int clockPeriod;
 int newButtonState;
 int oldButtonState;
+
+const char numbers[10] = { 0b11111100, 0b01100000, 0b11011010, 0b11110010, 0b01100110, 0b10110110, 0b00111110, 0b11100000, 0b11111110, 0b11100110 };
 
 // bitNum starts at 0-7 for 8-bits
 // https://stackoverflow.com/questions/47981/how-do-you-set-clear-and-toggle-a-single-bit
@@ -46,6 +49,15 @@ void extTick() {
 int main() {
   boardLED.write(HIGH);
   
+  // init display
+  for (int i = 0; i < 10; i++)
+  {
+    display.writeByte(numbers[i]);
+    display.pulseLatch();
+    wait_ms(500);
+  }
+  
+
   cap.init(&i2c);
 
   if (!cap.isConnected()) {
