@@ -7,7 +7,6 @@
 
 I2C i2c(I2C_SDA, I2C_SCL);
 DigitalOut boardLED(LED1);
-
 Ticker ticker;
 Timer timer;
 InterruptIn extClockInput(EXT_CLOCK_INPUT);
@@ -29,12 +28,6 @@ int oldButtonState;
 
 const char numbers[10] = { 0b11111100, 0b01100000, 0b11011010, 0b11110010, 0b01100110, 0b10110110, 0b00111110, 0b11100000, 0b11111110, 0b11100110 };
 
-// bitNum starts at 0-7 for 8-bits
-// https://stackoverflow.com/questions/47981/how-do-you-set-clear-and-toggle-a-single-bit
-bool getBitStatus(int b, int bitNum) {
-  return (b & (1 << bitNum));
-}
-
 void tick() {
   bClock.tick();
 }
@@ -48,15 +41,16 @@ void extTick() {
 
 int main() {
   boardLED.write(HIGH);
-  
+
   // init display
   for (int i = 0; i < 10; i++)
   {
     display.writeByte(numbers[i]);
+    display.writeByte(numbers[1]);
     display.pulseLatch();
-    wait_ms(500);
+    wait_ms(100);
   }
-  
+
 
   cap.init(&i2c);
 
@@ -86,12 +80,12 @@ int main() {
     if (touched != prevTouched) {
       for (int i=0; i<8; i++) {
         // if it *is* touched and *wasnt* touched before, alert!
-        if (getBitStatus(touched, i) && !getBitStatus(prevTouched, i)) {
+        if (cap.getBitStatus(touched, i) && !cap.getBitStatus(prevTouched, i)) {
           ETL = false; // deactivate event triggering loop
           chEventList.createEvent(bClock.position, i);
         }
         // if it *was* touched and now *isnt*, alert!
-        if (!getBitStatus(touched, i) && getBitStatus(prevTouched, i)) {
+        if (!cap.getBitStatus(touched, i) && cap.getBitStatus(prevTouched, i)) {
           chEventList.addEvent(bClock.position);
           ETL = true; // activate event triggering loop
         }

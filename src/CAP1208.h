@@ -95,6 +95,12 @@ class CAP1208 {
     return data_read[0];
   }
 
+  // bitNum starts at 0-7 for 8-bits
+  // https://stackoverflow.com/questions/47981/how-do-you-set-clear-and-toggle-a-single-bit
+  bool getBitStatus(int b, int bitNum) {
+    return (b & (1 << bitNum));
+  }
+
 };
 
 

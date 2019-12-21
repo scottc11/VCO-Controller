@@ -26,6 +26,7 @@ class BeatClock {
     void init();
     void tick();
     void reset();
+    void handleEncoder();
 };
 
 

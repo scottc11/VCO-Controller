@@ -1,6 +1,7 @@
 {
   "files.associations": {
     "*.tpp": "cpp",
-    "*.tcc": "cpp"
+    "*.tcc": "cpp",
+    "stm32f4xx.h": "c"
   }
 }

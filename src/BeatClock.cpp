@@ -34,3 +34,18 @@ void BeatClock::tick() {
     }
   }
 }
+
+void BeatClock::handleEncoder() {
+  // Encoder_Status encoderStatus = Encoder_Get_Status();
+
+  // switch(encoderStatus) {
+  //   case Incremented:
+  //     if (numSteps < 16) { numSteps += 1; }
+  //     break;
+  //   case Decremented:
+  //     if (numSteps > 1) { numSteps -= 1; }
+  //     break;
+  //   case Neutral:
+  //     break;
+  // }
+}
