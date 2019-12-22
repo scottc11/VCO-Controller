@@ -11,6 +11,7 @@ typedef enum {
 
 void EncoderInit(TIM_Encoder_InitTypeDef * encoder, TIM_HandleTypeDef * timer, TIM_TypeDef * TIMx);
 uint16_t EncoderRead(TIM_HandleTypeDef * timer);
+void EncoderInitialiseTIM3(void);
 EncoderStatus EncoderGetStatus();
 
 #endif
