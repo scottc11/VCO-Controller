@@ -29,7 +29,7 @@
 #define TLC59116_CHAN_D_ADDR 0x64 // 1100100
 
 #define CAP1208_CNTRL_ADDR   0x14 // 0010100
-#define PCA9544_ADDR         0x70 // 1110000
+#define TCA9544A_ADDR        0x70 // 1110000
 
 
 

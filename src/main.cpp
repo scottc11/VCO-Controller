@@ -4,8 +4,9 @@
 #include "CAP1208.h"
 #include "ShiftRegister.h"
 #include "MIDI.h"
+#include "TCA9544A.h"
 
-I2C i2c(I2C_SDA, I2C_SCL);
+I2C i2c1(I2C_SDA, I2C_SCL);
 DigitalOut boardLED(LED1);
 Ticker ticker;
 Timer timer;
@@ -16,6 +17,7 @@ ShiftRegister reg(SHIFT_REG_DATA, SHIFT_REG_CLOCK, SHIFT_REG_LATCH);
 ShiftRegister display(DISPLAY_DATA, DISPLAY_CLK, DISPLAY_LATCH);
 DigitalOut latch(DISPLAY_LATCH);
 CAP1208 cap;
+TCA9544A i2cMux(&i2c1, TCA9544A_ADDR);
 BeatClock bClock(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
 ChannelEventList chEventList(CHANNEL_GATE, &reg, &midi);
 
@@ -43,20 +45,20 @@ int main() {
   boardLED.write(HIGH);
 
   // init display
-  for (int x = 0; x < 10; x++)
-  {
-    for (int i = 0; i < 10; i++)
-    {
-      display.writeByte(numbers[i]);
-      display.writeByte(numbers[x]);
-      display.pulseLatch();
-      wait_ms(10);
-    }
+  // for (int x = 0; x < 10; x++)
+  // {
+  //   for (int i = 0; i < 10; i++)
+  //   {
+  //     display.writeByte(numbers[i]);
+  //     display.writeByte(numbers[x]);
+  //     display.pulseLatch();
+  //     wait_ms(10);
+  //   }
     
-  }
+  // }
 
-
-  cap.init(&i2c);
+  i2cMux.enableChan(0);
+  cap.init(&i2c1);
 
   if (!cap.isConnected()) { boardLED.write(HIGH); }
   else { boardLED.write(LOW); }
