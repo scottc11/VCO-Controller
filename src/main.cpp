@@ -43,23 +43,23 @@ int main() {
   boardLED.write(HIGH);
 
   // init display
-  for (int i = 0; i < 10; i++)
+  for (int x = 0; x < 10; x++)
   {
-    display.writeByte(numbers[i]);
-    display.writeByte(numbers[1]);
-    display.pulseLatch();
-    wait_ms(100);
+    for (int i = 0; i < 10; i++)
+    {
+      display.writeByte(numbers[i]);
+      display.writeByte(numbers[x]);
+      display.pulseLatch();
+      wait_ms(10);
+    }
+    
   }
 
 
   cap.init(&i2c);
 
-  if (!cap.isConnected()) {
-    boardLED.write(HIGH);
-  } else {
-    boardLED.write(LOW);
-  }
-
+  if (!cap.isConnected()) { boardLED.write(HIGH); }
+  else { boardLED.write(LOW); }
 
   cap.getControlStatus();
   cap.getGeneralStatus();
@@ -73,9 +73,8 @@ int main() {
 
   ticker.attach_us(&tick, (1000000/2) / PPQ); //approx 120 bpm
   extClockInput.rise(&extTick);
-  
-  while(1) {
 
+  while(1) {
     touched = cap.touched();
     if (touched != prevTouched) {
       for (int i=0; i<8; i++) {
