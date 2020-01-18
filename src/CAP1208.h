@@ -23,7 +23,7 @@ class CAP1208 {
     i2c = _i2c;
     
     // read product id to test connection
-    data_write[0] = 0xFD; 
+    data_write[0] = 0xFD;
     i2c->write(address, data_write, 1, true);
     i2c->read(address, data_read, 1);
 
@@ -43,12 +43,20 @@ class CAP1208 {
     data_write[1] = 0x00;
     i2c->write(address, data_write, 2);
 
+    // disable repeat rate for all channels
+    data_write[0] = 0x28;
+    data_write[1] = 0x00;
+    i2c->write(address, data_write, 2);
+    i2c->write(address, data_write, 1);
+
+  }
+
+  void disableInterupts() {
     // disable interupts
     data_write[0] = 0x27;
     data_write[1] = 0x00;
     i2c->write(address, data_write, 2);
     i2c->write(address, data_write, 1);
-    i2c->read(address, data_read, 1);
   }
 
   bool isConnected() {
@@ -84,8 +92,8 @@ class CAP1208 {
 
   uint8_t touched() {
     // for some reason we have to "clear" the INT bit everytime we read the sensors... 
-    data_write[0] = CAP1208_MAIN_CONTROL;    
-    data_write[1] = data_write[0] & ~0x01;
+    data_write[0] = CAP1208_MAIN_CONTROL;
+    data_write[1] = CAP1208_MAIN_CONTROL & ~0x01;
     i2c->write(address, data_write, 2);
     
     // read input status of CAP1208

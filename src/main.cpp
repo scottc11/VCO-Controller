@@ -8,15 +8,18 @@
 
 I2C i2c1(I2C_SDA, I2C_SCL);
 DigitalOut boardLED(LED1);
+DigitalOut led3(LED3);
 Ticker ticker;
 Timer timer;
 InterruptIn extClockInput(EXT_CLOCK_INPUT);
+InterruptIn touchAInt(PB_4, PullUp);
+InterruptIn touchBInt(PB_5, PullUp);
 
 MIDI midi;
 ShiftRegister reg(SHIFT_REG_DATA, SHIFT_REG_CLOCK, SHIFT_REG_LATCH);
 ShiftRegister display(DISPLAY_DATA, DISPLAY_CLK, DISPLAY_LATCH);
 DigitalOut latch(DISPLAY_LATCH);
-CAP1208 cap;
+CAP1208 touchA;
 TCA9544A i2cMux(&i2c1, TCA9544A_ADDR);
 BeatClock bClock(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
 ChannelEventList chEventList(CHANNEL_GATE, &reg, &midi);
@@ -25,8 +28,8 @@ bool ETL = false;       // "Event Triggering Loop" -> This will prevent looped e
 int newClockPeriod;
 int oldClockPeriod;
 int clockPeriod;
-int newButtonState;
-int oldButtonState;
+volatile int interupt = 0;
+int numInterupts = 0;
 
 const char numbers[10] = { 0b11111100, 0b01100000, 0b11011010, 0b11110010, 0b01100110, 0b10110110, 0b00111110, 0b11100000, 0b11111110, 0b11100110 };
 
@@ -41,31 +44,29 @@ void extTick() {
   ticker.attach_us(&tick, clockPeriod / PPQ);  // potentially write this as a flag and update in main loop
 }
 
+void CAP1208_Interupt() {
+  interupt = 1;
+}
+
 int main() {
   boardLED.write(HIGH);
 
   // init display
-  // for (int x = 0; x < 10; x++)
-  // {
-  //   for (int i = 0; i < 10; i++)
-  //   {
-  //     display.writeByte(numbers[i]);
-  //     display.writeByte(numbers[x]);
-  //     display.pulseLatch();
-  //     wait_ms(10);
-  //   }
-    
-  // }
+  display.writeByte(numbers[0]);
+  display.writeByte(numbers[0]);
+  display.pulseLatch();
+
+  touchAInt.fall(&CAP1208_Interupt);
 
   i2cMux.enableChan(0);
-  cap.init(&i2c1);
+  touchA.init(&i2c1);
 
-  if (!cap.isConnected()) { boardLED.write(HIGH); }
+  if (!touchA.isConnected()) { boardLED.write(HIGH); }
   else { boardLED.write(LOW); }
 
-  cap.getControlStatus();
-  cap.getGeneralStatus();
-  cap.calibrate();
+  touchA.getControlStatus();
+  touchA.getGeneralStatus();
+  touchA.calibrate();
   int touched = 0;
   int prevTouched = 0;
 
@@ -77,23 +78,41 @@ int main() {
   extClockInput.rise(&extTick);
 
   while(1) {
-    touched = cap.touched();
-    if (touched != prevTouched) {
-      for (int i=0; i<8; i++) {
-        // if it *is* touched and *wasnt* touched before, alert!
-        if (cap.getBitStatus(touched, i) && !cap.getBitStatus(prevTouched, i)) {
-          ETL = false; // deactivate event triggering loop
-          chEventList.createEvent(bClock.position, i);
-        }
-        // if it *was* touched and now *isnt*, alert!
-        if (!cap.getBitStatus(touched, i) && cap.getBitStatus(prevTouched, i)) {
-          chEventList.addEvent(bClock.position);
-          ETL = true; // activate event triggering loop
-        }
+    
+    if (interupt == 1) {
+      if (numInterupts > 9) {
+        numInterupts = 0;
+      } else {
+        numInterupts += 1;
       }
-      reg.writeByte(touched); // toggle channel LEDs
-      prevTouched = touched;
+      
+      display.writeByte(numbers[0]);
+      display.writeByte(numbers[numInterupts]);
+      display.pulseLatch();
+
+
+      touched = touchA.touched();
+      if (touched != prevTouched) {
+        for (int i=0; i<8; i++) {
+          // if it *is* touched and *wasnt* touched before, alert!
+          if (touchA.getBitStatus(touched, i) && !touchA.getBitStatus(prevTouched, i)) {
+            ETL = false; // deactivate event triggering loop
+            chEventList.createEvent(bClock.position, i);
+          }
+          // if it *was* touched and now *isnt*, alert!
+          if (!touchA.getBitStatus(touched, i) && touchA.getBitStatus(prevTouched, i)) {
+            chEventList.addEvent(bClock.position);
+            ETL = true; // activate event triggering loop
+          }
+        }
+        reg.writeByte(touched); // toggle channel LEDs
+        prevTouched = touched;
+      }
+
+      interupt = 0;
     }
+
+
 
     if (chEventList.hasEventInQueue() && ETL ) {
       chEventList.handleQueuedEvent(bClock.position);
