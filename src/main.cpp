@@ -13,13 +13,15 @@ DigitalOut boardLED(LED1);
 Ticker ticker;
 Timer timer;
 InterruptIn extClockInput(EXT_CLOCK_INPUT);
-InterruptIn touchAInt(PB_4);
+InterruptIn touchAInt(PB_4, PullUp);
+InterruptIn touchBInt(PB_5, PullUp);
 
 MIDI midi;
 ShiftRegister reg(SHIFT_REG_DATA, SHIFT_REG_CLOCK, SHIFT_REG_LATCH);
 ShiftRegister display(DISPLAY_DATA, DISPLAY_CLK, DISPLAY_LATCH);
 DigitalOut latch(DISPLAY_LATCH);
 CAP1208 touchA;
+CAP1208 touchB;
 TCA9544A i2cMux(&i2c1, TCA9544A_ADDR);
 BeatClock bClock(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
 ChannelEventList chEventList(CHANNEL_GATE, &reg, &midi);
@@ -48,6 +50,10 @@ void CAP1208_Interupt() {
   interupt = 1;
 }
 
+void secondInterupt() {
+  interupt = 1;
+}
+
 int main() {
   boardLED.write(HIGH);
 
@@ -56,16 +62,23 @@ int main() {
   display.writeByte(numbers[0]);
   display.pulseLatch();
 
-  touchAInt.fall(&CAP1208_Interupt);
+  touchAInt.fall(&secondInterupt);
 
   touchA.init(&i2c1, &i2cMux, 0);
 
   if (!touchA.isConnected()) { boardLED.write(HIGH); }
   else { boardLED.write(LOW); }
-
-  touchA.getControlStatus();
-  touchA.getGeneralStatus();
   touchA.calibrate();
+
+  touchBInt.fall(&CAP1208_Interupt);
+
+  touchB.init(&i2c1, &i2cMux, 1);
+
+  if (!touchB.isConnected()) { boardLED.write(HIGH); }
+  else { boardLED.write(LOW); }
+  touchB.calibrate();
+  
+
   int touched = 0;
   int prevTouched = 0;
 
@@ -77,7 +90,7 @@ int main() {
   extClockInput.rise(&extTick);
 
   while(1) {
-    // channelA.handleInterupts();
+    
     if (interupt == 1) {
       if (numInterupts > 9) {
         numInterupts = 0;
@@ -89,17 +102,17 @@ int main() {
       display.writeByte(numbers[numInterupts]);
       display.pulseLatch();
 
-
-      touched = touchA.touched();
+      touchA.touched();
+      touched = touchB.touched();
       if (touched != prevTouched) {
         for (int i=0; i<8; i++) {
           // if it *is* touched and *wasnt* touched before, alert!
-          if (touchA.getBitStatus(touched, i) && !touchA.getBitStatus(prevTouched, i)) {
+          if (touchB.getBitStatus(touched, i) && !touchB.getBitStatus(prevTouched, i)) {
             ETL = false; // deactivate event triggering loop
             chEventList.createEvent(bClock.position, i);
           }
           // if it *was* touched and now *isnt*, alert!
-          if (!touchA.getBitStatus(touched, i) && touchA.getBitStatus(prevTouched, i)) {
+          if (!touchB.getBitStatus(touched, i) && touchB.getBitStatus(prevTouched, i)) {
             chEventList.addEvent(bClock.position);
             ETL = true; // activate event triggering loop
           }

@@ -14,8 +14,6 @@ class CAP1208 {
     address = 0x28 << 1;
     id = 0x6B;
   }
-  
-
 
   I2C * i2c;
   TCA9544A * mux;
@@ -28,9 +26,11 @@ class CAP1208 {
 
   void init(I2C *_i2c, TCA9544A *mux_ptr, int _muxChannel) {
     mux = mux_ptr;
+    muxChannel = _muxChannel;
     i2c = _i2c;
     
-    mux->enableChan(0);
+
+    mux->enableChan(muxChannel);
 
     // read product id to test connection
     data_write[0] = 0xFD;
@@ -53,12 +53,22 @@ class CAP1208 {
     data_write[1] = 0x00;
     i2c->write(address, data_write, 2);
 
+    // enable interupts
+    data_write[0] = 0x27;
+    data_write[1] = 0xFF;
+    i2c->write(address, data_write, 2);
+
     // disable repeat rate for all channels
     data_write[0] = 0x28;
     data_write[1] = 0x00;
     i2c->write(address, data_write, 2);
-    i2c->write(address, data_write, 1);
 
+    // disable BLK_PWR_CTRL power saving feature
+    data_write[0] = 0x44;
+    data_write[1] = 0x60;
+    i2c->write(address, data_write, 2);
+
+    clearInterupt();
   }
 
   void disableInterupts() {
@@ -66,7 +76,6 @@ class CAP1208 {
     data_write[0] = 0x27;
     data_write[1] = 0x00;
     i2c->write(address, data_write, 2);
-    i2c->write(address, data_write, 1);
   }
 
   bool isConnected() {
@@ -80,7 +89,7 @@ class CAP1208 {
   }
 
   void getControlStatus() {
-    mux->enableChan(0);
+    mux->enableChan(muxChannel);
     // read main control status of CAP1208
     data_write[0] = 0x00; // main control
     i2c->write(address, data_write, 1, true);
@@ -88,7 +97,7 @@ class CAP1208 {
   }
 
   void getGeneralStatus() {
-    mux->enableChan(0);
+    mux->enableChan(muxChannel);
     // read general status of CAP1208
     data_write[0] = 0x02; // general status
     i2c->write(address, data_write, 1, true);
@@ -96,20 +105,23 @@ class CAP1208 {
   }
 
   void calibrate() {
-    mux->enableChan(0);
+    mux->enableChan(muxChannel);
     data_write[0] = 0x26; // CALIBRATION ACTIVATE AND STATUS REGISTER
     data_write[1] = 0xFF; // calibrate all inputs
     i2c->write(address, data_write, 2, true);
     i2c->read(address, data_read, 1);
   }
 
-  uint8_t touched() {
-    mux->enableChan(0);
-    // for some reason we have to "clear" the INT bit everytime we read the sensors... 
+  void clearInterupt() {
     data_write[0] = CAP1208_MAIN_CONTROL;
     data_write[1] = CAP1208_MAIN_CONTROL & ~0x01;
     i2c->write(address, data_write, 2);
-    
+  }
+
+  uint8_t touched() {
+    mux->enableChan(muxChannel);
+    // for some reason we have to "clear" the INT bit everytime we read the sensors... 
+    clearInterupt();
     // read input status of CAP1208
     data_write[0] = 0x03; // input status
     i2c->write(address, data_write, 1, true);

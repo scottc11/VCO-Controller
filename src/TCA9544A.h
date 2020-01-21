@@ -23,34 +23,33 @@ class TCA9544A {
   int channel;
   I2C * i2c;
   char read_buffer[1];
-  char write_buffer[2];
+  char write_buffer[1];
 
   void enableChan(int channel) {
 
     switch (channel) {
       case 0:
-        read_buffer[0] = TCA9544A_CH0;
-        i2c->write(address, read_buffer, 1);
+        write_buffer[0] = TCA9544A_CH0;
+        i2c->write(address, write_buffer, 1);
         break;
       case 1:
-        read_buffer[0] = TCA9544A_CH1;
-        i2c->write(address, read_buffer, 1);
+        write_buffer[0] = TCA9544A_CH1;
+        i2c->write(address, write_buffer, 1);
         break;
       case 2:
-        read_buffer[0] = TCA9544A_CH2;
-        i2c->write(address, read_buffer, 1);
+        write_buffer[0] = TCA9544A_CH2;
+        i2c->write(address, write_buffer, 1);
         break;
       case 3:
-        read_buffer[0] = TCA9544A_CH3;
-        i2c->write(address, read_buffer, 1);
+        write_buffer[0] = TCA9544A_CH3;
+        i2c->write(address, write_buffer, 1);
         break;
     }
   }
 
   char currentChan() {
-    // not yet tested
-    read_buffer[0] = 0b11111100;
-    return i2c->read(address, read_buffer, 1);
+    i2c->read(address, read_buffer, 1);
+    return read_buffer[0];
   }
 };
 
