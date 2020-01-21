@@ -5,15 +5,18 @@
 #include "CAP1208.h"
 #include "ChannelEventList.h"
 #include "BeatClock.h"
+#include "TCA9544A.h"
 
 class Channel {
   public:
 
-  Channel(PinName tchInt, PinName _gate, I2C *touchI2C, ShiftRegister *_reg, MIDI *_midi, BeatClock *_clock) : touchInterupt(tchInt), events(_gate, _reg, _midi) {
-    touch.init(touchI2C);
+  Channel(int _channel, PinName tchInt, PinName _gate, I2C *touchI2C, ShiftRegister *_reg, MIDI *_midi, BeatClock *_clock, TCA9544A *mux) : touchInterupt(tchInt), events(_gate, _reg, _midi) {
+    channel = _channel;
+    touch.init(touchI2C, mux, channel);
     clock = _clock;
   }
-
+  
+  int channel;  // index for identifying channel number (ie, channel 0, channel 1, etc.)
   CAP1208 touch;
   ChannelEventList events;
   BeatClock *clock;
@@ -40,7 +43,7 @@ class Channel {
             ETL = true; // activate event triggering loop
           }
         }
-        reg.writeByte(touched); // toggle channel LEDs
+        // reg.writeByte(touched); // toggle channel LEDs
         prevTouched = touched;
       }
 

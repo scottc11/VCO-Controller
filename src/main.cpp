@@ -14,7 +14,6 @@ Ticker ticker;
 Timer timer;
 InterruptIn extClockInput(EXT_CLOCK_INPUT);
 InterruptIn touchAInt(PB_4);
-// InterruptIn touchBInt(PB_5);
 
 MIDI midi;
 ShiftRegister reg(SHIFT_REG_DATA, SHIFT_REG_CLOCK, SHIFT_REG_LATCH);
@@ -59,8 +58,7 @@ int main() {
 
   touchAInt.fall(&CAP1208_Interupt);
 
-  i2cMux.enableChan(0);
-  touchA.init(&i2c1);
+  touchA.init(&i2c1, &i2cMux, 0);
 
   if (!touchA.isConnected()) { boardLED.write(HIGH); }
   else { boardLED.write(LOW); }
