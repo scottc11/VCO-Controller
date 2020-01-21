@@ -6,14 +6,15 @@
 #include "MIDI.h"
 #include "TCA9544A.h"
 
+
+
 I2C i2c1(I2C_SDA, I2C_SCL);
 DigitalOut boardLED(LED1);
-DigitalOut led3(LED3);
 Ticker ticker;
 Timer timer;
 InterruptIn extClockInput(EXT_CLOCK_INPUT);
-InterruptIn touchAInt(PB_4, PullUp);
-InterruptIn touchBInt(PB_5, PullUp);
+InterruptIn touchAInt(PB_4);
+// InterruptIn touchBInt(PB_5);
 
 MIDI midi;
 ShiftRegister reg(SHIFT_REG_DATA, SHIFT_REG_CLOCK, SHIFT_REG_LATCH);
@@ -78,7 +79,7 @@ int main() {
   extClockInput.rise(&extTick);
 
   while(1) {
-    
+    // channelA.handleInterupts();
     if (interupt == 1) {
       if (numInterupts > 9) {
         numInterupts = 0;
