@@ -6,14 +6,17 @@
 #define LOW                  0
 #define HIGH                 1
 #define PPQ                  24
-#define DISPLAY_CLK          PC_8
-#define DISPLAY_DATA         PC_6
-#define DISPLAY_LATCH        PC_5
+#define MIDI_BAUD            31250
+
+#define ERROR_LED            PC_8
+#define DISPLAY_CLK          PB_2
+#define DISPLAY_DATA         PB_1
+#define DISPLAY_LATCH        PB_10
 #define LOOP_START_LED_PIN   PC_2
 #define LOOP_STEP_LED_PIN    PC_3
-#define ENCODER_CHAN_A       PB_4
-#define ENCODER_CHAN_B       PB_5
-#define ENCODER_PPR          20
+#define ENCODER_CHAN_A       PA_5
+#define ENCODER_CHAN_B       PA_6
+#define ENCODER_BTN          PA_7
 #define SHIFT_REG_DATA       PB_13
 #define SHIFT_REG_CLOCK      PB_14
 #define SHIFT_REG_LATCH      PA_10
@@ -21,7 +24,7 @@
 #define CHANNEL_GATE         PA_7
 #define MIDI_TX              PA_11
 #define MIDI_RX              PA_12
-#define MIDI_BAUD            31250
+
 
 #define TLC59116_CHAN_A_ADDR   0x60 // 1100000
 #define TLC59116_CHAN_B_ADDR   0x61 // 1100001

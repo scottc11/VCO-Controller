@@ -6,11 +6,12 @@
 #include "MIDI.h"
 #include "TCA9544A.h"
 #include "MCP23017.h"
+#include "RotaryEncoder.h"
 
 
 I2C i2c1(I2C_SDA, I2C_SCL);
 I2C i2c3(PC_9, PA_8);
-DigitalOut boardLED(LED1);
+DigitalOut boardLED(ERROR_LED);
 Ticker ticker;
 Timer timer;
 InterruptIn extClockInput(EXT_CLOCK_INPUT);
@@ -28,6 +29,7 @@ CAP1208 touchB;
 TCA9544A i2cMux(&i2c1, TCA9544A_ADDR);
 BeatClock bClock(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
 ChannelEventList chEventList(CHANNEL_GATE, &reg, &midi);
+RotaryEncoder encoder(ENCODER_CHAN_A, ENCODER_CHAN_B, ENCODER_BTN);
 
 bool ETL = false;       // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
 int newClockPeriod;
@@ -64,7 +66,9 @@ void degreeInteruptCallback() {
 
 int main() {
   boardLED.write(HIGH);
-
+  
+  encoder.init();
+  
   // io init
   io.init();
   io.setDirection(MCP23017_PORTA, 0xFF);    // set all of the PORTA pins to input
@@ -111,6 +115,12 @@ int main() {
 
   while(1) {
     
+    if (encoder.btnPressed()) {
+      boardLED.write(HIGH);
+    } else {
+      boardLED.write(LOW);
+    }
+
     if (degreeFlag) {
       io.digitalRead(MCP23017_PORTA);
       io.digitalWrite(MCP23017_PORTB, ~io.digitalRead(MCP23017_PORTB));
