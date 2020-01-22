@@ -9,8 +9,8 @@
 #define DISPLAY_CLK          PC_8
 #define DISPLAY_DATA         PC_6
 #define DISPLAY_LATCH        PC_5
-#define LOOP_START_LED_PIN   PA_9
-#define LOOP_STEP_LED_PIN    PA_8
+#define LOOP_START_LED_PIN   PC_2
+#define LOOP_STEP_LED_PIN    PC_3
 #define ENCODER_CHAN_A       PB_4
 #define ENCODER_CHAN_B       PB_5
 #define ENCODER_PPR          20
@@ -23,14 +23,14 @@
 #define MIDI_RX              PA_12
 #define MIDI_BAUD            31250
 
-#define TLC59116_CHAN_A_ADDR 0x60 // 1100000
-#define TLC59116_CHAN_B_ADDR 0x61 // 1100001
-#define TLC59116_CHAN_C_ADDR 0x62 // 1100010
-#define TLC59116_CHAN_D_ADDR 0x64 // 1100100
+#define TLC59116_CHAN_A_ADDR   0x60 // 1100000
+#define TLC59116_CHAN_B_ADDR   0x61 // 1100001
+#define TLC59116_CHAN_C_ADDR   0x62 // 1100010
+#define TLC59116_CHAN_D_ADDR   0x64 // 1100100
 
-#define CAP1208_CNTRL_ADDR   0x14 // 0010100
-#define TCA9544A_ADDR        0x70 // 1110000
-
+#define CAP1208_CNTRL_ADDR     0x14 // 0010100
+#define TCA9544A_ADDR          0x70 // 1110000
+#define MCP23017_DEGREES_ADDR  0x20 // 0100000
 
 
 #endif

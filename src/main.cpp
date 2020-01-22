@@ -5,10 +5,11 @@
 #include "ShiftRegister.h"
 #include "MIDI.h"
 #include "TCA9544A.h"
-
+#include "MCP23017.h"
 
 
 I2C i2c1(I2C_SDA, I2C_SCL);
+I2C i2c3(PC_9, PA_8);
 DigitalOut boardLED(LED1);
 Ticker ticker;
 Timer timer;
@@ -16,6 +17,7 @@ InterruptIn extClockInput(EXT_CLOCK_INPUT);
 InterruptIn touchAInt(PB_4, PullUp);
 InterruptIn touchBInt(PB_5, PullUp);
 
+MCP23017 io(&i2c3, MCP23017_DEGREES_ADDR);
 MIDI midi;
 ShiftRegister reg(SHIFT_REG_DATA, SHIFT_REG_CLOCK, SHIFT_REG_LATCH);
 ShiftRegister display(DISPLAY_DATA, DISPLAY_CLK, DISPLAY_LATCH);
@@ -56,6 +58,15 @@ void secondInterupt() {
 
 int main() {
   boardLED.write(HIGH);
+
+  // io init
+  io.init();
+  io.setDirection(MCP23017_PORTA, 0xFF);    // set all of the PORTA pins to input
+  io.setDirection(MCP23017_PORTB, 0x00);    // set all of the PORTB pins to output
+  io.setPullUp(MCP23017_PORTA, 0xFF);        // activate all of the PORTA pin pull-ups
+  io.setInputPolarity(MCP23017_PORTA, 0xFF); // invert all of the PORTA pins input polarity
+
+  io.digitalWrite(MCP23017_PORTB, 0xFF);
 
   // init display
   display.writeByte(numbers[0]);

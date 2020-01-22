@@ -7,6 +7,8 @@
 
 #define CAP1208_MAIN_CONTROL 0x00
 
+// supports I2C speeds to 400kHz
+
 class CAP1208 {
   public:
 
