@@ -1,9 +1,3 @@
-/* MCP23017 Library for mbed
- * Copyright (c) 2014, Takuya Urakawa
- * 
- * This library is released under the MIT License
- * See http://opensource.org/licenses/mit-license.php
- */
 
 #ifndef _MCP23017_H_
 #define _MCP23017_H_
@@ -16,6 +10,7 @@
 #define MCP23017_PORTB 0x01
 
 // supports I2C speeds 400kHz, 1.7MHz
+// note: This class assumes the use of bank = 0 for register addresses. Reference the datasheet.
 
 class MCP23017 {
 	
@@ -36,6 +31,7 @@ class MCP23017 {
 	void setDirection(char _port, char _value);       // set port pins to input or output.  1 = input, 0 = output	
 	void setPullUp(char _port, char _value);          // activate pin pull-ups
 	void setInputPolarity(char _port, char _value);   // invert pin input polarity
+	void setInterupt(char _port, char _value);        // enable/disable interupts per pin/port
 	void digitalWrite(char _port, char _value);
 	char digitalRead(char _port);
 	

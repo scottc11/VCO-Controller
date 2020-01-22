@@ -16,6 +16,7 @@ Timer timer;
 InterruptIn extClockInput(EXT_CLOCK_INPUT);
 InterruptIn touchAInt(PB_4, PullUp);
 InterruptIn touchBInt(PB_5, PullUp);
+InterruptIn degreeInt(PC_12);
 
 MCP23017 io(&i2c3, MCP23017_DEGREES_ADDR);
 MIDI midi;
@@ -34,6 +35,7 @@ int oldClockPeriod;
 int clockPeriod;
 volatile int interupt = 0;
 int numInterupts = 0;
+bool degreeFlag = false;
 
 const char numbers[10] = { 0b11111100, 0b01100000, 0b11011010, 0b11110010, 0b01100110, 0b10110110, 0b00111110, 0b11100000, 0b11111110, 0b11100110 };
 
@@ -56,6 +58,10 @@ void secondInterupt() {
   interupt = 1;
 }
 
+void degreeInteruptCallback() {
+  degreeFlag = true;
+}
+
 int main() {
   boardLED.write(HIGH);
 
@@ -65,8 +71,11 @@ int main() {
   io.setDirection(MCP23017_PORTB, 0x00);    // set all of the PORTB pins to output
   io.setPullUp(MCP23017_PORTA, 0xFF);        // activate all of the PORTA pin pull-ups
   io.setInputPolarity(MCP23017_PORTA, 0xFF); // invert all of the PORTA pins input polarity
+  io.setInterupt(MCP23017_PORTA, 0xFF);
 
   io.digitalWrite(MCP23017_PORTB, 0xFF);
+  degreeInt.fall(&degreeInteruptCallback);
+
 
   // init display
   display.writeByte(numbers[0]);
@@ -102,6 +111,12 @@ int main() {
 
   while(1) {
     
+    if (degreeFlag) {
+      io.digitalRead(MCP23017_PORTA);
+      io.digitalWrite(MCP23017_PORTB, ~io.digitalRead(MCP23017_PORTB));
+      degreeFlag = false;
+    }
+
     if (interupt == 1) {
       if (numInterupts > 9) {
         numInterupts = 0;
