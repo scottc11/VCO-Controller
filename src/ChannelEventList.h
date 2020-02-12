@@ -3,6 +3,7 @@
 
 #include "main.h"
 #include "ShiftRegister.h"
+#include "MCP23017.h"
 #include "MIDI.h"
 
 typedef struct EventNode {
@@ -21,17 +22,17 @@ class ChannelEventList {
     EventNode* queued;    // the currently active / next / ensuing / succeeding event
 
   public:
-    ChannelEventList(PinName gateOutPin, ShiftRegister *reg_p, MIDI *midi_p) : gateOut(gateOutPin) {
+    ChannelEventList(PinName gateOutPin, MCP23017 *io_p, MIDI *midi_p) : gateOut(gateOutPin) {
       head=NULL;
       newEvent=NULL;
       queued=NULL;
-      reg = reg_p;
+      io = io_p;
       midi = midi_p;
     }
 
     DigitalOut gateOut;
-    ShiftRegister *reg;  // pointer to shift register instance
-    MIDI *midi;          // pointer to midi instance
+    MCP23017 *io;
+    MIDI *midi;          // pointer to mbed midi instance
 
     void createEvent(int position, int noteIndex);
     void addEvent(int position);

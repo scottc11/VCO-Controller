@@ -101,7 +101,7 @@ void ChannelEventList::handleQueuedEvent(int position) {
   if (queued->triggered == false ) {
     if (position == queued->startPos) {
       gateOut.write(HIGH);
-      reg->setBit(queued->index);
+      // reg->setBit(queued->index);
       midi->sendNoteOn(1, MIDI_NOTE_MAP[queued->index], 100);
       // send midi note
       queued->triggered = true;
@@ -109,7 +109,7 @@ void ChannelEventList::handleQueuedEvent(int position) {
   }
   else if (position == queued->endPos) {
     gateOut.write(LOW);
-    reg->clearBit(queued->index);
+    // reg->clearBit(queued->index);
     midi->sendNoteOff(1, MIDI_NOTE_MAP[queued->index], 100);
     queued->triggered = false;
     if (queued->next != NULL) {

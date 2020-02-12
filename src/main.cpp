@@ -10,25 +10,25 @@
 
 
 I2C i2c1(I2C_SDA, I2C_SCL);
-I2C i2c3(PC_9, PA_8);
-DigitalOut boardLED(ERROR_LED);
+I2C i2c3(I2C3_SDA, I2C3_SCL);
+
 Ticker ticker;
 Timer timer;
 InterruptIn extClockInput(EXT_CLOCK_INPUT);
-InterruptIn touchAInt(PB_4, PullUp);
-InterruptIn touchBInt(PB_5, PullUp);
-InterruptIn degreeInt(PC_12);
+InterruptIn touchAInt(TOUCH_INT_A, PullUp);
+InterruptIn touchBInt(TOUCH_INT_B, PullUp);
+InterruptIn degreeInt(DEGREES_INT);
 
 MCP23017 io(&i2c3, MCP23017_DEGREES_ADDR);
 MIDI midi;
-ShiftRegister reg(SHIFT_REG_DATA, SHIFT_REG_CLOCK, SHIFT_REG_LATCH);
+
 ShiftRegister display(DISPLAY_DATA, DISPLAY_CLK, DISPLAY_LATCH);
 DigitalOut latch(DISPLAY_LATCH);
 CAP1208 touchA;
 CAP1208 touchB;
 TCA9544A i2cMux(&i2c1, TCA9544A_ADDR);
 BeatClock bClock(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
-ChannelEventList chEventList(CHANNEL_GATE, &reg, &midi);
+ChannelEventList chEventList(GATE_OUT_A, &io, &midi);
 RotaryEncoder encoder(ENCODER_CHAN_A, ENCODER_CHAN_B, ENCODER_BTN);
 
 bool ETL = false;       // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
@@ -65,7 +65,6 @@ void degreeInteruptCallback() {
 }
 
 int main() {
-  boardLED.write(HIGH);
   
   encoder.init();
   
@@ -90,19 +89,27 @@ int main() {
 
   touchA.init(&i2c1, &i2cMux, 0);
 
-  if (!touchA.isConnected()) { boardLED.write(HIGH); }
-  else { boardLED.write(LOW); }
+  if (!touchA.isConnected()) {
+    // throw error to display
+  }
+  else {
+    // throw error to display
+  }
   touchA.calibrate();
 
   touchBInt.fall(&CAP1208_Interupt);
 
   touchB.init(&i2c1, &i2cMux, 1);
 
-  if (!touchB.isConnected()) { boardLED.write(HIGH); }
-  else { boardLED.write(LOW); }
+  if (!touchB.isConnected()) {
+    // throw error to display
+  }
+  else {
+    // throw error to display
+  }
+
   touchB.calibrate();
   
-
   int touched = 0;
   int prevTouched = 0;
 
@@ -116,9 +123,9 @@ int main() {
   while(1) {
     
     if (encoder.btnPressed()) {
-      boardLED.write(HIGH);
+      // boardLED.write(HIGH);
     } else {
-      boardLED.write(LOW);
+      // boardLED.write(LOW);
     }
 
     if (degreeFlag) {
@@ -153,7 +160,7 @@ int main() {
             ETL = true; // activate event triggering loop
           }
         }
-        reg.writeByte(touched); // toggle channel LEDs
+        // reg.writeByte(touched); // toggle channel LEDs
         prevTouched = touched;
       }
 
