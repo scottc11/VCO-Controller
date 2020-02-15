@@ -38,13 +38,13 @@ public:
   }
 
   void btnPressCallback() {
-    // todo: add software debounce
     btnState = true;
+    wait_ms(10);
   }
 
   void btnReleasedCallback() {
-    // todo: add software debounce
     btnState = false;
+    wait_ms(10);
   }
 
   bool btnPressed() {

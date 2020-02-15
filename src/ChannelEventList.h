@@ -33,7 +33,11 @@ class ChannelEventList {
     DigitalOut gateOut;
     MCP23017 *io;
     MIDI *midi;          // pointer to mbed midi instance
+    int leds[8] = { 0b00000001, 0b00000010, 0b00000100, 0b00001000, 0b00010000, 0b00100000, 0b01000000, 0b10000000 };
 
+    void init();
+    void setLed(int led_index);
+    void updateLeds(uint8_t touched);
     void createEvent(int position, int noteIndex);
     void addEvent(int position);
     bool hasEventInQueue();

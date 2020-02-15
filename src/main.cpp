@@ -20,6 +20,10 @@ InterruptIn touchBInt(TOUCH_INT_B, PullUp);
 InterruptIn degreeInt(DEGREES_INT);
 
 MCP23017 io(&i2c3, MCP23017_DEGREES_ADDR);
+MCP23017 ioA(&i2c3, MCP23017_CHAN_A_ADDR);
+MCP23017 ioB(&i2c3, MCP23017_CHAN_B_ADDR);
+MCP23017 ioC(&i2c3, MCP23017_CHAN_C_ADDR);
+MCP23017 ioD(&i2c3, MCP23017_CHAN_D_ADDR);
 MIDI midi;
 
 ShiftRegister display(DISPLAY_DATA, DISPLAY_CLK, DISPLAY_LATCH);
@@ -28,7 +32,7 @@ CAP1208 touchA;
 CAP1208 touchB;
 TCA9544A i2cMux(&i2c1, TCA9544A_ADDR);
 BeatClock bClock(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
-ChannelEventList chEventList(GATE_OUT_A, &io, &midi);
+ChannelEventList channelA(GATE_OUT_A, &ioA, &midi);
 RotaryEncoder encoder(ENCODER_CHAN_A, ENCODER_CHAN_B, ENCODER_BTN);
 
 bool ETL = false;       // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
@@ -36,7 +40,6 @@ int newClockPeriod;
 int oldClockPeriod;
 int clockPeriod;
 volatile int interupt = 0;
-int numInterupts = 0;
 bool degreeFlag = false;
 
 const char numbers[10] = { 0b11111100, 0b01100000, 0b11011010, 0b11110010, 0b01100110, 0b10110110, 0b00111110, 0b11100000, 0b11111110, 0b11100110 };
@@ -56,10 +59,6 @@ void CAP1208_Interupt() {
   interupt = 1;
 }
 
-void secondInterupt() {
-  interupt = 1;
-}
-
 void degreeInteruptCallback() {
   degreeFlag = true;
 }
@@ -68,49 +67,33 @@ int main() {
   
   encoder.init();
   
-  // io init
-  io.init();
-  io.setDirection(MCP23017_PORTA, 0xFF);    // set all of the PORTA pins to input
-  io.setDirection(MCP23017_PORTB, 0x00);    // set all of the PORTB pins to output
-  io.setPullUp(MCP23017_PORTA, 0xFF);        // activate all of the PORTA pin pull-ups
-  io.setInputPolarity(MCP23017_PORTA, 0xFF); // invert all of the PORTA pins input polarity
-  io.setInterupt(MCP23017_PORTA, 0xFF);
+  channelA.init();
 
-  io.digitalWrite(MCP23017_PORTB, 0xFF);
   degreeInt.fall(&degreeInteruptCallback);
 
 
   // init display
-  display.writeByte(numbers[0]);
-  display.writeByte(numbers[0]);
-  display.pulseLatch();
+  // display.writeByte(numbers[9]);
+  // display.writeByte(numbers[9]);
+  // display.pulseLatch();
 
-  touchAInt.fall(&secondInterupt);
+  touchAInt.fall(&CAP1208_Interupt);
 
   touchA.init(&i2c1, &i2cMux, 0);
 
   if (!touchA.isConnected()) {
-    // throw error to display
+    display.writeByte(numbers[5]);
+    display.writeByte(numbers[6]);
+    display.pulseLatch();
   }
   else {
-    // throw error to display
+    display.writeByte(numbers[9]);
+    display.writeByte(numbers[9]);
+    display.pulseLatch();
   }
   touchA.calibrate();
 
-  touchBInt.fall(&CAP1208_Interupt);
-
-  touchB.init(&i2c1, &i2cMux, 1);
-
-  if (!touchB.isConnected()) {
-    // throw error to display
-  }
-  else {
-    // throw error to display
-  }
-
-  touchB.calibrate();
-  
-  int touched = 0;
+  int touched = touchA.touched();
   int prevTouched = 0;
 
   timer.start();
@@ -123,7 +106,7 @@ int main() {
   while(1) {
     
     if (encoder.btnPressed()) {
-      // boardLED.write(HIGH);
+      // somthin
     } else {
       // boardLED.write(LOW);
     }
@@ -135,28 +118,20 @@ int main() {
     }
 
     if (interupt == 1) {
-      if (numInterupts > 9) {
-        numInterupts = 0;
-      } else {
-        numInterupts += 1;
-      }
-      
-      display.writeByte(numbers[0]);
-      display.writeByte(numbers[numInterupts]);
-      display.pulseLatch();
-
-      touchA.touched();
-      touched = touchB.touched();
+      touched = touchA.touched();
       if (touched != prevTouched) {
         for (int i=0; i<8; i++) {
           // if it *is* touched and *wasnt* touched before, alert!
-          if (touchB.getBitStatus(touched, i) && !touchB.getBitStatus(prevTouched, i)) {
+          if (touchA.getBitStatus(touched, i) && !touchA.getBitStatus(prevTouched, i)) {
             ETL = false; // deactivate event triggering loop
-            chEventList.createEvent(bClock.position, i);
+            channelA.createEvent(bClock.position, i);
+            channelA.setLed(i);
+            // channelA.updateLeds(touched);
           }
           // if it *was* touched and now *isnt*, alert!
-          if (!touchB.getBitStatus(touched, i) && touchB.getBitStatus(prevTouched, i)) {
-            chEventList.addEvent(bClock.position);
+          if (!touchA.getBitStatus(touched, i) && touchA.getBitStatus(prevTouched, i)) {
+            channelA.addEvent(bClock.position);
+            // channelA.updateLeds(touched);
             ETL = true; // activate event triggering loop
           }
         }
@@ -169,8 +144,8 @@ int main() {
 
 
 
-    if (chEventList.hasEventInQueue() && ETL ) {
-      chEventList.handleQueuedEvent(bClock.position);
+    if (channelA.hasEventInQueue() && ETL ) {
+      channelA.handleQueuedEvent(bClock.position);
     }
   }
 }

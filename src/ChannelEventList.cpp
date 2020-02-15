@@ -1,6 +1,30 @@
 #include "ChannelEventList.h"
 
 
+void ChannelEventList::init() {
+  io->init();
+  io->setDirection(MCP23017_PORTA, 0x00);    // set all of the PORTA pins to output
+  io->setDirection(MCP23017_PORTB, 0xFF);    // set all of the PORTB pins to input
+  io->setPullUp(MCP23017_PORTB, 0xFF);       // activate all of the PORTB pin pull-ups
+  io->setInputPolarity(MCP23017_PORTB, 0xFF); // invert all of the PORTB pins input polarity
+  // io->setInterupt(MCP23017_PORTB, 0xFF);
+
+  for (int i = 0; i < 8; i++) {
+    this->setLed(i);
+    wait_ms(100);
+  }
+
+  this->setLed(0);
+}
+
+void ChannelEventList::setLed(int led_index) {
+  io->digitalWrite(MCP23017_PORTA, leds[led_index]);
+}
+
+void ChannelEventList::updateLeds(uint8_t touched) {
+  io->digitalWrite(MCP23017_PORTA, touched);
+}
+
 void ChannelEventList::createEvent(int position, int noteIndex) {
   newEvent = new EventNode;
   newEvent->index = noteIndex;
