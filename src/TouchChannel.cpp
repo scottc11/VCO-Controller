@@ -1,7 +1,7 @@
-#include "ChannelEventList.h"
+#include "TouchChannel.h"
 
 
-void ChannelEventList::init() {
+void TouchChannel::init() {
   io->init();
   io->setDirection(MCP23017_PORTA, 0x00);           // set all of the PORTA pins to output
   io->setDirection(MCP23017_PORTB, 0b00001111);     // set PORTB pins 0-3 as input, 4-7 as output
@@ -19,7 +19,7 @@ void ChannelEventList::init() {
 }
 
 // HANDLE ALL INTERUPT FLAGS
-void ChannelEventList::poll() {
+void TouchChannel::poll() {
   if (switchHasChanged) {
     handleModeSwitch();
     handleOctaveSwitch();
@@ -31,7 +31,7 @@ void ChannelEventList::poll() {
 /**
  * mode switch states determined by the last 2 bits of io's port B
 **/
-void ChannelEventList::handleModeSwitch() {
+void TouchChannel::handleModeSwitch() {
   int state = io->digitalRead(MCP23017_PORTB) & 0b00000011;  // set first 6 bits to zero
   switch (state) {
     case MONOPHONIC:
@@ -50,7 +50,7 @@ void ChannelEventList::handleModeSwitch() {
 /**
  * octave switch states determined by bits 5 and 6 of io's port B
 **/
-void ChannelEventList::handleOctaveSwitch() {
+void TouchChannel::handleOctaveSwitch() {
   int state = io->digitalRead(MCP23017_PORTB) & 0b00001100;  // set first 4 bits, and last 2 bits to zero
   switch (state) {
     case OCTAVE_UP:
@@ -65,20 +65,20 @@ void ChannelEventList::handleOctaveSwitch() {
   setOctaveLed();
 }
 
-void ChannelEventList::setLed(int led_index) {
+void TouchChannel::setLed(int led_index) {
   io->digitalWrite(MCP23017_PORTA, leds[led_index]);
 }
 
-void ChannelEventList::updateLeds(uint8_t touched) {
+void TouchChannel::updateLeds(uint8_t touched) {
   io->digitalWrite(MCP23017_PORTA, touched);
 }
 
-void ChannelEventList::setOctaveLed() {
+void TouchChannel::setOctaveLed() {
   int state = 1 << (octave + 4);
   io->digitalWrite(MCP23017_PORTB, state);
 }
 
-void ChannelEventList::createEvent(int position, int noteIndex) {
+void TouchChannel::createEvent(int position, int noteIndex) {
   newEvent = new EventNode;
   newEvent->index = noteIndex;
   newEvent->startPos = position;
@@ -86,7 +86,7 @@ void ChannelEventList::createEvent(int position, int noteIndex) {
   newEvent->next = NULL;
 }
 
-void ChannelEventList::addEvent(int position) {
+void TouchChannel::addEvent(int position) {
   newEvent->endPos = position;
   if (head == NULL) { // initialize the list
     head = newEvent;
@@ -166,7 +166,7 @@ void ChannelEventList::addEvent(int position) {
 }
 
 
-bool ChannelEventList::hasEventInQueue() {
+bool TouchChannel::hasEventInQueue() {
   if (queued) {
     return true;
   } else {
@@ -174,7 +174,7 @@ bool ChannelEventList::hasEventInQueue() {
   }
 }
 
-void ChannelEventList::handleQueuedEvent(int position) {
+void TouchChannel::handleQueuedEvent(int position) {
   if (queued->triggered == false ) {
     if (position == queued->startPos) {
       gateOut.write(HIGH);

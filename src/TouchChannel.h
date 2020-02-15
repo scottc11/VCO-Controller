@@ -15,7 +15,7 @@ typedef struct EventNode {
 } EventNode;
 
 // Linked List
-class ChannelEventList {
+class TouchChannel {
   public:
     DigitalOut gateOut;              // gate output pin
     InterruptIn switchInterupt;      // gpio interupt pin
@@ -26,13 +26,13 @@ class ChannelEventList {
     MIDI *midi;                      // pointer to mbed midi instance
     int leds[8] = { 0b00000001, 0b00000010, 0b00000100, 0b00001000, 0b00010000, 0b00100000, 0b01000000, 0b10000000 };
 
-    ChannelEventList(PinName gateOutPin, PinName intPin, MCP23017 *io_p, MIDI *midi_p) : gateOut(gateOutPin), switchInterupt(intPin, PullUp) {
+    TouchChannel(PinName gateOutPin, PinName intPin, MCP23017 *io_p, MIDI *midi_p) : gateOut(gateOutPin), switchInterupt(intPin, PullUp) {
       head=NULL;
       newEvent=NULL;
       queued=NULL;
       io = io_p;
       midi = midi_p;
-      switchInterupt.fall(callback(this, &ChannelEventList::handleSwitchInterupt));
+      switchInterupt.fall(callback(this, &TouchChannel::handleSwitchInterupt));
       counter = 0;
       octave = 0;
     }
