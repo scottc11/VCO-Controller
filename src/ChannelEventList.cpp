@@ -15,13 +15,14 @@ void ChannelEventList::init() {
   }
 
   this->setLed(0);
-  this->setOctaveLed(octave);
+  this->setOctaveLed();
 }
 
 // HANDLE ALL INTERUPT FLAGS
 void ChannelEventList::poll() {
   if (switchHasChanged) {
-    handleModeChange();
+    handleModeSwitch();
+    handleOctaveSwitch();
     switchHasChanged = false;
   }
 }
@@ -30,7 +31,7 @@ void ChannelEventList::poll() {
 /**
  * mode switch states determined by the last 2 bits of io's port B
 **/
-void ChannelEventList::handleModeChange() {
+void ChannelEventList::handleModeSwitch() {
   int state = io->digitalRead(MCP23017_PORTB) & 0b00000011;  // set first 6 bits to zero
   switch (state) {
     case MONOPHONIC:
@@ -45,6 +46,25 @@ void ChannelEventList::handleModeChange() {
   }
 }
 
+
+/**
+ * octave switch states determined by bits 5 and 6 of io's port B
+**/
+void ChannelEventList::handleOctaveSwitch() {
+  int state = io->digitalRead(MCP23017_PORTB) & 0b00001100;  // set first 4 bits, and last 2 bits to zero
+  switch (state) {
+    case OCTAVE_UP:
+      if (octave < 3) { octave += 1; }
+      break;
+    case OCTAVE_DOWN:
+      if (octave > 0) { octave -= 1; }
+      break;
+    default:
+      break;
+  }
+  setOctaveLed();
+}
+
 void ChannelEventList::setLed(int led_index) {
   io->digitalWrite(MCP23017_PORTA, leds[led_index]);
 }
@@ -53,8 +73,9 @@ void ChannelEventList::updateLeds(uint8_t touched) {
   io->digitalWrite(MCP23017_PORTA, touched);
 }
 
-void ChannelEventList::setOctaveLed(int led_index) {
-  io->digitalWrite(MCP23017_PORTB, 0b11110000);
+void ChannelEventList::setOctaveLed() {
+  int state = 1 << (octave + 4);
+  io->digitalWrite(MCP23017_PORTB, state);
 }
 
 void ChannelEventList::createEvent(int position, int noteIndex) {

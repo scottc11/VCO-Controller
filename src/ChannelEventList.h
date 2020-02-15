@@ -42,8 +42,9 @@ class ChannelEventList {
     void poll();
     void setLed(int led_index);
     void updateLeds(uint8_t touched);
-    void setOctaveLed(int led_index);
-    void handleModeChange();
+    void setOctaveLed();
+    void handleModeSwitch();
+    void handleOctaveSwitch();
 
     void createEvent(int position, int noteIndex);
     void addEvent(int position);
@@ -55,10 +56,15 @@ class ChannelEventList {
     EventNode* newEvent;  // to be created and deleted everytime a user presses event create button
     EventNode* queued;    // the currently active / next / ensuing / succeeding event
   
-    enum MODE {
+    enum SWITCH_STATES {
+      // mode switch
       MONOPHONIC = 0b00000011,
       QUANTIZER = 0b00000010,
       LOOPER = 0b00000001,
+      
+      // octave switch
+      OCTAVE_UP = 0b00001000,
+      OCTAVE_DOWN = 0b00000100,
     };
 };
 
