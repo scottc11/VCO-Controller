@@ -16,7 +16,7 @@
 
 #define SPI2_MOSI            PB_15
 #define SPI2_MISO            PB_14
-#define SPI2_SCLK            PB_13
+#define SPI2_SCK             PB_13
 
 #define DAC_A_CS             PB_12
 #define DAC_B_CS             PC_7

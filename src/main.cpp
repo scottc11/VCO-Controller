@@ -6,6 +6,7 @@
 #include "MIDI.h"
 #include "TCA9544A.h"
 #include "MCP23017.h"
+#include "MCP4922.h"
 #include "RotaryEncoder.h"
 
 
@@ -22,6 +23,9 @@ ShiftRegister display(DISPLAY_DATA, DISPLAY_CLK, DISPLAY_LATCH);
 InterruptIn extClockInput(EXT_CLOCK_INPUT);
 InterruptIn degreeInt(DEGREES_INT);
 
+MCP4922 dacA(SPI2_MOSI, SPI2_SCK, DAC_A_CS);
+MCP4922 dacB(SPI2_MOSI, SPI2_SCK, DAC_B_CS);
+
 MCP23017 io(&i2c3, MCP23017_DEGREES_ADDR);
 MCP23017 ioA(&i2c3, MCP23017_CHAN_A_ADDR);
 MCP23017 ioB(&i2c3, MCP23017_CHAN_B_ADDR);
@@ -29,10 +33,10 @@ MCP23017 ioC(&i2c3, MCP23017_CHAN_C_ADDR);
 MCP23017 ioD(&i2c3, MCP23017_CHAN_D_ADDR);
 TCA9544A i2cMux(&i2c1, TCA9544A_ADDR);
 
-TouchChannel channelA(0, GATE_OUT_A, CHAN_INT_A, TOUCH_INT_A, &ioA, &midi, &CLOCK);
-TouchChannel channelB(1, GATE_OUT_B, CHAN_INT_B, TOUCH_INT_B, &ioB, &midi, &CLOCK);
-TouchChannel channelC(2, GATE_OUT_C, CHAN_INT_C, TOUCH_INT_C, &ioC, &midi, &CLOCK);
-TouchChannel channelD(3, GATE_OUT_D, CHAN_INT_D, TOUCH_INT_D, &ioD, &midi, &CLOCK);
+TouchChannel channelA(0, GATE_OUT_A, CHAN_INT_A, TOUCH_INT_A, &ioA, &midi, &CLOCK, &dacA, MCP4922::DAC_A);
+TouchChannel channelB(1, GATE_OUT_B, CHAN_INT_B, TOUCH_INT_B, &ioB, &midi, &CLOCK, &dacA, MCP4922::DAC_B);
+TouchChannel channelC(2, GATE_OUT_C, CHAN_INT_C, TOUCH_INT_C, &ioC, &midi, &CLOCK, &dacB, MCP4922::DAC_A);
+TouchChannel channelD(3, GATE_OUT_D, CHAN_INT_D, TOUCH_INT_D, &ioD, &midi, &CLOCK, &dacB, MCP4922::DAC_B);
 
 
 int newClockPeriod;

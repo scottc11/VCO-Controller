@@ -21,11 +21,16 @@ void TouchChannel::init(I2C *touchI2C_ptr, TCA9544A *touchMux_ptr) {
 
   for (int i = 0; i < 8; i++) {
     this->setLed(i);
-    wait_ms(100);
+    wait_ms(50);
   }
 
   this->setLed(0);
   this->setOctaveLed();
+
+  dac->referenceMode(dacChannel, MCP4922::REF_UNBUFFERED);
+  dac->gainMode(dacChannel, MCP4922::GAIN_1X);
+  dac->powerMode(dacChannel, MCP4922::POWER_NORMAL);
+  dac->write(dacChannel, 1.0);
 }
 
 // HANDLE ALL INTERUPT FLAGS
@@ -76,14 +81,14 @@ void TouchChannel::handleTouch() {
 void TouchChannel::handleModeSwitch() {
   int state = io->digitalRead(MCP23017_PORTB) & 0b00000011;  // set first 6 bits to zero
   switch (state) {
-    case MONOPHONIC:
-      setLed(1);
+    case 0b00000011:
+      mode = MONOPHONIC;
       break;
-    case QUANTIZER:
-      setLed(2);
+    case 0b00000010:
+      mode = QUANTIZER;
       break;
-    case LOOPER:
-      setLed(0);
+    case 0b00000001:
+      mode = LOOPER;
       break;
   }
 }
