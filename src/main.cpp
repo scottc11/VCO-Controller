@@ -32,7 +32,7 @@ CAP1208 touchA;
 CAP1208 touchB;
 TCA9544A i2cMux(&i2c1, TCA9544A_ADDR);
 BeatClock bClock(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
-ChannelEventList channelA(GATE_OUT_A, &ioA, &midi);
+ChannelEventList channelA(GATE_OUT_A, CHAN_INT_A, &ioA, &midi);
 RotaryEncoder encoder(ENCODER_CHAN_A, ENCODER_CHAN_B, ENCODER_BTN);
 
 bool ETL = false;       // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
@@ -104,6 +104,8 @@ int main() {
   extClockInput.rise(&extTick);
 
   while(1) {
+    
+    channelA.poll();
     
     if (encoder.btnPressed()) {
       // somthin

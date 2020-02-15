@@ -22,22 +22,32 @@ class ChannelEventList {
     EventNode* queued;    // the currently active / next / ensuing / succeeding event
 
   public:
-    ChannelEventList(PinName gateOutPin, MCP23017 *io_p, MIDI *midi_p) : gateOut(gateOutPin) {
+    ChannelEventList(PinName gateOutPin, PinName intPin, MCP23017 *io_p, MIDI *midi_p) : gateOut(gateOutPin), switchInterupt(intPin, PullUp) {
       head=NULL;
       newEvent=NULL;
       queued=NULL;
       io = io_p;
       midi = midi_p;
+      switchInterupt.fall(callback(this, &ChannelEventList::handleSwitchInterupt));
+      counter = 0;
+      octave = 0;
     }
 
     DigitalOut gateOut;
+    InterruptIn switchInterupt;
+    volatile bool switchHasChanged;
+    int octave;
+    int counter;
     MCP23017 *io;
     MIDI *midi;          // pointer to mbed midi instance
     int leds[8] = { 0b00000001, 0b00000010, 0b00000100, 0b00001000, 0b00010000, 0b00100000, 0b01000000, 0b10000000 };
 
     void init();
+    void handleSwitchInterupt() { switchHasChanged = true; }
+    void poll();
     void setLed(int led_index);
     void updateLeds(uint8_t touched);
+    void setOctaveLed(int led_index);
     void createEvent(int position, int noteIndex);
     void addEvent(int position);
     bool hasEventInQueue();

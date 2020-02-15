@@ -90,20 +90,22 @@ class CAP1208 {
     i2c->read(address, data_read, 1);
   }
 
-  void getControlStatus() {
+  uint8_t getControlStatus() {
     mux->enableChan(muxChannel);
     // read main control status of CAP1208
     data_write[0] = 0x00; // main control
     i2c->write(address, data_write, 1, true);
     i2c->read(address, data_read, 1);
+    return data_read[0];
   }
 
-  void getGeneralStatus() {
+  uint8_t getGeneralStatus() {
     mux->enableChan(muxChannel);
     // read general status of CAP1208
     data_write[0] = 0x02; // general status
     i2c->write(address, data_write, 1, true);
     i2c->read(address, data_read, 1);
+    return data_read[0];
   }
 
   void calibrate() {
@@ -124,6 +126,7 @@ class CAP1208 {
     mux->enableChan(muxChannel);
     // for some reason we have to "clear" the INT bit everytime we read the sensors... 
     clearInterupt();
+    
     // read input status of CAP1208
     data_write[0] = 0x03; // input status
     i2c->write(address, data_write, 1, true);

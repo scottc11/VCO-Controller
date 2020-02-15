@@ -3,11 +3,11 @@
 
 void ChannelEventList::init() {
   io->init();
-  io->setDirection(MCP23017_PORTA, 0x00);    // set all of the PORTA pins to output
-  io->setDirection(MCP23017_PORTB, 0xFF);    // set all of the PORTB pins to input
-  io->setPullUp(MCP23017_PORTB, 0xFF);       // activate all of the PORTB pin pull-ups
-  io->setInputPolarity(MCP23017_PORTB, 0xFF); // invert all of the PORTB pins input polarity
-  // io->setInterupt(MCP23017_PORTB, 0xFF);
+  io->setDirection(MCP23017_PORTA, 0x00);           // set all of the PORTA pins to output
+  io->setDirection(MCP23017_PORTB, 0b00001111);     // set PORTB pins 0-3 as input, 4-7 as output
+  io->setPullUp(MCP23017_PORTB, 0b00001111);        // activate PORTB pin pull-ups for toggle switches
+  io->setInputPolarity(MCP23017_PORTB, 0b00001111); // invert PORTB pins input polarity for toggle switches
+  io->setInterupt(MCP23017_PORTB, 0b00001111);
 
   for (int i = 0; i < 8; i++) {
     this->setLed(i);
@@ -15,6 +15,21 @@ void ChannelEventList::init() {
   }
 
   this->setLed(0);
+  this->setOctaveLed(octave);
+}
+
+// HANDLE ALL INTERUPT FLAGS
+void ChannelEventList::poll() {
+  if (switchHasChanged) {
+    counter += 1;
+    volatile int change = io->digitalRead(MCP23017_PORTB);
+    if (counter % 2 == 0) {
+      updateLeds(0x00);
+    } else {
+      updateLeds(0xFF);
+    }
+    switchHasChanged = false;
+  }
 }
 
 void ChannelEventList::setLed(int led_index) {
@@ -23,6 +38,10 @@ void ChannelEventList::setLed(int led_index) {
 
 void ChannelEventList::updateLeds(uint8_t touched) {
   io->digitalWrite(MCP23017_PORTA, touched);
+}
+
+void ChannelEventList::setOctaveLed(int led_index) {
+  io->digitalWrite(MCP23017_PORTB, 0b11110000);
 }
 
 void ChannelEventList::createEvent(int position, int noteIndex) {
