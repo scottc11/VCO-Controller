@@ -6,7 +6,7 @@ void ChannelEventList::init() {
   io->setDirection(MCP23017_PORTA, 0x00);           // set all of the PORTA pins to output
   io->setDirection(MCP23017_PORTB, 0b00001111);     // set PORTB pins 0-3 as input, 4-7 as output
   io->setPullUp(MCP23017_PORTB, 0b00001111);        // activate PORTB pin pull-ups for toggle switches
-  io->setInputPolarity(MCP23017_PORTB, 0b00001111); // invert PORTB pins input polarity for toggle switches
+  io->setInputPolarity(MCP23017_PORTB, 0b00000000); // invert PORTB pins input polarity for toggle switches
   io->setInterupt(MCP23017_PORTB, 0b00001111);
 
   for (int i = 0; i < 8; i++) {
@@ -21,14 +21,27 @@ void ChannelEventList::init() {
 // HANDLE ALL INTERUPT FLAGS
 void ChannelEventList::poll() {
   if (switchHasChanged) {
-    counter += 1;
-    volatile int change = io->digitalRead(MCP23017_PORTB);
-    if (counter % 2 == 0) {
-      updateLeds(0x00);
-    } else {
-      updateLeds(0xFF);
-    }
+    handleModeChange();
     switchHasChanged = false;
+  }
+}
+
+
+/**
+ * mode switch states determined by the last 2 bits of io's port B
+**/
+void ChannelEventList::handleModeChange() {
+  int state = io->digitalRead(MCP23017_PORTB) & 0b00000011;  // set first 6 bits to zero
+  switch (state) {
+    case MONOPHONIC:
+      setLed(1);
+      break;
+    case QUANTIZER:
+      setLed(2);
+      break;
+    case LOOPER:
+      setLed(0);
+      break;
   }
 }
 

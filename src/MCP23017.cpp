@@ -48,12 +48,18 @@ void MCP23017::setInputPolarity(char _port, char _value) {
 /**
  * If enabled, the MCP23X17 activates the INTn interrupt output when one of the port pins changes state or when a pin does not match the preconfigured default.
  * Additionally, the INTn pins can be configured to mirror each other so that any interrupt will cause both pins to go active. This is controlled via IOCON.MIRROR.
- * There are two interrupt pins: INTA and INTB. By default, INTA is associated with GPAn pins (PORTA) and INTB is associated with GPBn pins (PORTB). Each port has an independent signal which is cleared if its associated GPIO or INTCAP register is read.
+ * There are two interrupt pins: INTA and INTB. By default, INTA is associated with GPAn pins (PORTA) and INTB is associated with GPBn pins (PORTB).
+ * NOTE: Each port has an independent signal which is cleared if its associated GPIO or INTCAP register is read.
 **/
 void MCP23017::setInterupt(char _port, char _value) {
 	i2cSend(REG_GPINTEN + _port, _value );
 }
 
+/**
+ * This register allows the user to configure the polarity on the corresponding GPIO port bits.
+ * If a bit is set, the corresponding GPIO register bit will reflect the inverted value on the pin.
+ * for some reason, I think the default is inverted...
+**/
 void MCP23017::digitalWrite(char _port, char _value) {
 	i2cSend(REG_GPIO + _port, _value);
 }
