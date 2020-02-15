@@ -1,7 +1,17 @@
 #include "TouchChannel.h"
 
 
-void TouchChannel::init() {
+void TouchChannel::init(I2C *touchI2C_ptr, TCA9544A *touchMux_ptr) {
+  
+  touch.init(touchI2C_ptr, touchMux_ptr, channel);
+  if (!touch.isConnected()) {
+    this->updateLeds(0xFF);
+    return;
+  }
+  touch.calibrate();
+  touch.clearInterupt();
+
+
   io->init();
   io->setDirection(MCP23017_PORTA, 0x00);           // set all of the PORTA pins to output
   io->setDirection(MCP23017_PORTB, 0b00001111);     // set PORTB pins 0-3 as input, 4-7 as output
@@ -20,10 +30,42 @@ void TouchChannel::init() {
 
 // HANDLE ALL INTERUPT FLAGS
 void TouchChannel::poll() {
+  if (touchDetected) {
+    handleTouch();
+    touchDetected = false;
+  }
+
   if (switchHasChanged) {
     handleModeSwitch();
     handleOctaveSwitch();
     switchHasChanged = false;
+  }
+
+  if (hasEventInQueue() && ETL ) {
+    handleQueuedEvent(beatClock->position);
+  }
+}
+
+void TouchChannel::handleTouch() {  
+  touched = touch.touched();
+  if (touched != prevTouched) {
+    for (int i=0; i<8; i++) {
+      // if it *is* touched and *wasnt* touched before, alert!
+      if (touch.getBitStatus(touched, i) && !touch.getBitStatus(prevTouched, i)) {
+        ETL = false; // deactivate event triggering loop
+        createEvent(beatClock->position, i);
+        setLed(i);
+        // updateLeds(touched);
+      }
+      // if it *was* touched and now *isnt*, alert!
+      if (!touch.getBitStatus(touched, i) && touch.getBitStatus(prevTouched, i)) {
+        addEvent(beatClock->position);
+        // updateLeds(touched);
+        ETL = true; // activate event triggering loop
+      }
+    }
+    // reg.writeByte(touched); // toggle channel LEDs
+    prevTouched = touched;
   }
 }
 

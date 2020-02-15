@@ -61,11 +61,6 @@
 #define TOUCH_INT_C          PB_5
 #define TOUCH_INT_D          PB_4
 
-#define TLC59116_CHAN_A_ADDR   0x60 // 1100000
-#define TLC59116_CHAN_B_ADDR   0x61 // 1100001
-#define TLC59116_CHAN_C_ADDR   0x62 // 1100010
-#define TLC59116_CHAN_D_ADDR   0x64 // 1100100
-
 #define TCA9544A_ADDR          0x70 // 1110000
 #define CAP1208_ADDR           0x14 // 0010100  via mux
 #define CAP1208_CTRL_ADDR      0x14 // 0010100
