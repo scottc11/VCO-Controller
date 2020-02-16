@@ -20,11 +20,10 @@ void TouchChannel::init(I2C *touchI2C_ptr, TCA9544A *touchMux_ptr) {
   io->setInterupt(MCP23017_PORTB, 0b00001111);
 
   for (int i = 0; i < 8; i++) {
-    this->setLed(i);
+    this->updateLeds(leds[i]);
     wait_ms(50);
   }
-
-  this->setLed(0);
+  this->updateLeds(0x00);
   this->setOctaveLed();
 
   dac->referenceMode(dacChannel, MCP4922::REF_UNBUFFERED);
@@ -51,7 +50,7 @@ void TouchChannel::poll() {
   }
 }
 
-void TouchChannel::handleTouch() {  
+void TouchChannel::handleTouch() {
   touched = touch.touched();
   if (touched != prevTouched) {
     for (int i=0; i<8; i++) {
@@ -59,13 +58,13 @@ void TouchChannel::handleTouch() {
       if (touch.getBitStatus(touched, i) && !touch.getBitStatus(prevTouched, i)) {
         ETL = false; // deactivate event triggering loop
         createEvent(beatClock->position, i);
-        setLed(i);
+        writeLed(i, HIGH);
         // updateLeds(touched);
       }
       // if it *was* touched and now *isnt*, alert!
       if (!touch.getBitStatus(touched, i) && touch.getBitStatus(prevTouched, i)) {
         addEvent(beatClock->position);
-        // updateLeds(touched);
+        writeLed(i, LOW);
         ETL = true; // activate event triggering loop
       }
     }
@@ -112,8 +111,18 @@ void TouchChannel::handleOctaveSwitch() {
   setOctaveLed();
 }
 
-void TouchChannel::setLed(int led_index) {
-  io->digitalWrite(MCP23017_PORTA, leds[led_index]);
+void TouchChannel::writeLed(int index, int state) {
+  switch (state) {
+    case HIGH:
+      ledStates |= 1 << index;
+      io->digitalWrite(MCP23017_PORTA, ledStates);
+      break;
+    case LOW:
+      ledStates &= ~(1 << index);
+      io->digitalWrite(MCP23017_PORTA, ledStates);
+      break;
+  }
+  
 }
 
 void TouchChannel::updateLeds(uint8_t touched) {
@@ -225,7 +234,7 @@ void TouchChannel::handleQueuedEvent(int position) {
   if (queued->triggered == false ) {
     if (position == queued->startPos) {
       gateOut.write(HIGH);
-      // reg->setBit(queued->index);
+      writeLed(queued->index, HIGH);
       midi->sendNoteOn(1, MIDI_NOTE_MAP[queued->index], 100);
       // send midi note
       queued->triggered = true;
@@ -233,7 +242,7 @@ void TouchChannel::handleQueuedEvent(int position) {
   }
   else if (position == queued->endPos) {
     gateOut.write(LOW);
-    // reg->clearBit(queued->index);
+    writeLed(queued->index, LOW);
     midi->sendNoteOff(1, MIDI_NOTE_MAP[queued->index], 100);
     queued->triggered = false;
     if (queued->next != NULL) {

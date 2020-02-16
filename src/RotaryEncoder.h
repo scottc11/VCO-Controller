@@ -9,49 +9,71 @@
 class RotaryEncoder {
 public:
   
-  InterruptIn signalA;
-  DigitalIn signalB;
-  InterruptIn button;
-  bool btnState;
-  int position;
+  enum Direction {
+    CLOCKWISE = 1,
+    COUNTERCLOCKWISE = 0,
+  };
 
-  RotaryEncoder(PinName chanA, PinName chanB, PinName btn) : signalA(chanA, PullUp), signalB(chanB, PullUp), button(btn, PullUp) {
+  InterruptIn channelA;
+  DigitalIn channelB;
+  InterruptIn button;
+  bool btnState;          // non-blocking state of encoder button
+  int position;
+  Direction direction;    // 0 or 1
+  bool btnPressed;        // interupt flag
+  bool btnReleased;       // interupt flag
+
+  RotaryEncoder(PinName chanA, PinName chanB, PinName btn) : channelA(chanA, PullUp), channelB(chanB, PullUp), button(btn, PullUp) {
     // do something
   }
 
   void init() {
-    signalA.rise(callback(this, &RotaryEncoder::sigARise));
+    channelA.fall(callback(this, &RotaryEncoder::sigAFall));
+    // channelA.rise(callback(this, &RotaryEncoder::encode));
     button.fall(callback(this, &RotaryEncoder::btnPressCallback));
-    button.rise(callback(this, &RotaryEncoder::btnReleasedCallback));
+    button.rise(callback(this, &RotaryEncoder::btnReleaseCallback));
   }
 
-
-  void sigARise() {
-    // todo: add software debounce
-    if (signalB.read() == 0) {
-      // going clockwise
-      position += 1;
-    } else {
-      // going counter-clockwise
-      position -= 1;
+  void poll() {
+    if (btnPressed) {
+      // do something
+      btnState = true;
+      wait_us(10);
+      btnPressed = false;
+    }
+    if (btnReleased) {
+      // do something
+      btnState = false;
+      wait_us(10);
+      btnReleased = false;
     }
   }
 
+  void sigAFall() {
+    if (channelB.read() == 0) {
+      // going counter-clockwise
+      position -= 1;
+      direction = COUNTERCLOCKWISE;
+    } else {
+      // going clockwise
+      position += 1;
+      direction = CLOCKWISE;
+    }
+    wait_us(10);
+  }
+
   void btnPressCallback() {
-    btnState = true;
-    wait_ms(10);
+    btnPressed = true;
   }
 
-  void btnReleasedCallback() {
-    btnState = false;
-    wait_ms(10);
+  void btnReleaseCallback() {
+    btnReleased = true;
   }
 
-  bool btnPressed() {
+  bool btnIsPressed() {
     return btnState;
   }
 
 };
-
 
 #endif

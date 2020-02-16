@@ -32,20 +32,24 @@ class TouchChannel {
     bool ETL = false;                // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
     DigitalOut gateOut;              // gate output pin
     BeatClock * beatClock;
+    MIDI *midi;                      // pointer to mbed midi instance
     CAP1208 touch;                   // i2c touch IC
     MCP4922 * dac;                   // pointer to dual channel digital-analog-converter
     MCP4922::_DAC dacChannel;           // which dac to address
     MCP23017 * io;                   // for leds and switches
     InterruptIn touchInterupt;
     InterruptIn ioInterupt;          // gpio interupt pin
+    
     volatile bool switchHasChanged;  // toggle switches interupt flag
     volatile bool touchDetected;
+    
+    uint8_t ledStates;
     int touched;                 // variable for holding the currently touched degrees
     int prevTouched;             // variable for holding the previously touched degrees
     int octave;                      // current octave
     int counter;
     
-    MIDI *midi;                      // pointer to mbed midi instance
+    
     int leds[8] = { 0b00000001, 0b00000010, 0b00000100, 0b00001000, 0b00010000, 0b00100000, 0b01000000, 0b10000000 };
 
     TouchChannel(
@@ -81,7 +85,7 @@ class TouchChannel {
     void handleioInterupt() { switchHasChanged = true; }
     void handleTouchInterupt() { touchDetected = true; }
     void poll();
-    void setLed(int led_index);
+    void writeLed(int index, int state);
     void updateLeds(uint8_t touched);
     void setOctaveLed();
     void handleTouch();

@@ -27,8 +27,10 @@ int main()
 {
   unsigned char a = 0b00000011;
   unsigned char b = 0b00000011;
-
-  std::bitset<8> output(1 << 4);
+  int chanA = 1;
+  int chanB = 1;
+  
+  std::bitset<8> output((chanA << 1) | (chanB));
 
   std::cout << output << std::endl;
   return 0;

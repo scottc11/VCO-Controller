@@ -12,6 +12,8 @@ class ShiftRegister {
     ShiftRegister(PinName data_pin, PinName clock_pin, PinName latch_pin) : data(data_pin), clock(clock_pin), latch(latch_pin) {
       // do something
       latch.write(LOW);
+      data.write(LOW);
+      clock.write(LOW);
     }
     
 
@@ -21,7 +23,7 @@ class ShiftRegister {
 
     void writeByte(unsigned char byte) {
       for (int i = 0; i < 8; i++) {
-        data = (byte & 0x01<<i)>>i;
+        data = (byte & 0x01 << i) >> i;
         clock = 1;
         wait_us(1);
         clock = 0;

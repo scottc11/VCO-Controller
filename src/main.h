@@ -25,8 +25,8 @@
 #define DISPLAY_DATA         PB_10
 #define DISPLAY_LATCH        PB_1
 
-#define ENCODER_CHAN_A       PA_7
-#define ENCODER_CHAN_B       PA_1
+#define ENCODER_CHAN_A       PA_1
+#define ENCODER_CHAN_B       PA_7
 #define ENCODER_BTN          PA_0
 
 
@@ -70,6 +70,20 @@
 #define MCP23017_CHAN_B_ADDR  0x22 // 0100010
 #define MCP23017_CHAN_C_ADDR  0x23 // 0100011
 #define MCP23017_CHAN_D_ADDR  0x24 // 0100100
+
+
+const float QUANTIZED_VOLTAGES[8][2] = {
+    { 0, 136.5 },      // I
+    { 136.5, 204.75 }, // maj2, n/a
+    { 204.75, 273 },   // min3, maj3
+    { 341.25, 409.5 }, // per4, aug4
+    { 409.5, 477.75 }, // dim5, per5
+    { 546, 614.25 },   // min6, maj6
+    { 682.5, 750.75 }, // min7, maj7
+    { 750.75, 819 }    // VIII
+  };
+
+const float OCTAVE_VALUES[] = {0.0, 819.0, 1638.0, 2457.0, 3276.0};
 
 
 #endif

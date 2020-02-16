@@ -45,6 +45,8 @@ int clockPeriod;
 
 bool degreeFlag = false;
 
+int encoderPos = 0;
+
 const char numbers[10] = { 0b11111100, 0b01100000, 0b11011010, 0b11110010, 0b01100110, 0b10110110, 0b00111110, 0b11100000, 0b11111110, 0b11100110 };
 
 void tick() {
@@ -92,10 +94,22 @@ int main() {
     channelC.poll();
     channelD.poll();
     
-    if (encoder.btnPressed()) {
-      // somthin
-    } else {
-      // boardLED.write(LOW);
+    if (encoder.position != encoderPos) {
+      encoderPos = encoder.position;
+      if (encoder.direction == RotaryEncoder::CLOCKWISE) {
+        if (encoderPos <= 9) {
+          display.writeByte(0b11111111);
+          display.writeByte(numbers[encoderPos]);
+          display.pulseLatch();
+        }
+      }
+      else if (encoder.direction == RotaryEncoder::COUNTERCLOCKWISE) {
+        if (encoderPos >= 0) {
+          display.writeByte(0b11111111);
+          display.writeByte(numbers[encoderPos]);
+          display.pulseLatch();
+        }
+      }
     }
   }
 }
