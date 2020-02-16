@@ -8,8 +8,8 @@
 #define PPQ                  24
 
 #define MIDI_BAUD            31250
-#define MIDI_TX              PA_11
-#define MIDI_RX              PA_12
+#define MIDI_TX              PA_2
+#define MIDI_RX              PA_3
 
 #define I2C3_SDA             PC_9
 #define I2C3_SCL             PA_8

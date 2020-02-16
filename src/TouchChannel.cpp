@@ -235,7 +235,7 @@ void TouchChannel::handleQueuedEvent(int position) {
     if (position == queued->startPos) {
       gateOut.write(HIGH);
       writeLed(queued->index, HIGH);
-      midi->sendNoteOn(1, MIDI_NOTE_MAP[queued->index], 100);
+      midi->sendNoteOn(channel, MIDI_NOTE_MAP[queued->index], 100);
       // send midi note
       queued->triggered = true;
     }
@@ -243,7 +243,7 @@ void TouchChannel::handleQueuedEvent(int position) {
   else if (position == queued->endPos) {
     gateOut.write(LOW);
     writeLed(queued->index, LOW);
-    midi->sendNoteOff(1, MIDI_NOTE_MAP[queued->index], 100);
+    midi->sendNoteOff(channel, MIDI_NOTE_MAP[queued->index], 100);
     queued->triggered = false;
     if (queued->next != NULL) {
       queued = queued->next;
