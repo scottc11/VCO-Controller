@@ -67,3 +67,17 @@ void MCP23017::digitalWrite(char _port, char _value) {
 char MCP23017::digitalRead(char _port) {
 	return i2cRead(REG_GPIO + _port);
 }
+
+
+/**
+ * read both ports and append into a 16 bit value 
+*/
+uint16_t MCP23017::digitalReadAB() {
+	int portA = this->digitalRead(MCP23017_PORTA);
+	int portB = this->digitalRead(MCP23017_PORTB);
+	return (portB << 8) | portA;
+}
+
+int MCP23017::getBitStatus(int byte, int bit) {
+	return (byte & (1 << bit));
+}

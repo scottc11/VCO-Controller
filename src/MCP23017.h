@@ -34,7 +34,9 @@ class MCP23017 {
 	void setInterupt(char _port, char _value);        // enable/disable interupts per pin/port
 	void digitalWrite(char _port, char _value);
 	char digitalRead(char _port);
+	uint16_t digitalReadAB();
 	
+	int getBitStatus(int byte, int bit);
 	
 	// void setInterruptConfig(char _port, char _intcon, char _defval);
 	// void interrupt(char _port, char _value);

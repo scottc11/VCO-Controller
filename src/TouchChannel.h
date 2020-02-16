@@ -1,5 +1,5 @@
-#ifndef __EVENT_LIST_H
-#define __EVENT_LIST_H
+#ifndef __TOUCH_CHANNEL_H
+#define __TOUCH_CHANNEL_H
 
 #include "main.h"
 #include "BeatClock.h"
@@ -35,7 +35,7 @@ class TouchChannel {
     MIDI *midi;                      // pointer to mbed midi instance
     CAP1208 touch;                   // i2c touch IC
     MCP4922 * dac;                   // pointer to dual channel digital-analog-converter
-    MCP4922::_DAC dacChannel;           // which dac to address
+    MCP4922::_DAC dacChannel;        // which dac to address
     MCP23017 * io;                   // for leds and switches
     InterruptIn touchInterupt;
     InterruptIn ioInterupt;          // gpio interupt pin

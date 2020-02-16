@@ -9,7 +9,9 @@
  * The ~ (bitwise NOT) in C or C++ takes one number and inverts all bits of it 
  * 
  * 
- * https://stackoverflow.com/questions/47981/how-do-you-set-clear-and-toggle-a-single-bit
+ * settings, clearing, toggling single bits --> https://stackoverflow.com/questions/47981/how-do-you-set-clear-and-toggle-a-single-bit
+ * 
+ * combine two 8 bit values into 16 bit value --> https://stackoverflow.com/questions/11193918/combine-merge-two-bytes-into-one/11193978
 **/
 
 
@@ -27,10 +29,15 @@ int main()
 {
   unsigned char a = 0b00000011;
   unsigned char b = 0b00000011;
-  int chanA = 1;
-  int chanB = 1;
+  int chanA = 0b00001100;
+  int chanB = 0b00000010;
   
-  std::bitset<8> output((chanA << 1) | (chanB));
+  uint16_t value = (chanB << 8) | chanA;
+
+  int valA = (value & (1 << 2));
+  int valB = (value & (1 << 3));
+
+  std::bitset<16> output((valB | valA) >> 0);
 
   std::cout << output << std::endl;
   return 0;
