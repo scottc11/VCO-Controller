@@ -31,7 +31,6 @@ void TouchChannel::init(I2C *touchI2C_ptr, TCA9544A *touchMux_ptr, Degrees *degr
   dac->referenceMode(dacChannel, MCP4922::REF_UNBUFFERED);
   dac->gainMode(dacChannel, MCP4922::GAIN_1X);
   dac->powerMode(dacChannel, MCP4922::POWER_NORMAL);
-  dac->write(dacChannel, 1.0);
 }
 
 // HANDLE ALL INTERUPT FLAGS
@@ -58,16 +57,38 @@ void TouchChannel::handleTouch() {
     for (int i=0; i<8; i++) {
       // if it *is* touched and *wasnt* touched before, alert!
       if (touch.getBitStatus(touched, i) && !touch.getBitStatus(prevTouched, i)) {
-        ETL = false; // deactivate event triggering loop
-        createEvent(beatClock->position, i);
-        writeLed(i, HIGH);
-        // updateLeds(touched);
+
+        switch (mode) {
+          case MONOPHONIC:
+            triggerNote(prevNoteIndex, OFF);
+            wait_us(5);
+            triggerNote(i, ON);
+            break;
+          case QUANTIZER:
+            break;
+          case LOOPER:
+            ETL = false; // deactivate event triggering loop
+            createEvent(beatClock->position, i);
+            writeLed(i, HIGH);
+            break;
+        }
       }
       // if it *was* touched and now *isnt*, alert!
       if (!touch.getBitStatus(touched, i) && touch.getBitStatus(prevTouched, i)) {
-        addEvent(beatClock->position);
-        writeLed(i, LOW);
-        ETL = true; // activate event triggering loop
+        
+        switch (mode) {
+          case MONOPHONIC:
+            // do nothing
+            break;
+          case QUANTIZER:
+            break;
+          case LOOPER:
+            addEvent(beatClock->position);
+            writeLed(i, LOW);
+            ETL = true; // activate event triggering loop
+            break;
+        }
+
       }
     }
     // reg.writeByte(touched); // toggle channel LEDs
@@ -83,12 +104,15 @@ void TouchChannel::handleModeSwitch() {
   int state = io->digitalRead(MCP23017_PORTB) & 0b00000011;  // set first 6 bits to zero
   switch (state) {
     case 0b00000011:
+      ETL = false;
       mode = MONOPHONIC;
       break;
     case 0b00000010:
+      ETL = false;
       mode = QUANTIZER;
       break;
     case 0b00000001:
+      ETL = true;
       mode = LOOPER;
       break;
   }
@@ -235,16 +259,12 @@ bool TouchChannel::hasEventInQueue() {
 void TouchChannel::handleQueuedEvent(int position) {
   if (queued->triggered == false ) {
     if (position == queued->startPos) {
-      gateOut.write(HIGH);
-      writeLed(queued->index, HIGH);
-      midi->sendNoteOn(channel, calculateMIDINoteValue(queued->index), 100);
+      triggerNote(queued->index, ON);
       queued->triggered = true;
     }
   }
   else if (position == queued->endPos) {
-    gateOut.write(LOW);
-    writeLed(queued->index, LOW);
-    midi->sendNoteOff(channel, calculateMIDINoteValue(queued->index), 100);
+    triggerNote(queued->index, OFF);
     queued->triggered = false;
     if (queued->next != NULL) {
       queued = queued->next;
@@ -252,6 +272,33 @@ void TouchChannel::handleQueuedEvent(int position) {
       queued = head;
     }
   }
+}
+
+void TouchChannel::triggerNote(int index, NoteState state) {
+  switch (state) {
+    case ON:
+      gateOut.write(HIGH);
+      writeLed(index, HIGH);
+      dac->write_u16(dacChannel, calculateDACNoteValue(index));
+      midi->sendNoteOn(channel, calculateMIDINoteValue(index), 100);
+      break;
+    case OFF:
+      gateOut.write(LOW);
+      writeLed(index, LOW);
+      midi->sendNoteOff(channel, calculateMIDINoteValue(index), 100);
+      break;
+    case SUSTAIN:
+      gateOut.write(HIGH);
+      writeLed(index, HIGH);
+      dac->write_u16(dacChannel, calculateDACNoteValue(index));
+      midi->sendNoteOn(channel, calculateMIDINoteValue(index), 100);
+      break;
+  }
+  prevNoteIndex = index;
+}
+
+int TouchChannel::calculateDACNoteValue(int index) {
+  return DAC_NOTE_MAP[index][degrees->switchStates[index]] + DAC_OCTAVE_MAP[octave];
 }
 
 int TouchChannel::calculateMIDINoteValue(int index) {

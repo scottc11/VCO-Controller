@@ -21,11 +21,28 @@ typedef struct EventNode {
 
 // Linked List
 class TouchChannel {
-  enum Mode {
-    MONOPHONIC,
-    QUANTIZER,
-    LOOPER,
-  };
+  private:
+    EventNode* head;
+    EventNode* newEvent;  // to be created and deleted everytime a user presses event create button
+    EventNode* queued;    // the currently active / next / ensuing / succeeding event
+  
+    enum SWITCH_STATES {      
+      // octave switch
+      OCTAVE_UP = 0b00001000,
+      OCTAVE_DOWN = 0b00000100,
+    };
+
+    enum NoteState {
+      ON = 1,
+      OFF = 0,
+      SUSTAIN = 3,
+    };
+
+    enum Mode {
+      MONOPHONIC,
+      QUANTIZER,
+      LOOPER,
+    };
 
   public:
     int channel;                     // 0 based index to represent channel
@@ -47,9 +64,10 @@ class TouchChannel {
     uint8_t ledStates;
     int touched;                 // variable for holding the currently touched degrees
     int prevTouched;             // variable for holding the previously touched degrees
-    int octave;                      // current octave
+    int octave;                  // current octave
     int counter;
-    
+    int prevNoteIndex;           //
+
     Degrees *degrees;
     
     int leds[8] = { 0b00000001, 0b00000010, 0b00000100, 0b00001000, 0b00010000, 0b00100000, 0b01000000, 0b10000000 };
@@ -94,22 +112,14 @@ class TouchChannel {
     void handleModeSwitch();
     void handleOctaveSwitch();
     int calculateMIDINoteValue(int index);
+    int calculateDACNoteValue(int index);
+    void triggerNote(int index, NoteState state);
 
     void createEvent(int position, int noteIndex);
     void addEvent(int position);
     bool hasEventInQueue();
     void handleQueuedEvent(int position);
 
-  private:
-    EventNode* head;
-    EventNode* newEvent;  // to be created and deleted everytime a user presses event create button
-    EventNode* queued;    // the currently active / next / ensuing / succeeding event
-  
-    enum SWITCH_STATES {      
-      // octave switch
-      OCTAVE_UP = 0b00001000,
-      OCTAVE_DOWN = 0b00000100,
-    };
 };
 
 #endif
