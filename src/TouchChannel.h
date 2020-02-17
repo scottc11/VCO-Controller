@@ -11,6 +11,8 @@
 #include "TCA9544A.h"
 #include "MIDI.h"
 
+extern bool UPDATE_DEGREES[4];
+
 typedef struct EventNode {
   uint8_t index;             // note index between 0 and 7
   uint16_t startPos;         // the point in time in which the EventNode occured
@@ -19,7 +21,7 @@ typedef struct EventNode {
   struct EventNode *next;    // pointer to the 'next' EventNode to occur (linked list)
 } EventNode;
 
-// Linked List
+
 class TouchChannel {
   private:
     EventNode* head;
@@ -33,9 +35,11 @@ class TouchChannel {
     };
 
     enum NoteState {
-      ON = 1,
-      OFF = 0,
-      SUSTAIN = 3,
+      ON,
+      OFF,
+      SUSTAIN,
+      PREV_ON,
+      PREV_OFF,
     };
 
     enum Mode {
@@ -66,10 +70,13 @@ class TouchChannel {
     int prevTouched;             // variable for holding the previously touched degrees
     int currSwitchStates;        // value to hold the current octave and mode switch states
     int prevSwitchStates;        // value to hold the previous octave and mode switch states
-    int octave;                  // current octave
+    int currOctave;              // current octave value between 0..3
+    int prevOctave;              // previous octave value
     int counter;
     int currNoteIndex;
     int prevNoteIndex;
+    NoteState currNoteState;     //
+
 
     Degrees *degrees;
     
@@ -98,7 +105,9 @@ class TouchChannel {
       touchInterupt.fall(callback(this, &TouchChannel::handleTouchInterupt));
       ioInterupt.fall(callback(this, &TouchChannel::handleioInterupt));
       counter = 0;
-      octave = 0;
+      currOctave = 0;
+      prevOctave = 0;
+      currNoteState = OFF;
       touched = 0;
       prevTouched = 0;
       channel = _channel;
@@ -108,6 +117,7 @@ class TouchChannel {
     void handleioInterupt() { switchHasChanged = true; }
     void handleTouchInterupt() { touchDetected = true; }
     void poll();
+    int readSwitchStates();
     void writeLed(int index, int state);
     void updateLeds(uint8_t touched);
     void setOctaveLed();
@@ -115,9 +125,9 @@ class TouchChannel {
     void handleDegreeChange();
     void handleModeSwitch(int state);
     void handleOctaveSwitch(int state);
-    int calculateMIDINoteValue(int index);
-    int calculateDACNoteValue(int index);
-    void triggerNote(int index, NoteState state);
+    int calculateMIDINoteValue(int index, int octave);
+    int calculateDACNoteValue(int index, int octave);
+    void triggerNote(int index, int octave, NoteState state);
 
     void createEvent(int position, int noteIndex);
     void addEvent(int position);

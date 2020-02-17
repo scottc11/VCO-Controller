@@ -4,12 +4,15 @@
 #include "main.h"
 #include "MCP23017.h"
 
+extern bool UPDATE_DEGREES[4];
+
 class Degrees {
   public:
 
     MCP23017 * io;
     InterruptIn ioInterupt;
     bool interuptDetected;
+    bool hasChanged[4];
     uint16_t currState;
     uint16_t prevState;
 
@@ -19,7 +22,7 @@ class Degrees {
       io = io_ptr;
       interuptDetected = false;
       ioInterupt.fall(callback(this, &Degrees::handleInterupt));
-    }
+    };
 
     void init() {
 
@@ -34,23 +37,29 @@ class Degrees {
       io->setInterupt(MCP23017_PORTB, 0xFF);
       
       updateDegreeStates(); // get current state of toggle switches
-    }
+    };
 
     void handleInterupt() {
       interuptDetected = true;
-    }
+    };
 
     void poll() {
       if (interuptDetected) {     // update switch states
+        wait_us(5);
         updateDegreeStates();
         interuptDetected = false;
-        UPDATE_DEGREES = true;
-      } 
-    }
+      }
+    };
 
     void updateDegreeStates() {
       currState = io->digitalReadAB();
       if (currState != prevState) {
+        // for notifiying external channels there was a change
+        hasChanged[0] = true;
+        hasChanged[1] = true;
+        hasChanged[2] = true;
+        hasChanged[3] = true;
+
         int switchIndex = 0;
         for (int i = 0; i < 16; i++) {   // iterate over all 16 bits
           if (i % 2 == 0) {             // only checking bits in pairs
@@ -73,7 +82,7 @@ class Degrees {
         }
         prevState = currState;
       }
-    }
+    };
 
   private:
     enum SwitchPosition {

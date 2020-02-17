@@ -10,6 +10,7 @@
 #include "MCP4922.h"
 #include "RotaryEncoder.h"
 
+bool UPDATE_DEGREES[4] = { false, false, false, false };
 
 I2C i2c1(I2C_SDA, I2C_SCL);
 I2C i2c3(I2C3_SDA, I2C3_SCL);
