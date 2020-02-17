@@ -1,8 +1,10 @@
 #include "TouchChannel.h"
 
 
-void TouchChannel::init(I2C *touchI2C_ptr, TCA9544A *touchMux_ptr) {
+void TouchChannel::init(I2C *touchI2C_ptr, TCA9544A *touchMux_ptr, Degrees *degrees_ptr) {
   
+  degrees = degrees_ptr;
+
   touch.init(touchI2C_ptr, touchMux_ptr, channel);
   if (!touch.isConnected()) {
     this->updateLeds(0xFF);
@@ -235,15 +237,14 @@ void TouchChannel::handleQueuedEvent(int position) {
     if (position == queued->startPos) {
       gateOut.write(HIGH);
       writeLed(queued->index, HIGH);
-      midi->sendNoteOn(channel, MIDI_NOTE_MAP[queued->index], 100);
-      // send midi note
+      midi->sendNoteOn(channel, calculateMIDINoteValue(queued->index), 100);
       queued->triggered = true;
     }
   }
   else if (position == queued->endPos) {
     gateOut.write(LOW);
     writeLed(queued->index, LOW);
-    midi->sendNoteOff(channel, MIDI_NOTE_MAP[queued->index], 100);
+    midi->sendNoteOff(channel, calculateMIDINoteValue(queued->index), 100);
     queued->triggered = false;
     if (queued->next != NULL) {
       queued = queued->next;
@@ -253,6 +254,9 @@ void TouchChannel::handleQueuedEvent(int position) {
   }
 }
 
+int TouchChannel::calculateMIDINoteValue(int index) {
+  return MIDI_NOTE_MAP[index][degrees->switchStates[index]] + MIDI_OCTAVE_MAP[octave];
+}
 
 
 // ensuing, succeeding

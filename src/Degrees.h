@@ -13,7 +13,7 @@ class Degrees {
     uint16_t currState;
     uint16_t prevState;
 
-    int degrees[8];
+    int switchStates[8];
 
     Degrees(PinName ioIntPin, MCP23017 *io_ptr) : ioInterupt(ioIntPin, PullUp) {
       io = io_ptr;
@@ -58,13 +58,13 @@ class Degrees {
             int value = (bitB | bitA) >> i;
             switch (value) {
               case SWITCH_UP:
-                degrees[switchIndex] = 2;
+                switchStates[switchIndex] = 2;
                 break;
               case SWITCH_NEUTRAL:
-                degrees[switchIndex] = 1;
+                switchStates[switchIndex] = 1;
                 break;
               case SWITCH_DOWN:
-                degrees[switchIndex] = 0;
+                switchStates[switchIndex] = 0;
                 break;
             }
             switchIndex += 1;

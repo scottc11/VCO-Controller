@@ -37,7 +37,11 @@ int main()
   int valA = (value & (1 << 2));
   int valB = (value & (1 << 3));
 
-  std::bitset<16> output((valB | valA) >> 0);
+  std::bitset<16> output(1000);
+
+  float f = 0.0833333333;
+  
+  unsigned short newF = (unsigned short)(f * 4095) << 4;
 
   std::cout << output << std::endl;
   return 0;

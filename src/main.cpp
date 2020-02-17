@@ -79,10 +79,10 @@ int main() {
 
   degrees.init();
 
-  channelA.init(&i2c1, &i2cMux);
-  channelB.init(&i2c1, &i2cMux);
-  channelC.init(&i2c1, &i2cMux);
-  channelD.init(&i2c1, &i2cMux);
+  channelA.init(&i2c1, &i2cMux, &degrees);
+  channelB.init(&i2c1, &i2cMux, &degrees);
+  channelC.init(&i2c1, &i2cMux, &degrees);
+  channelD.init(&i2c1, &i2cMux, &degrees);
 
   while(1) {
 

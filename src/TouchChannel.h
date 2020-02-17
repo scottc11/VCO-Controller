@@ -3,6 +3,7 @@
 
 #include "main.h"
 #include "BeatClock.h"
+#include "Degrees.h"
 #include "ShiftRegister.h"
 #include "MCP23017.h"
 #include "MCP4922.h"
@@ -11,7 +12,7 @@
 #include "MIDI.h"
 
 typedef struct EventNode {
-  uint8_t index;             // note index :: one of 0..7
+  uint8_t index;             // note index between 0 and 7
   uint16_t startPos;         // the point in time in which the EventNode occured
   uint16_t endPos;           // the point in time the EventNode finishes
   bool triggered;            // has the EventNode been triggered
@@ -49,6 +50,7 @@ class TouchChannel {
     int octave;                      // current octave
     int counter;
     
+    Degrees *degrees;
     
     int leds[8] = { 0b00000001, 0b00000010, 0b00000100, 0b00001000, 0b00010000, 0b00100000, 0b01000000, 0b10000000 };
 
@@ -81,7 +83,7 @@ class TouchChannel {
       channel = _channel;
     }
 
-    void init(I2C *touchI2C, TCA9544A *mux_ptr);
+    void init(I2C *touchI2C, TCA9544A *mux_ptr, Degrees *degrees_ptr);
     void handleioInterupt() { switchHasChanged = true; }
     void handleTouchInterupt() { touchDetected = true; }
     void poll();
@@ -91,6 +93,7 @@ class TouchChannel {
     void handleTouch();
     void handleModeSwitch();
     void handleOctaveSwitch();
+    int calculateMIDINoteValue(int index);
 
     void createEvent(int position, int noteIndex);
     void addEvent(int position);
