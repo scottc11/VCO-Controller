@@ -99,5 +99,6 @@ const int MIDI_NOTE_MAP[8][3] = {
 const int DAC_OCTAVE_MAP[4] = {0, 1000, 2000, 3000 };
 const int MIDI_OCTAVE_MAP[4] = { 36, 48, 60, 72 };
 
- 
+bool UPDATE_DEGREES = false;
+
 #endif

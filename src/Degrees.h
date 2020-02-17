@@ -44,6 +44,7 @@ class Degrees {
       if (interuptDetected) {     // update switch states
         updateDegreeStates();
         interuptDetected = false;
+        UPDATE_DEGREES = true;
       } 
     }
 

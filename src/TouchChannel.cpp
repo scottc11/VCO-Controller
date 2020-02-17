@@ -41,14 +41,39 @@ void TouchChannel::poll() {
   }
 
   if (switchHasChanged) {
-    handleModeSwitch();
-    handleOctaveSwitch();
+    currSwitchStates = io->digitalRead(MCP23017_PORTB);
+    int modeSwitchState = currSwitchStates & 0b00000011;   // set first 6 bits to zero
+    int octaveSwitchState = currSwitchStates & 0b00001100; // set first 4 bits, and last 2 bits to zero
+    
+    if (modeSwitchState != (prevSwitchStates & 0b00000011) ) {
+      handleModeSwitch(modeSwitchState);
+    }
+
+    if (octaveSwitchState != (prevSwitchStates & 0b00001100) ) {
+      handleOctaveSwitch(octaveSwitchState);
+    }
+    
     switchHasChanged = false;
   }
 
   if (hasEventInQueue() && ETL ) {
     handleQueuedEvent(beatClock->position);
   }
+}
+
+void TouchChannel::handleDegreeChange() {
+  switch (mode) {
+    case MONOPHONIC:
+      triggerNote(prevNoteIndex, OFF);
+      wait_us(5);
+      triggerNote(prevNoteIndex, ON);
+      break;
+    case QUANTIZER:
+      break;
+    case LOOPER:
+      break;
+  }
+  UPDATE_DEGREES = false;
 }
 
 void TouchChannel::handleTouch() {
@@ -100,20 +125,23 @@ void TouchChannel::handleTouch() {
 /**
  * mode switch states determined by the last 2 bits of io's port B
 **/
-void TouchChannel::handleModeSwitch() {
-  int state = io->digitalRead(MCP23017_PORTB) & 0b00000011;  // set first 6 bits to zero
+void TouchChannel::handleModeSwitch(int state) {
+  
   switch (state) {
     case 0b00000011:
       ETL = false;
       mode = MONOPHONIC;
+      triggerNote(prevNoteIndex, ON);
       break;
     case 0b00000010:
       ETL = false;
       mode = QUANTIZER;
+      triggerNote(prevNoteIndex, OFF);
       break;
     case 0b00000001:
       ETL = true;
       mode = LOOPER;
+      triggerNote(prevNoteIndex, OFF);
       break;
   }
 }
@@ -122,19 +150,32 @@ void TouchChannel::handleModeSwitch() {
 /**
  * octave switch states determined by bits 5 and 6 of io's port B
 **/
-void TouchChannel::handleOctaveSwitch() {
-  int state = io->digitalRead(MCP23017_PORTB) & 0b00001100;  // set first 4 bits, and last 2 bits to zero
+void TouchChannel::handleOctaveSwitch(int state) {
+  // update the octave value
   switch (state) {
     case OCTAVE_UP:
       if (octave < 3) { octave += 1; }
       break;
     case OCTAVE_DOWN:
       if (octave > 0) { octave -= 1; }
-      break;
-    default:
+      triggerNote(prevNoteIndex, OFF);
+      wait_us(5);
+      triggerNote(prevNoteIndex, ON);
       break;
   }
   setOctaveLed();
+
+  switch (mode) {
+    case MONOPHONIC:
+      triggerNote(prevNoteIndex, OFF);
+      wait_us(5);
+      triggerNote(prevNoteIndex, ON);
+      break;
+    case QUANTIZER:
+      break;
+    case LOOPER:
+      break;
+  }
 }
 
 void TouchChannel::writeLed(int index, int state) {

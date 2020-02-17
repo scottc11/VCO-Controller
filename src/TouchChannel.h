@@ -64,9 +64,12 @@ class TouchChannel {
     uint8_t ledStates;
     int touched;                 // variable for holding the currently touched degrees
     int prevTouched;             // variable for holding the previously touched degrees
+    int currSwitchStates;        // value to hold the current octave and mode switch states
+    int prevSwitchStates;        // value to hold the previous octave and mode switch states
     int octave;                  // current octave
     int counter;
-    int prevNoteIndex;           //
+    int currNoteIndex;
+    int prevNoteIndex;
 
     Degrees *degrees;
     
@@ -109,8 +112,9 @@ class TouchChannel {
     void updateLeds(uint8_t touched);
     void setOctaveLed();
     void handleTouch();
-    void handleModeSwitch();
-    void handleOctaveSwitch();
+    void handleDegreeChange();
+    void handleModeSwitch(int state);
+    void handleOctaveSwitch(int state);
     int calculateMIDINoteValue(int index);
     int calculateDACNoteValue(int index);
     void triggerNote(int index, NoteState state);
