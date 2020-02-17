@@ -3,9 +3,9 @@
 
 #include "main.h"
 
-class BeatClock {
+class Metronome {
   public:
-    BeatClock(PinName startLedPin, PinName stepLedPin) {
+    Metronome(PinName startLedPin, PinName stepLedPin) {
       startLed = new DigitalOut(startLedPin);
       stepLed = new DigitalOut(stepLedPin);
     };

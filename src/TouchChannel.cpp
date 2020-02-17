@@ -66,7 +66,7 @@ void TouchChannel::poll() {
   }
 
   if (mode == LOOPER && hasEventInQueue() && ETL ) {
-    handleQueuedEvent(beatClock->position);
+    handleQueuedEvent(metronome->position);
   }
 }
 
@@ -85,7 +85,7 @@ void TouchChannel::handleTouch() {
             break;
           case LOOPER:
             ETL = false; // deactivate event triggering loop
-            createEvent(beatClock->position, i);
+            createEvent(metronome->position, i);
             writeLed(i, HIGH);
             break;
         }
@@ -100,7 +100,7 @@ void TouchChannel::handleTouch() {
           case QUANTIZER:
             break;
           case LOOPER:
-            addEvent(beatClock->position);
+            addEvent(metronome->position);
             writeLed(i, LOW);
             ETL = true; // activate event triggering loop
             break;

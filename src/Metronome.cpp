@@ -1,7 +1,7 @@
-#include "BeatClock.h"
+#include "Metronome.h"
 
 // clock initialization
-void BeatClock::init() {
+void Metronome::init() {
   bpm = 120;
   currStep = 1;
   numSteps = 8;
@@ -11,7 +11,7 @@ void BeatClock::init() {
 }
 
 
-void BeatClock::tick() {
+void Metronome::tick() {
   currTick += 1;
   position += 1;
 
@@ -35,7 +35,7 @@ void BeatClock::tick() {
   }
 }
 
-void BeatClock::handleEncoder() {
+void Metronome::handleEncoder() {
   // Encoder_Status encoderStatus = Encoder_Get_Status();
 
   // switch(encoderStatus) {

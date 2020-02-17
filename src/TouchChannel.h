@@ -2,7 +2,7 @@
 #define __TOUCH_CHANNEL_H
 
 #include "main.h"
-#include "BeatClock.h"
+#include "Metronome.h"
 #include "Degrees.h"
 #include "ShiftRegister.h"
 #include "MCP23017.h"
@@ -49,16 +49,17 @@ class TouchChannel {
     };
 
   public:
+  
     int channel;                     // 0 based index to represent channel
     Mode mode;                       // which mode channel is currently in
     bool ETL = false;                // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
     DigitalOut gateOut;              // gate output pin
-    BeatClock * beatClock;
+    Metronome *metronome;
     MIDI *midi;                      // pointer to mbed midi instance
     CAP1208 touch;                   // i2c touch IC
-    MCP4922 * dac;                   // pointer to dual channel digital-analog-converter
+    MCP4922 *dac;                   // pointer to dual channel digital-analog-converter
     MCP4922::_DAC dacChannel;        // which dac to address
-    MCP23017 * io;                   // for leds and switches
+    MCP23017 *io;                   // for leds and switches
     InterruptIn touchInterupt;
     InterruptIn ioInterupt;          // gpio interupt pin
     
@@ -76,10 +77,7 @@ class TouchChannel {
     int currNoteIndex;
     int prevNoteIndex;
     NoteState currNoteState;     //
-
-
     Degrees *degrees;
-    
     int leds[8] = { 0b00000001, 0b00000010, 0b00000100, 0b00001000, 0b00010000, 0b00100000, 0b01000000, 0b10000000 };
 
     TouchChannel(
@@ -89,7 +87,7 @@ class TouchChannel {
         PinName tchIntPin,
         MCP23017 *io_p,
         MIDI *midi_p,
-        BeatClock *_clock,
+        Metronome *_clock,
         MCP4922 *dac_ptr,
         MCP4922::_DAC _dacChannel
       ) : gateOut(gateOutPin), ioInterupt(ioIntPin, PullUp), touchInterupt(tchIntPin, PullUp) {
@@ -97,7 +95,7 @@ class TouchChannel {
       head = NULL;
       newEvent = NULL;
       queued = NULL;
-      beatClock = _clock;
+      metronome = _clock;
       dac = dac_ptr;
       dacChannel = _dacChannel;
       io = io_p;
@@ -111,7 +109,7 @@ class TouchChannel {
       touched = 0;
       prevTouched = 0;
       channel = _channel;
-    }
+    };
 
     void init(I2C *touchI2C, TCA9544A *mux_ptr, Degrees *degrees_ptr);
     void handleioInterupt() { switchHasChanged = true; }

@@ -1,5 +1,5 @@
 #include "main.h"
-#include "BeatClock.h"
+#include "Metronome.h"
 #include "TouchChannel.h"
 #include "Degrees.h"
 #include "CAP1208.h"
@@ -18,7 +18,7 @@ I2C i2c3(I2C3_SDA, I2C3_SCL);
 Ticker ticker;
 Timer timer;
 MIDI midi;
-BeatClock CLOCK(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
+Metronome metronome(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
 RotaryEncoder encoder(ENCODER_CHAN_A, ENCODER_CHAN_B, ENCODER_BTN);
 ShiftRegister display(DISPLAY_DATA, DISPLAY_CLK, DISPLAY_LATCH);
 
@@ -36,10 +36,10 @@ TCA9544A i2cMux(&i2c1, TCA9544A_ADDR);
 
 Degrees degrees(DEGREES_INT, &io);
 
-TouchChannel channelA(0, GATE_OUT_A, CHAN_INT_A, TOUCH_INT_A, &ioA, &midi, &CLOCK, &dacA, MCP4922::DAC_A);
-TouchChannel channelB(1, GATE_OUT_B, CHAN_INT_B, TOUCH_INT_B, &ioB, &midi, &CLOCK, &dacA, MCP4922::DAC_B);
-TouchChannel channelC(2, GATE_OUT_C, CHAN_INT_C, TOUCH_INT_C, &ioC, &midi, &CLOCK, &dacB, MCP4922::DAC_A);
-TouchChannel channelD(3, GATE_OUT_D, CHAN_INT_D, TOUCH_INT_D, &ioD, &midi, &CLOCK, &dacB, MCP4922::DAC_B);
+TouchChannel channelA(0, GATE_OUT_A, CHAN_INT_A, TOUCH_INT_A, &ioA, &midi, &metronome, &dacA, MCP4922::DAC_A);
+TouchChannel channelB(1, GATE_OUT_B, CHAN_INT_B, TOUCH_INT_B, &ioB, &midi, &metronome, &dacA, MCP4922::DAC_B);
+TouchChannel channelC(2, GATE_OUT_C, CHAN_INT_C, TOUCH_INT_C, &ioC, &midi, &metronome, &dacB, MCP4922::DAC_A);
+TouchChannel channelD(3, GATE_OUT_D, CHAN_INT_D, TOUCH_INT_D, &ioD, &midi, &metronome, &dacB, MCP4922::DAC_B);
 
 
 int newClockPeriod;
@@ -51,7 +51,7 @@ int encoderPos = 0;
 const char numbers[10] = { 0b11111100, 0b01100000, 0b11011010, 0b11110010, 0b01100110, 0b10110110, 0b00111110, 0b11100000, 0b11111110, 0b11100110 };
 
 void tick() {
-  CLOCK.tick();
+  metronome.tick();
 }
 
 void extTick() {
@@ -73,7 +73,7 @@ int main() {
 
   timer.start();
   newClockPeriod = timer.read_us();
-  CLOCK.init();
+  metronome.init();
 
   ticker.attach_us(&tick, (1000000/2) / PPQ); //approx 120 bpm
   extClockInput.rise(&extTick);
