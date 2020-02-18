@@ -11,8 +11,6 @@
 #include "TCA9544A.h"
 #include "MIDI.h"
 
-extern bool UPDATE_DEGREES[4];
-
 typedef struct EventNode {
   uint8_t index;             // note index between 0 and 7
   uint16_t startPos;         // the point in time in which the EventNode occured

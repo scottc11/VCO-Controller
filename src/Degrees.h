@@ -4,8 +4,6 @@
 #include "main.h"
 #include "MCP23017.h"
 
-extern bool UPDATE_DEGREES[4];
-
 class Degrees {
   public:
 

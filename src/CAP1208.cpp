@@ -51,6 +51,16 @@ uint8_t CAP1208::touched() {
   return data;
 }
 
+// if it *is* touched and *wasnt* touched before, alert!
+bool CAP1208::padIsTouched(int pad, int currTouched, int prevTouched) {
+  return (getBitStatus(currTouched, pad) && !getBitStatus(prevTouched, pad));
+}
+
+// if it *was* touched and now *isnt*, alert!
+bool CAP1208::padWasTouched(int pad, int currTouched, int prevTouched) {
+  return (!getBitStatus(currTouched, pad) && getBitStatus(prevTouched, pad));
+}
+
 // bitNum starts at 0-7 for 8-bits
 // https://stackoverflow.com/questions/47981/how-do-you-set-clear-and-toggle-a-single-bit
 bool CAP1208::getBitStatus(int b, int bitNum) {
