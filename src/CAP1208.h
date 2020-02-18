@@ -4,7 +4,7 @@
 #include "main.h"
 #include "TCA9544A.h"
 
-#define CAP1208_I2C_ADDR     0x28 << 1
+#define CAP1208_I2C_ADDR     0x50
 #define CAP1208_PROD_ID      0x6B
 
 // supports I2C speeds to 400kHz

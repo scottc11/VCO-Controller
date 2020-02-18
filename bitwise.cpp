@@ -37,7 +37,7 @@ int main()
   int valA = (value & (1 << 2));
   int valB = (value & (1 << 3));
 
-  std::bitset<16> output(1000);
+  std::bitset<8> output(0x28 << 1);
 
   float f = 0.0833333333;
   

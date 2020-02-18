@@ -62,8 +62,8 @@
 #define TOUCH_INT_D          PB_4
 
 #define TCA9544A_ADDR          0x70 // 1110000
-#define CAP1208_ADDR           0x14 // 0010100  via mux
-#define CAP1208_CTRL_ADDR      0x14 // 0010100
+#define CAP1208_ADDR           0x50 // 0010100  via mux
+#define CAP1208_CTRL_ADDR      0x50 // 0010100
 
 #define MCP23017_DEGREES_ADDR  0x20 // 0100000
 #define MCP23017_CHAN_A_ADDR  0x21 // 0100001

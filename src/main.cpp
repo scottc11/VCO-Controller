@@ -1,6 +1,7 @@
 #include "main.h"
 #include "Metronome.h"
 #include "TouchChannel.h"
+#include "GlobalControl.h"
 #include "Degrees.h"
 #include "CAP1208.h"
 #include "ShiftRegister.h"
@@ -34,6 +35,7 @@ MCP23017 ioC(&i2c3, MCP23017_CHAN_C_ADDR);
 MCP23017 ioD(&i2c3, MCP23017_CHAN_D_ADDR);
 TCA9544A i2cMux(&i2c1, TCA9544A_ADDR);
 
+CAP1208 touchCTRL(&i2c3);
 CAP1208 touchA(&i2c1, &i2cMux, 0);
 CAP1208 touchB(&i2c1, &i2cMux, 1);
 CAP1208 touchC(&i2c1, &i2cMux, 2);
@@ -46,6 +48,7 @@ TouchChannel channelB(1, GATE_OUT_B, CHAN_INT_B, TOUCH_INT_B, &touchB, &degrees,
 TouchChannel channelC(2, GATE_OUT_C, CHAN_INT_C, TOUCH_INT_C, &touchC, &degrees, &ioC, &midi, &metronome, &dacB, MCP4922::DAC_A);
 TouchChannel channelD(3, GATE_OUT_D, CHAN_INT_D, TOUCH_INT_D, &touchD, &degrees, &ioD, &midi, &metronome, &dacB, MCP4922::DAC_B);
 
+GlobalControl globalCTRL(&touchCTRL);
 
 int newClockPeriod;
 int oldClockPeriod;
@@ -89,6 +92,8 @@ int main() {
   channelB.init();
   channelC.init();
   channelD.init();
+
+  globalCTRL.init();
 
   while(1) {
 
