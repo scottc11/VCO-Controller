@@ -359,5 +359,24 @@ int TouchChannel::calculateMIDINoteValue(int index, int octave) {
   return MIDI_NOTE_MAP[index][degrees->switchStates[index]] + MIDI_OCTAVE_MAP[octave];
 }
 
+void TouchChannel::freeze() {
+  switch (mode) {
+    case MONOPHONIC:
+      break;
+    case QUANTIZER:
+      break;
+    case LOOPER:
+      break;
+  }
+}
 
-// ensuing, succeeding
+void TouchChannel::reset() {
+  switch (mode) {
+    case MONOPHONIC:
+      break;
+    case QUANTIZER:
+      break;
+    case LOOPER:
+      break;
+  }
+}

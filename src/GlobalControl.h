@@ -9,10 +9,6 @@ class GlobalControl {
 public:
 
   CAP1208 *cap;
-  DigitalOut ledA;
-  DigitalOut ledB;
-  DigitalOut ledC;
-  DigitalOut ledD;
   TouchChannel *channels[4];
   InterruptIn touchInterupt;
   int selectedChannel;          //   
@@ -20,8 +16,12 @@ public:
   int prevTouched;              // variable for holding previously touched buttons
   volatile bool touchDetected;
 
-  GlobalControl(CAP1208 *cap_ptr, PinName _ledA, PinName _ledB, PinName _ledC, PinName _ledD, PinName cap_int ) : ledA(_ledA), ledB(_ledB), ledC(_ledC), ledD(_ledD), touchInterupt(cap_int, PullUp) {
+  GlobalControl(CAP1208 *cap_ptr, PinName cap_int, TouchChannel *chanA_ptr, TouchChannel *chanB_ptr, TouchChannel *chanC_ptr, TouchChannel *chanD_ptr ) : touchInterupt(cap_int, PullUp) {
     cap = cap_ptr;
+    channels[0] = chanA_ptr;
+    channels[1] = chanB_ptr;
+    channels[2] = chanC_ptr;
+    channels[3] = chanD_ptr;
     selectedChannel = 0;
     touchInterupt.fall(callback(this, &GlobalControl::handleTouchInterupt));
   }

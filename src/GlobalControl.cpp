@@ -3,19 +3,6 @@
 
 void GlobalControl::init() {
   cap->init();
-  ledA.write(HIGH);
-  wait_ms(50);
-  ledA.write(LOW);
-  ledB.write(HIGH);
-  wait_ms(50);
-  ledB.write(LOW);
-  ledC.write(HIGH);
-  wait_ms(50);
-  ledC.write(LOW);
-  ledD.write(HIGH);
-  wait_ms(50);
-  ledD.write(LOW);
-  ledA.write(HIGH);
 }
 
 
@@ -44,10 +31,11 @@ void GlobalControl::handleTouchEvent() {
 }
 
 void GlobalControl::handleTouch(int pad) {
-  ledA.write(LOW);
-  ledB.write(LOW);
-  ledC.write(LOW);
-  ledD.write(LOW);
+  channels[0]->ctrlLed.write(LOW);
+  channels[1]->ctrlLed.write(LOW);
+  channels[2]->ctrlLed.write(LOW);
+  channels[3]->ctrlLed.write(LOW);
+  
   switch (pad) {
     case CTRL_FREEZE:
       handleFreeze();
@@ -56,21 +44,19 @@ void GlobalControl::handleTouch(int pad) {
       break;
     case CTRL_A:
       selectedChannel = 0;
-      ledA.write(HIGH);
       break;
     case CTRL_B:
       selectedChannel = 1;
-      ledB.write(HIGH);
       break;
     case CTRL_C:
       selectedChannel = 2;
-      ledC.write(HIGH);
       break;
     case CTRL_D:
       selectedChannel = 3;
-      ledD.write(HIGH);
       break;
   }
+  
+  channels[selectedChannel]->ctrlLed.write(HIGH);
 
 }
 
@@ -81,6 +67,10 @@ void GlobalControl::handleRelease(int pad) {
 void GlobalControl::handleFreeze() {
   if (currTouched & 0b00000001) {  // if no other pads being touched
     // freeze all channels
+    channels[0]->freeze();
+    channels[1]->freeze();
+    channels[2]->freeze();
+    channels[3]->freeze();
   }
 }
 

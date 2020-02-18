@@ -52,6 +52,7 @@ class TouchChannel {
     Mode mode;                       // which mode channel is currently in
     bool ETL = false;                // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
     DigitalOut gateOut;              // gate output pin
+    DigitalOut ctrlLed;              // via global controls
     Metronome *metronome;
     MIDI *midi;                      // pointer to mbed midi instance
     CAP1208 *touch;                   // i2c touch IC
@@ -83,6 +84,7 @@ class TouchChannel {
         PinName gateOutPin,
         PinName ioIntPin,
         PinName tchIntPin,
+        PinName ctrlLedPin,
         CAP1208 *touch_ptr,
         Degrees *degrees_ptr,
         MCP23017 *io_p,
@@ -90,7 +92,7 @@ class TouchChannel {
         Metronome *_clock,
         MCP4922 *dac_ptr,
         MCP4922::_DAC _dacChannel
-      ) : gateOut(gateOutPin), ioInterupt(ioIntPin, PullUp), touchInterupt(tchIntPin, PullUp) {
+      ) : gateOut(gateOutPin), ioInterupt(ioIntPin, PullUp), touchInterupt(tchIntPin, PullUp), ctrlLed(ctrlLedPin) {
       
       head = NULL;
       newEvent = NULL;
@@ -128,7 +130,8 @@ class TouchChannel {
     int calculateMIDINoteValue(int index, int octave);
     int calculateDACNoteValue(int index, int octave);
     void triggerNote(int index, int octave, NoteState state);
-
+    void freeze();
+    void reset();
     void createEvent(int position, int noteIndex);
     void addEvent(int position);
     bool hasEventInQueue();
