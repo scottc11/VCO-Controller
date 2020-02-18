@@ -48,7 +48,7 @@ TouchChannel channelB(1, GATE_OUT_B, CHAN_INT_B, TOUCH_INT_B, &touchB, &degrees,
 TouchChannel channelC(2, GATE_OUT_C, CHAN_INT_C, TOUCH_INT_C, &touchC, &degrees, &ioC, &midi, &metronome, &dacB, MCP4922::DAC_A);
 TouchChannel channelD(3, GATE_OUT_D, CHAN_INT_D, TOUCH_INT_D, &touchD, &degrees, &ioD, &midi, &metronome, &dacB, MCP4922::DAC_B);
 
-GlobalControl globalCTRL(&touchCTRL);
+GlobalControl globalCTRL(&touchCTRL, CTRL_LED_A, CTRL_LED_B, CTRL_LED_C, CTRL_LED_D);
 
 int newClockPeriod;
 int oldClockPeriod;

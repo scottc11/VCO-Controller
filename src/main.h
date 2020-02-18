@@ -40,10 +40,10 @@
 #define GATE_OUT_C           PA_11
 #define GATE_OUT_D           PA_12
 
-#define CTRL_LED_D           PC_0
-#define CTRL_LED_C           PC_1
-#define CTRL_LED_B           PC_2
 #define CTRL_LED_A           PC_3
+#define CTRL_LED_B           PC_2
+#define CTRL_LED_C           PC_1
+#define CTRL_LED_D           PC_0
 
 #define LOOP_START_LED_PIN   PC_4
 #define LOOP_STEP_LED_PIN    PC_5
