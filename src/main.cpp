@@ -34,12 +34,17 @@ MCP23017 ioC(&i2c3, MCP23017_CHAN_C_ADDR);
 MCP23017 ioD(&i2c3, MCP23017_CHAN_D_ADDR);
 TCA9544A i2cMux(&i2c1, TCA9544A_ADDR);
 
+CAP1208 touchA(&i2c1, &i2cMux, 0);
+CAP1208 touchB(&i2c1, &i2cMux, 1);
+CAP1208 touchC(&i2c1, &i2cMux, 2);
+CAP1208 touchD(&i2c1, &i2cMux, 3);
+
 Degrees degrees(DEGREES_INT, &io);
 
-TouchChannel channelA(0, GATE_OUT_A, CHAN_INT_A, TOUCH_INT_A, &ioA, &midi, &metronome, &dacA, MCP4922::DAC_A);
-TouchChannel channelB(1, GATE_OUT_B, CHAN_INT_B, TOUCH_INT_B, &ioB, &midi, &metronome, &dacA, MCP4922::DAC_B);
-TouchChannel channelC(2, GATE_OUT_C, CHAN_INT_C, TOUCH_INT_C, &ioC, &midi, &metronome, &dacB, MCP4922::DAC_A);
-TouchChannel channelD(3, GATE_OUT_D, CHAN_INT_D, TOUCH_INT_D, &ioD, &midi, &metronome, &dacB, MCP4922::DAC_B);
+TouchChannel channelA(0, GATE_OUT_A, CHAN_INT_A, TOUCH_INT_A, &touchA, &degrees, &ioA, &midi, &metronome, &dacA, MCP4922::DAC_A);
+TouchChannel channelB(1, GATE_OUT_B, CHAN_INT_B, TOUCH_INT_B, &touchB, &degrees, &ioB, &midi, &metronome, &dacA, MCP4922::DAC_B);
+TouchChannel channelC(2, GATE_OUT_C, CHAN_INT_C, TOUCH_INT_C, &touchC, &degrees, &ioC, &midi, &metronome, &dacB, MCP4922::DAC_A);
+TouchChannel channelD(3, GATE_OUT_D, CHAN_INT_D, TOUCH_INT_D, &touchD, &degrees, &ioD, &midi, &metronome, &dacB, MCP4922::DAC_B);
 
 
 int newClockPeriod;
@@ -80,10 +85,10 @@ int main() {
 
   degrees.init();
 
-  channelA.init(&i2c1, &i2cMux, &degrees);
-  channelB.init(&i2c1, &i2cMux, &degrees);
-  channelC.init(&i2c1, &i2cMux, &degrees);
-  channelD.init(&i2c1, &i2cMux, &degrees);
+  channelA.init();
+  channelB.init();
+  channelC.init();
+  channelD.init();
 
   while(1) {
 

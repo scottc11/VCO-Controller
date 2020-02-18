@@ -18,10 +18,10 @@ class CAP1208 {
   }
 
   CAP1208(I2C *i2c_ptr, TCA9544A *mux_ptr, int _muxChannel) {
+    useMux = true;
     i2c = i2c_ptr;
     mux = mux_ptr;
     muxChannel = _muxChannel;
-    useMux = true;
   }
 
   I2C * i2c;
@@ -32,7 +32,7 @@ class CAP1208 {
   char data_read[1];
   char data_write[2];
 
-  void init(I2C *_i2c, TCA9544A *mux_ptr, int _muxChannel);
+  void init();
   void disableInterupts();
   bool isConnected();
   void read(uint8_t reg);
@@ -46,6 +46,9 @@ class CAP1208 {
 private:
 
   void i2cWrite(char reg, char data) {
+    
+    if (useMux) { mux->enableChan(muxChannel); }
+    
     char buffer[2];
     buffer[0] = reg;
     buffer[1] = data;
@@ -53,6 +56,9 @@ private:
   }
 
   char i2cRead(char reg) {
+    
+    if (useMux) { mux->enableChan(muxChannel); }
+
     char command[1];
     char buffer[1];
     command[0] = reg;
@@ -72,7 +78,7 @@ private:
     INT_ENABLE_REG = 0x27,
     REPEAT_RATE_ENABLE_REG = 0x28,
     CONF_2_REG = 0x44,             // default: 0x40
-  }
+  };
 };
 
 

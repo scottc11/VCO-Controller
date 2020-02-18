@@ -1,17 +1,16 @@
 #include "TouchChannel.h"
 
 
-void TouchChannel::init(I2C *touchI2C_ptr, TCA9544A *touchMux_ptr, Degrees *degrees_ptr) {
+void TouchChannel::init() {
   
-  degrees = degrees_ptr;
-
-  touch.init(touchI2C_ptr, touchMux_ptr, channel);
-  if (!touch.isConnected()) {
+  touch->init();
+  
+  if (!touch->isConnected()) {
     this->updateLeds(0xFF);
     return;
   }
-  touch.calibrate();
-  touch.clearInterupt();
+  touch->calibrate();
+  touch->clearInterupt();
 
 
   io->init();
@@ -71,11 +70,11 @@ void TouchChannel::poll() {
 }
 
 void TouchChannel::handleTouch() {
-  touched = touch.touched();
+  touched = touch->touched();
   if (touched != prevTouched) {
     for (int i=0; i<8; i++) {
       // if it *is* touched and *wasnt* touched before, alert!
-      if (touch.getBitStatus(touched, i) && !touch.getBitStatus(prevTouched, i)) {
+      if (touch->getBitStatus(touched, i) && !touch->getBitStatus(prevTouched, i)) {
 
         switch (mode) {
           case MONOPHONIC:
@@ -91,7 +90,7 @@ void TouchChannel::handleTouch() {
         }
       }
       // if it *was* touched and now *isnt*, alert!
-      if (!touch.getBitStatus(touched, i) && touch.getBitStatus(prevTouched, i)) {
+      if (!touch->getBitStatus(touched, i) && touch->getBitStatus(prevTouched, i)) {
         
         switch (mode) {
           case MONOPHONIC:

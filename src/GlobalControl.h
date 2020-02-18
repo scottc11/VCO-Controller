@@ -7,13 +7,13 @@
 class GlobalControl {
 public:
 
-  CAP1208 touch;
+  // CAP1208 touch;
   
-  GlobalControl() {
+  GlobalControl(I2C *touchI2C_ptr) {
 
   }
   
-  void init(I2C *touchI2C_ptr);
+  void init();
 
 };
 

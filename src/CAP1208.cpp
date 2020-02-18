@@ -1,14 +1,8 @@
 #include "CAP1208.h"
 
 
-void CAP1208::init(I2C *_i2c, TCA9544A *mux_ptr, int _muxChannel) {
-  mux = mux_ptr;
-  muxChannel = _muxChannel;
-  i2c = _i2c;
+void CAP1208::init() {
   
-
-  mux->enableChan(muxChannel);
-
   // read product id to test connection
   if (i2cRead(PRODUCT_ID_REG) != CAP1208_PROD_ID) {
     connected = false;
@@ -16,30 +10,11 @@ void CAP1208::init(I2C *_i2c, TCA9544A *mux_ptr, int _muxChannel) {
     connected = true;
   }
 
-  // speed up sampling time
-  data_write[0] = AVR_SMPL_CONF_REG; // AVERAGING AND SAMPLING CONFIGURATION REGISTER
-  data_write[1] = 0b00000000;  // default: 0b00111001
-  i2c->write(CAP1208_I2C_ADDR, data_write, 2);
-
-  // allow multiple touches
-  data_write[0] = MULT_TOUCH_CONF_REG;
-  data_write[1] = 0x00;
-  i2c->write(CAP1208_I2C_ADDR, data_write, 2);
-
-  // enable interupts
-  data_write[0] = INT_ENABLE_REG;
-  data_write[1] = 0xFF;
-  i2c->write(CAP1208_I2C_ADDR, data_write, 2);
-
-  // disable repeat rate for all channels
-  data_write[0] = REPEAT_RATE_ENABLE_REG;
-  data_write[1] = 0x00;
-  i2c->write(CAP1208_I2C_ADDR, data_write, 2);
-
-  // disable BLK_PWR_CTRL power saving feature
-  data_write[0] = CONF_2_REG;
-  data_write[1] = 0x60;
-  i2c->write(CAP1208_I2C_ADDR, data_write, 2);
+  i2cWrite(AVR_SMPL_CONF_REG, 0x00);        // speed up sampling time
+  i2cWrite(MULT_TOUCH_CONF_REG, 0x00);      // allow multiple touches
+  i2cWrite(INT_ENABLE_REG, 0xFF);           // enable interupts
+  i2cWrite(REPEAT_RATE_ENABLE_REG, 0x00);   // disable repeat rate for all channels
+  i2cWrite(CONF_2_REG, 0x60);               // disable BLK_PWR_CTRL power saving feature
 
   clearInterupt();
 }
@@ -52,54 +27,28 @@ bool CAP1208::isConnected() {
   return connected;
 }
 
-void CAP1208::read(uint8_t reg) {
-  data_write[0] = reg;
-  i2c->write(CAP1208_I2C_ADDR, data_write, 1, true);
-  i2c->read(CAP1208_I2C_ADDR, data_read, 1);
-}
-
 uint8_t CAP1208::getControlStatus() {
-  mux->enableChan(muxChannel);
-  // read main control status of CAP1208
-  data_write[0] = MAIN_CTRL_REG; // main control
-  i2c->write(CAP1208_I2C_ADDR, data_write, 1, true);
-  i2c->read(CAP1208_I2C_ADDR, data_read, 1);
-  return data_read[0];
+  return i2cRead(MAIN_CTRL_REG);
 }
 
 uint8_t CAP1208::getGeneralStatus() {
-  mux->enableChan(muxChannel);
-  
-  data_write[0] = GENERAL_STATUS_REG; // general status
-  i2c->write(CAP1208_I2C_ADDR, data_write, 1, true);
-  i2c->read(CAP1208_I2C_ADDR, data_read, 1);
-  return data_read[0];
+  return i2cRead(GENERAL_STATUS_REG);
 }
 
 void CAP1208::calibrate() {
-  mux->enableChan(muxChannel);
-  data_write[0] = CALIBRATE_REG;
-  data_write[1] = 0xFF; // calibrate all inputs
-  i2c->write(CAP1208_I2C_ADDR, data_write, 2, true);
-  i2c->read(CAP1208_I2C_ADDR, data_read, 1);
+  i2cWrite(CALIBRATE_REG, 0xFF);
 }
 
+// for some reason we have to "clear" the INT bit everytime we read the sensors... 
 void CAP1208::clearInterupt() {
-  data_write[0] = MAIN_CTRL_REG;
-  data_write[1] = MAIN_CTRL_REG & ~0x01;
-  i2c->write(CAP1208_I2C_ADDR, data_write, 2);
+  i2cWrite(MAIN_CTRL_REG, MAIN_CTRL_REG & ~0x01);
 }
 
+// read input status of CAP1208
 uint8_t CAP1208::touched() {
-  mux->enableChan(muxChannel);
-  // for some reason we have to "clear" the INT bit everytime we read the sensors... 
-  clearInterupt();
-  
-  // read input status of CAP1208
-  data_write[0] = 0x03; // input status
-  i2c->write(CAP1208_I2C_ADDR, data_write, 1, true);
-  i2c->read(CAP1208_I2C_ADDR, data_read, 1);
-  return data_read[0];
+  this->clearInterupt();
+  uint8_t data = i2cRead(INPUT_STATUS_REG);
+  return data;
 }
 
 // bitNum starts at 0-7 for 8-bits

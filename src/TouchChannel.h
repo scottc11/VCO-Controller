@@ -56,7 +56,7 @@ class TouchChannel {
     DigitalOut gateOut;              // gate output pin
     Metronome *metronome;
     MIDI *midi;                      // pointer to mbed midi instance
-    CAP1208 touch;                   // i2c touch IC
+    CAP1208 *touch;                   // i2c touch IC
     MCP4922 *dac;                   // pointer to dual channel digital-analog-converter
     MCP4922::_DAC dacChannel;        // which dac to address
     MCP23017 *io;                   // for leds and switches
@@ -76,7 +76,7 @@ class TouchChannel {
     int counter;
     int currNoteIndex;
     int prevNoteIndex;
-    NoteState currNoteState;     //
+    NoteState currNoteState;
     Degrees *degrees;
     int leds[8] = { 0b00000001, 0b00000010, 0b00000100, 0b00001000, 0b00010000, 0b00100000, 0b01000000, 0b10000000 };
 
@@ -85,6 +85,8 @@ class TouchChannel {
         PinName gateOutPin,
         PinName ioIntPin,
         PinName tchIntPin,
+        CAP1208 *touch_ptr,
+        Degrees *degrees_ptr,
         MCP23017 *io_p,
         MIDI *midi_p,
         Metronome *_clock,
@@ -95,6 +97,8 @@ class TouchChannel {
       head = NULL;
       newEvent = NULL;
       queued = NULL;
+      touch = touch_ptr;
+      degrees = degrees_ptr;
       metronome = _clock;
       dac = dac_ptr;
       dacChannel = _dacChannel;
@@ -111,7 +115,7 @@ class TouchChannel {
       channel = _channel;
     };
 
-    void init(I2C *touchI2C, TCA9544A *mux_ptr, Degrees *degrees_ptr);
+    void init();
     void handleioInterupt() { switchHasChanged = true; }
     void handleTouchInterupt() { touchDetected = true; }
     void poll();
