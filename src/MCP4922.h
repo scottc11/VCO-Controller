@@ -152,6 +152,8 @@ public:
      */
     void write_u16(_DAC dac, unsigned short value);
 
+    void write_u12(_DAC dac, unsigned short value);
+
 private:
     //SPI member variables
     SPI m_SPI;

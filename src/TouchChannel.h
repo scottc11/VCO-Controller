@@ -61,11 +61,13 @@ class TouchChannel {
     MCP23017 *io;                   // for leds and switches
     InterruptIn touchInterupt;
     InterruptIn ioInterupt;          // gpio interupt pin
-    
+    AnalogIn cvInput;                // CV Input Pin
     volatile bool switchHasChanged;  // toggle switches interupt flag
     volatile bool touchDetected;
     
     uint8_t ledStates;
+    unsigned int currCVInputValue; // 16 bit value (0..65,536)
+    unsigned int prevCVInputValue; // 16 bit value (0..65,536)
     int touched;                 // variable for holding the currently touched degrees
     int prevTouched;             // variable for holding the previously touched degrees
     int currSwitchStates;        // value to hold the current octave and mode switch states
@@ -85,6 +87,7 @@ class TouchChannel {
         PinName ioIntPin,
         PinName tchIntPin,
         PinName ctrlLedPin,
+        PinName cvInputPin,
         CAP1208 *touch_ptr,
         Degrees *degrees_ptr,
         MCP23017 *io_p,
@@ -92,7 +95,12 @@ class TouchChannel {
         Metronome *_clock,
         MCP4922 *dac_ptr,
         MCP4922::_DAC _dacChannel
-      ) : gateOut(gateOutPin), ioInterupt(ioIntPin, PullUp), touchInterupt(tchIntPin, PullUp), ctrlLed(ctrlLedPin) {
+      ) : 
+      gateOut(gateOutPin),
+      ioInterupt(ioIntPin, PullUp),
+      touchInterupt(tchIntPin, PullUp),
+      ctrlLed(ctrlLedPin),
+      cvInput(cvInputPin) {
       
       head = NULL;
       newEvent = NULL;
@@ -122,7 +130,8 @@ class TouchChannel {
     int readSwitchStates();
     void writeLed(int index, int state);
     void updateLeds(uint8_t touched);
-    void setOctaveLed();
+    void setOctaveLed(int octave);
+    void handleCVInput(int value);
     void handleTouch();
     void handleDegreeChange();
     void handleModeSwitch(int state);

@@ -31,18 +31,13 @@ int main()
   unsigned char b = 0b00000011;
   int chanA = 0b00001100;
   int chanB = 0b00000010;
+
+  int value = 4096 << 4;
+
+  std::bitset<16> output(value);
+  int integerOutput = value;
   
-  uint16_t value = (chanB << 8) | chanA;
-
-  int valA = (value & (1 << 2));
-  int valB = (value & (1 << 3));
-
-  std::bitset<8> output(0x28 << 1);
-
-  float f = 0.0833333333;
-  
-  unsigned short newF = (unsigned short)(f * 4095) << 4;
-
   std::cout << output << std::endl;
+  std::cout << integerOutput << std::endl;
   return 0;
 }

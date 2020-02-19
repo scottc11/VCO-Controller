@@ -41,10 +41,10 @@ CAP1208 touchD(&i2c1, &i2cMux, 3);
 
 Degrees degrees(DEGREES_INT, &io);
 
-TouchChannel channelA(0, GATE_OUT_A, CHAN_INT_A, TOUCH_INT_A, CTRL_LED_A, &touchA, &degrees, &ioA, &midi, &metronome, &dacA, MCP4922::DAC_A);
-TouchChannel channelB(1, GATE_OUT_B, CHAN_INT_B, TOUCH_INT_B, CTRL_LED_B, &touchB, &degrees, &ioB, &midi, &metronome, &dacA, MCP4922::DAC_B);
-TouchChannel channelC(2, GATE_OUT_C, CHAN_INT_C, TOUCH_INT_C, CTRL_LED_C, &touchC, &degrees, &ioC, &midi, &metronome, &dacB, MCP4922::DAC_A);
-TouchChannel channelD(3, GATE_OUT_D, CHAN_INT_D, TOUCH_INT_D, CTRL_LED_D, &touchD, &degrees, &ioD, &midi, &metronome, &dacB, MCP4922::DAC_B);
+TouchChannel channelA(0, GATE_OUT_A, CHAN_INT_A, TOUCH_INT_A, CTRL_LED_A, ADC_A, &touchA, &degrees, &ioA, &midi, &metronome, &dacA, MCP4922::DAC_A);
+TouchChannel channelB(1, GATE_OUT_B, CHAN_INT_B, TOUCH_INT_B, CTRL_LED_B, ADC_B, &touchB, &degrees, &ioB, &midi, &metronome, &dacA, MCP4922::DAC_B);
+TouchChannel channelC(2, GATE_OUT_C, CHAN_INT_C, TOUCH_INT_C, CTRL_LED_C, ADC_C, &touchC, &degrees, &ioC, &midi, &metronome, &dacB, MCP4922::DAC_A);
+TouchChannel channelD(3, GATE_OUT_D, CHAN_INT_D, TOUCH_INT_D, CTRL_LED_D, ADC_D, &touchD, &degrees, &ioD, &midi, &metronome, &dacB, MCP4922::DAC_B);
 
 GlobalControl globalCTRL(&touchCTRL, TOUCH_INT_CTRL, &channelA, &channelB, &channelC, &channelD);
 

@@ -30,9 +30,9 @@
 #define ENCODER_BTN          PA_0
 
 
-#define ADC_A                PC_13
-#define ADC_B                PC_13
-#define ADC_C                PC_13
+#define ADC_A                PA_4
+#define ADC_B                PA_5
+#define ADC_C                PA_6
 #define ADC_D                PB_0
 
 #define GATE_OUT_A           PA_9
@@ -99,5 +99,6 @@ const int MIDI_NOTE_MAP[8][3] = {
 const int DAC_OCTAVE_MAP[4] = {0, 1000, 2000, 3000 };
 const int MIDI_OCTAVE_MAP[4] = { 36, 48, 60, 72 };
 
-
+const int CV_INPUT_MAP[8] = { 2048, 4096, 6144, 8192, 10240, 12288, 14366, 16384 };
+const int CV_OCTAVES[4] = { 16384, 32768, 49152, 65536 };
 #endif

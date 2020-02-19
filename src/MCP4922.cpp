@@ -139,6 +139,10 @@ void MCP4922::write(_DAC dac, float value)
     write_u16(dac, (unsigned short)(value * 4095) << 4);
 }
 
+void MCP4922::write_u12(_DAC dac, unsigned short value) {
+    write_u16(dac, value << 4);
+}
+
 void MCP4922::write_u16(_DAC dac, unsigned short value)
 {
     //Update the value for the specified DAC

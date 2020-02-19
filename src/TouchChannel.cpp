@@ -28,7 +28,7 @@ void TouchChannel::init() {
     wait_ms(50);
   }
   this->updateLeds(0x00);
-  this->setOctaveLed();
+  this->setOctaveLed(currOctave);
 
   dac->referenceMode(dacChannel, MCP4922::REF_UNBUFFERED);
   dac->gainMode(dacChannel, MCP4922::GAIN_1X);
@@ -62,6 +62,14 @@ void TouchChannel::poll() {
 
   if (degrees->hasChanged[channel]) {
     handleDegreeChange();
+  }
+
+  if (mode == QUANTIZER) {
+    currCVInputValue = cvInput.read_u16();
+    if (currCVInputValue != prevCVInputValue) {
+      handleCVInput(currCVInputValue);
+      prevCVInputValue = currCVInputValue;
+    }
   }
 
   if (mode == LOOPER && hasEventInQueue() && ETL ) {
@@ -112,6 +120,39 @@ void TouchChannel::handleTouch() {
   }
 }
 
+void TouchChannel::handleCVInput(int value) {
+  // 65,536 / 4 == 16,384
+  // 16,384 / 8 == 2,048
+
+  int clippedValue = 0;
+  int octave = 0;
+
+  for (int i=0; i < 4; i++) {
+
+    if (value < 16384) {
+      clippedValue = value;
+      octave = 0;
+      break;
+    }
+
+    if (value > CV_OCTAVES[i] && value < CV_OCTAVES[i] + 16384) {
+      octave = i + 1;
+      clippedValue = value - CV_OCTAVES[i];
+      break;
+    }
+  }
+
+  for (int i=0; i < 8; i++) {
+    if (clippedValue < CV_INPUT_MAP[i]) {
+      if (prevNoteIndex != i) {
+        triggerNote(prevNoteIndex, prevOctave, OFF);
+        triggerNote(i, octave, ON);
+        setOctaveLed(octave);
+      }
+      break;
+    }
+  }
+}
 
 /**
  * mode switch states determined by the last 2 bits of io's port B
@@ -153,14 +194,13 @@ void TouchChannel::handleOctaveSwitch(int state) {
       if (currOctave > 0) { currOctave -= 1; }
       break;
   }
-  setOctaveLed();
+  setOctaveLed(currOctave);
 
   if (state == OCTAVE_UP || state == OCTAVE_DOWN) {  // only want this to happen once
     switch (mode) {
       case MONOPHONIC:
         if (currNoteState == ON) {
           triggerNote(prevNoteIndex, prevOctave, OFF);
-          wait_us(5);
           triggerNote(prevNoteIndex, currOctave, ON);
         }
         break;
@@ -178,7 +218,6 @@ void TouchChannel::handleDegreeChange() {
     case MONOPHONIC:
         if (currNoteState == ON) {
           triggerNote(prevNoteIndex, currOctave, OFF);
-          wait_us(5);
           triggerNote(prevNoteIndex, currOctave, ON);
         }
       break;
@@ -212,8 +251,8 @@ void TouchChannel::updateLeds(uint8_t touched) {
   io->digitalWrite(MCP23017_PORTA, touched);
 }
 
-void TouchChannel::setOctaveLed() {
-  int state = 1 << (currOctave + 4);
+void TouchChannel::setOctaveLed(int octave) {
+  int state = 1 << (octave + 4);
   io->digitalWrite(MCP23017_PORTB, state);
 }
 
@@ -338,7 +377,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state) {
       currNoteState = ON;
       gateOut.write(HIGH);
       writeLed(index, HIGH);
-      dac->write_u16(dacChannel, calculateDACNoteValue(index, octave));
+      dac->write_u12(dacChannel, calculateDACNoteValue(index, octave));
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
     case OFF:
@@ -346,6 +385,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state) {
       gateOut.write(LOW);
       writeLed(index, LOW);
       midi->sendNoteOff(channel, calculateMIDINoteValue(index, octave), 100);
+      wait_us(5);
       break;
   }
   prevNoteIndex = index;
