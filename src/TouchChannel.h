@@ -134,6 +134,7 @@ class TouchChannel {
     void handleCVInput(int value);
     void handleTouch();
     void handleDegreeChange();
+    void handleSwitchInterupt();
     void handleModeSwitch(int state);
     void handleOctaveSwitch(int state);
     int calculateMIDINoteValue(int index, int octave);

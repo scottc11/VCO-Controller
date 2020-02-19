@@ -20,8 +20,7 @@ void TouchChannel::init() {
   io->setInputPolarity(MCP23017_PORTB, 0b00000000); // invert PORTB pins input polarity for toggle switches
   io->setInterupt(MCP23017_PORTB, 0b00001111);
 
-  currSwitchStates = readSwitchStates();
-  prevSwitchStates = currSwitchStates;
+  handleSwitchInterupt();
 
   for (int i = 0; i < 8; i++) {
     this->updateLeds(leds[i]);
@@ -43,21 +42,7 @@ void TouchChannel::poll() {
   }
 
   if (switchHasChanged) {
-    wait_us(5); // debounce
-    currSwitchStates = readSwitchStates();
-    int modeSwitchState = currSwitchStates & 0b00000011;   // set first 6 bits to zero
-    int octaveSwitchState = currSwitchStates & 0b00001100; // set first 4 bits, and last 2 bits to zero
-    
-    if (modeSwitchState != (prevSwitchStates & 0b00000011) ) {
-      handleModeSwitch(modeSwitchState);
-    }
-
-    if (octaveSwitchState != (prevSwitchStates & 0b00001100) ) {
-      handleOctaveSwitch(octaveSwitchState);
-    }
-    
-    prevSwitchStates = currSwitchStates;
-    switchHasChanged = false;
+    handleSwitchInterupt();
   }
 
   if (degrees->hasChanged[channel]) {
@@ -75,6 +60,24 @@ void TouchChannel::poll() {
   if (mode == LOOPER && hasEventInQueue() && ETL ) {
     handleQueuedEvent(metronome->position);
   }
+}
+
+void TouchChannel::handleSwitchInterupt() {
+  wait_us(5); // debounce
+  currSwitchStates = readSwitchStates();
+  int modeSwitchState = currSwitchStates & 0b00000011;   // set first 6 bits to zero
+  int octaveSwitchState = currSwitchStates & 0b00001100; // set first 4 bits, and last 2 bits to zero
+  
+  if (modeSwitchState != (prevSwitchStates & 0b00000011) ) {
+    handleModeSwitch(modeSwitchState);
+  }
+
+  if (octaveSwitchState != (prevSwitchStates & 0b00001100) ) {
+    handleOctaveSwitch(octaveSwitchState);
+  }
+  
+  prevSwitchStates = currSwitchStates;
+  switchHasChanged = false;
 }
 
 void TouchChannel::handleTouch() {
@@ -373,6 +376,7 @@ void TouchChannel::handleQueuedEvent(int position) {
 void TouchChannel::triggerNote(int index, int octave, NoteState state) {
   switch (state) {
     case ON:
+      // if mideNoteState == ON, midi->sendNoteOff(prevNoteIndex, prevOctave)
       currNoteIndex = index;
       currNoteState = ON;
       gateOut.write(HIGH);
@@ -388,6 +392,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state) {
       wait_us(5);
       break;
   }
+  prevOctave = octave;
   prevNoteIndex = index;
 }
 
@@ -399,11 +404,13 @@ int TouchChannel::calculateMIDINoteValue(int index, int octave) {
   return MIDI_NOTE_MAP[index][degrees->switchStates[index]] + MIDI_OCTAVE_MAP[octave];
 }
 
+// enableFreeze(), disableFreeze(), handleFreeze()
 void TouchChannel::freeze() {
   switch (mode) {
     case MONOPHONIC:
       break;
     case QUANTIZER:
+      // turn quantizer off
       break;
     case LOOPER:
       break;
