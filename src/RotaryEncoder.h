@@ -17,17 +17,24 @@ public:
   InterruptIn channelA;
   DigitalIn channelB;
   InterruptIn button;
+  Direction direction;    // 0 or 1
   bool btnState;          // non-blocking state of encoder button
   int position;
-  Direction direction;    // 0 or 1
   bool btnPressed;        // interupt flag
   bool btnReleased;       // interupt flag
+  int maxValue;
+  int minValue;
+  int value;
 
   RotaryEncoder(PinName chanA, PinName chanB, PinName btn) : channelA(chanA, PullUp), channelB(chanB, PullUp), button(btn, PullUp) {
-    // do something
+    position = 0;
   }
 
-  void init() {
+  void init(int min = 0, int max = 255) {
+    maxValue = max;
+    minValue = min;
+    value = minValue;
+
     channelA.fall(callback(this, &RotaryEncoder::sigAFall));
     // channelA.rise(callback(this, &RotaryEncoder::encode));
     button.fall(callback(this, &RotaryEncoder::btnPressCallback));
@@ -53,13 +60,19 @@ public:
     if (channelB.read() == 0) {
       // going counter-clockwise
       position -= 1;
+      if (value > minValue) {
+        value -= 1;
+      }
       direction = COUNTERCLOCKWISE;
     } else {
       // going clockwise
       position += 1;
+      if (value < maxValue) {
+        value += 1;
+      }
       direction = CLOCKWISE;
     }
-    wait_us(10);
+    wait_us(5);
   }
 
   void btnPressCallback() {

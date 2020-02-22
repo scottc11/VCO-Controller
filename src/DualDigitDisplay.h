@@ -15,7 +15,8 @@ public:
   }
 
   void init() {    
-    write(0);
+    shiftReg.writeByte16(0b0000000000000000);
+    shiftReg.pulseLatch();
   }
 
   void write(int number) {

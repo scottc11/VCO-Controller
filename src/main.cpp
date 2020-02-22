@@ -2,15 +2,13 @@
 #include "Metronome.h"
 #include "TouchChannel.h"
 #include "GlobalControl.h"
-#include "DualDigitDisplay.h"
 #include "Degrees.h"
 #include "CAP1208.h"
-#include "ShiftRegister.h"
 #include "MIDI.h"
 #include "TCA9544A.h"
 #include "MCP23017.h"
 #include "MCP4922.h"
-#include "RotaryEncoder.h"
+
 
 I2C i2c1(I2C_SDA, I2C_SCL);
 I2C i2c3(I2C3_SDA, I2C3_SCL);
@@ -19,9 +17,6 @@ Ticker ticker;
 Timer timer;
 MIDI midi;
 Metronome metronome(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
-RotaryEncoder encoder(ENCODER_CHAN_A, ENCODER_CHAN_B, ENCODER_BTN);
-DualDigitDisplay display(DISPLAY_DATA, DISPLAY_CLK, DISPLAY_LATCH);
-
 InterruptIn extClockInput(EXT_CLOCK_INPUT);
 
 MCP4922 dacA(SPI2_MOSI, SPI2_SCK, DAC_A_CS);
@@ -47,13 +42,11 @@ TouchChannel channelB(1, GATE_OUT_B, CHAN_INT_B, TOUCH_INT_B, CTRL_LED_B, ADC_B,
 TouchChannel channelC(2, GATE_OUT_C, CHAN_INT_C, TOUCH_INT_C, CTRL_LED_C, ADC_C, &touchC, &degrees, &ioC, &midi, &metronome, &dacB, MCP4922::DAC_A);
 TouchChannel channelD(3, GATE_OUT_D, CHAN_INT_D, TOUCH_INT_D, CTRL_LED_D, ADC_D, &touchD, &degrees, &ioD, &midi, &metronome, &dacB, MCP4922::DAC_B);
 
-GlobalControl globalCTRL(&touchCTRL, TOUCH_INT_CTRL, &channelA, &channelB, &channelC, &channelD);
+GlobalControl globalCTRL(&touchCTRL, TOUCH_INT_CTRL, DISPLAY_DATA, DISPLAY_CLK, DISPLAY_LATCH, ENCODER_CHAN_A, ENCODER_CHAN_B, ENCODER_BTN, &channelA, &channelB, &channelC, &channelD);
 
 int newClockPeriod;
 int oldClockPeriod;
 int clockPeriod;
-
-int encoderPos = 0;
 
 void tick() {
   metronome.tick();
@@ -69,11 +62,6 @@ void extTick() {
 
 int main() {
   
-  encoder.init();
-
-  // init display
-  display.init();
-
   timer.start();
   newClockPeriod = timer.read_us();
   metronome.init();
@@ -101,10 +89,6 @@ int main() {
 
     globalCTRL.poll();
     
-    if (encoder.position != encoderPos) {
-      encoderPos = encoder.position;
-      display.write(encoderPos);
-    }
   }
 }
 

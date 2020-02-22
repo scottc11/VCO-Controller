@@ -3,6 +3,8 @@
 
 void GlobalControl::init() {
   cap->init();
+  display.init();
+  encoder.init(0, 99);
 }
 
 
@@ -10,6 +12,10 @@ void GlobalControl::poll() {
   if (touchDetected) {
     handleTouchEvent();
     touchDetected = false;
+  }
+  if (encoder.value != encoderValue) {
+    encoderValue = encoder.value;
+    display.write(encoderValue);
   }
 }
 
@@ -57,7 +63,7 @@ void GlobalControl::handleTouch(int pad) {
   }
   
   channels[selectedChannel]->ctrlLed.write(HIGH);
-
+  // get channels clock steps value and pass to display
 }
 
 void GlobalControl::handleRelease(int pad) {
