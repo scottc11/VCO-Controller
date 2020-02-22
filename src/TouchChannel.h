@@ -65,6 +65,8 @@ class TouchChannel {
     volatile bool switchHasChanged;  // toggle switches interupt flag
     volatile bool touchDetected;
     
+    int numLoopSteps;
+
     uint8_t ledStates;
     unsigned int currCVInputValue; // 16 bit value (0..65,536)
     unsigned int prevCVInputValue; // 16 bit value (0..65,536)
@@ -131,6 +133,7 @@ class TouchChannel {
     void writeLed(int index, int state);
     void updateLeds(uint8_t touched);
     void setOctaveLed(int octave);
+    void setNumLoopSteps(int num);
     void handleCVInput(int value);
     void handleTouch();
     void handleDegreeChange();

@@ -13,21 +13,31 @@ void GlobalControl::poll() {
     handleTouchEvent();
     touchDetected = false;
   }
-  if (encoder.value != encoderValue) {
-    encoderValue = encoder.value;
-    display.write(encoderValue);
+  if (encoder.getValue() != channels[selectedChannel]->numLoopSteps) {
+    handleEncoderRotation();
   }
+}
+
+void GlobalControl::handleEncoderRotation() {
+  switch (encoder.direction) {
+    case RotaryEncoder::CLOCKWISE:
+      channels[selectedChannel]->setNumLoopSteps(encoder.getValue());
+      break;
+    case RotaryEncoder::COUNTERCLOCKWISE:
+      channels[selectedChannel]->setNumLoopSteps(encoder.getValue());
+      break;
+  }
+
+  display.write(channels[selectedChannel]->numLoopSteps);
 }
 
 void GlobalControl::handleTouchEvent() {
   currTouched = cap->touched();
   if (currTouched != prevTouched) {
     for (int i=0; i<8; i++) {
-      
       if (cap->padIsTouched(i, currTouched, prevTouched)) {
         handleTouch(i);
       }
-      
       if (cap->padWasTouched(i, currTouched, prevTouched)) {
 
       }
@@ -63,7 +73,8 @@ void GlobalControl::handleTouch(int pad) {
   }
   
   channels[selectedChannel]->ctrlLed.write(HIGH);
-  // get channels clock steps value and pass to display
+  encoder.setValue(channels[selectedChannel]->numLoopSteps);
+  display.write(encoder.value);
 }
 
 void GlobalControl::handleRelease(int pad) {

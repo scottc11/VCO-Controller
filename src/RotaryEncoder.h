@@ -87,6 +87,14 @@ public:
     return btnState;
   }
 
+  void setValue(int val) {
+    value = val;
+  }
+
+  int getValue() {
+    return value;
+  }
+
 };
 
 #endif

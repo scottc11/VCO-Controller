@@ -16,8 +16,7 @@ public:
   InterruptIn touchInterupt;
   DualDigitDisplay display;
   RotaryEncoder encoder;
-  int encoderValue;
-  int selectedChannel;          //   
+  int selectedChannel;          //
   int currTouched;              // variable for holding the currently touched buttons
   int prevTouched;              // variable for holding previously touched buttons
   volatile bool touchDetected;
@@ -38,6 +37,7 @@ public:
   void handleTouch(int pad);
   void handleRelease(int pad);
   void handleTouchEvent();
+  void handleEncoderRotation();
   void handleTouchInterupt() {
     touchDetected = true;
   }

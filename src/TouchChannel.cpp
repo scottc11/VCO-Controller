@@ -2,7 +2,7 @@
 
 
 void TouchChannel::init() {
-  
+  numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
   touch->init();
   
   if (!touch->isConnected()) {
@@ -426,4 +426,8 @@ void TouchChannel::reset() {
     case LOOPER:
       break;
   }
+}
+
+void TouchChannel::setNumLoopSteps(int num) {
+  numLoopSteps = num;
 }
