@@ -35,16 +35,15 @@ void GlobalControl::selectChannel(int channel) {
 }
 
 void GlobalControl::handleEncoderRotation() {
-  switch (encoder.direction) {
-    case RotaryEncoder::CLOCKWISE:
-      channels[selectedChannel]->setNumLoopSteps(encoder.getValue());
-      break;
-    case RotaryEncoder::COUNTERCLOCKWISE:
-      channels[selectedChannel]->setNumLoopSteps(encoder.getValue());
-      break;
-  }
+  int value = encoder.getValue();
 
-  display.write(channels[selectedChannel]->numLoopSteps);
+  if (currTouched != 0x00) {
+    channels[selectedChannel]->setNumLoopSteps(value);
+    display.write(channels[selectedChannel]->numLoopSteps);
+  } else {
+    metronome->setNumberOfSteps(value);
+    display.write(metronome->numSteps);
+  }
 }
 
 void GlobalControl::handleTouchEvent() {
@@ -55,7 +54,7 @@ void GlobalControl::handleTouchEvent() {
         handleTouch(i);
       }
       if (cap->padWasTouched(i, currTouched, prevTouched)) {
-
+        handleRelease(i);
       }
     }
     prevTouched = currTouched;
@@ -86,7 +85,8 @@ void GlobalControl::handleTouch(int pad) {
 }
 
 void GlobalControl::handleRelease(int pad) {
-  
+  // set display back to global clock
+  display.write(metronome->numSteps);
 }
 
 void GlobalControl::handleFreeze() {

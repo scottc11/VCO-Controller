@@ -13,20 +13,23 @@ public:
 
   CAP1208 *cap;
   TouchChannel *channels[4];
+  Metronome *metronome;
   InterruptIn touchInterupt;
   DualDigitDisplay display;
   RotaryEncoder encoder;
-  int selectedChannel;          //
+  int selectedChannel;
+  int currTouchedChannel;
   int currTouched;              // variable for holding the currently touched buttons
   int prevTouched;              // variable for holding previously touched buttons
   volatile bool touchDetected;
 
-  GlobalControl(CAP1208 *cap_ptr, PinName cap_int, PinName disData, PinName disClk, PinName disLatch, PinName encChanA, PinName encChanB, PinName encBtn, TouchChannel *chanA_ptr, TouchChannel *chanB_ptr, TouchChannel *chanC_ptr, TouchChannel *chanD_ptr ) : touchInterupt(cap_int, PullUp), display(disData, disClk, disLatch), encoder(encChanA, encChanB, encBtn) {
+  GlobalControl(CAP1208 *cap_ptr, PinName cap_int, PinName disData, PinName disClk, PinName disLatch, PinName encChanA, PinName encChanB, PinName encBtn, TouchChannel *chanA_ptr, TouchChannel *chanB_ptr, TouchChannel *chanC_ptr, TouchChannel *chanD_ptr, Metronome *metronome_ptr ) : touchInterupt(cap_int, PullUp), display(disData, disClk, disLatch), encoder(encChanA, encChanB, encBtn) {
     cap = cap_ptr;
     channels[0] = chanA_ptr;
     channels[1] = chanB_ptr;
     channels[2] = chanC_ptr;
     channels[3] = chanD_ptr;
+    metronome = metronome_ptr;
     touchInterupt.fall(callback(this, &GlobalControl::handleTouchInterupt));
   }
   

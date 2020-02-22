@@ -4,7 +4,7 @@
 void Metronome::init() {
   bpm = 120;
   currStep = 1;
-  numSteps = 8;
+  numSteps = DEFAULT_CHANNEL_LOOP_STEPS;
   ticksPerStep = PPQN;
   currTick = 1;
   pulseDuration = 5;
@@ -33,4 +33,8 @@ void Metronome::tick() {
       startLed->write(HIGH);
     }
   }
+}
+
+void Metronome::setNumberOfSteps(int num) {
+  numSteps = num;
 }
