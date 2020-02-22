@@ -30,6 +30,15 @@ class ShiftRegister {
       }
     }
 
+    void writeByte16(char16_t byte) {
+      for (int i = 0; i < 16; i++) {
+        data = (byte & 0x01 << i) >> i;
+        clock = 1;
+        wait_us(1);
+        clock = 0;
+      }
+    }
+
     void pulseLatch() {
       latch = 1;
       wait_us(1);
@@ -49,6 +58,10 @@ class ShiftRegister {
     void setBit(int position){
       writeByte((0x00 | (1 << position)));
       pulseLatch();
+    }
+
+    int getBit(char byte, int position) {
+      return (byte >> position) & 1;
     }
 
 };

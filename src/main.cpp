@@ -2,6 +2,7 @@
 #include "Metronome.h"
 #include "TouchChannel.h"
 #include "GlobalControl.h"
+#include "DualDigitDisplay.h"
 #include "Degrees.h"
 #include "CAP1208.h"
 #include "ShiftRegister.h"
@@ -19,7 +20,7 @@ Timer timer;
 MIDI midi;
 Metronome metronome(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
 RotaryEncoder encoder(ENCODER_CHAN_A, ENCODER_CHAN_B, ENCODER_BTN);
-ShiftRegister display(DISPLAY_DATA, DISPLAY_CLK, DISPLAY_LATCH);
+DualDigitDisplay display(DISPLAY_DATA, DISPLAY_CLK, DISPLAY_LATCH);
 
 InterruptIn extClockInput(EXT_CLOCK_INPUT);
 
@@ -54,8 +55,6 @@ int clockPeriod;
 
 int encoderPos = 0;
 
-const char numbers[10] = { 0b11111100, 0b01100000, 0b11011010, 0b11110010, 0b01100110, 0b10110110, 0b00111110, 0b11100000, 0b11111110, 0b11100110 };
-
 void tick() {
   metronome.tick();
 }
@@ -73,9 +72,7 @@ int main() {
   encoder.init();
 
   // init display
-  display.writeByte(numbers[9]);
-  display.writeByte(numbers[9]);
-  display.pulseLatch();
+  display.init();
 
   timer.start();
   newClockPeriod = timer.read_us();
@@ -106,20 +103,7 @@ int main() {
     
     if (encoder.position != encoderPos) {
       encoderPos = encoder.position;
-      if (encoder.direction == RotaryEncoder::CLOCKWISE) {
-        if (encoderPos <= 9) {
-          display.writeByte(0b11111111);
-          display.writeByte(numbers[encoderPos]);
-          display.pulseLatch();
-        }
-      }
-      else if (encoder.direction == RotaryEncoder::COUNTERCLOCKWISE) {
-        if (encoderPos >= 0) {
-          display.writeByte(0b11111111);
-          display.writeByte(numbers[encoderPos]);
-          display.pulseLatch();
-        }
-      }
+      display.write(encoderPos);
     }
   }
 }
