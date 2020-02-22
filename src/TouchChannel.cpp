@@ -71,6 +71,14 @@ void TouchChannel::advanceLoopPosition() {
   currTick += 1;
   currPosition += 1;
   
+  if (currTick > 2) {
+    if (isSelected) {
+      ctrlLed.write(HIGH);
+    } else {
+      ctrlLed.write(LOW);
+    }
+  }
+
   // when currTick exceeds PPQN, reset to 1 and increment currStep by 1
   if (currTick > PPQN ) {
     currTick = 1;  // NOTE: maybe experiment with setting this value to '0' 🤔
@@ -80,6 +88,11 @@ void TouchChannel::advanceLoopPosition() {
     if (currStep > numLoopSteps) {
       currStep = 1;
       currPosition = 1;
+      if (isSelected) {
+        ctrlLed.write(LOW);
+      } else {
+        ctrlLed.write(HIGH);
+      }
     }
   }
 }
@@ -118,7 +131,7 @@ void TouchChannel::handleTouch() {
           case LOOPER:
             ETL = false; // deactivate event triggering loop
             createEvent(currPosition, i);
-            writeLed(i, HIGH);
+            triggerNote(i, currOctave, ON);
             break;
         }
       }
@@ -133,11 +146,10 @@ void TouchChannel::handleTouch() {
             break;
           case LOOPER:
             addEvent(currPosition);
-            writeLed(i, LOW);
+            triggerNote(i, currOctave, OFF);
             ETL = true; // activate event triggering loop
             break;
         }
-
       }
     }
     // reg.writeByte(touched); // toggle channel LEDs

@@ -49,6 +49,7 @@ class TouchChannel {
   public:
   
     int channel;                     // 0 based index to represent channel
+    bool isSelected;
     Mode mode;                       // which mode channel is currently in
     bool ETL = false;                // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
     DigitalOut gateOut;              // gate output pin

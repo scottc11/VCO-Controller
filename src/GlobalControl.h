@@ -27,12 +27,12 @@ public:
     channels[1] = chanB_ptr;
     channels[2] = chanC_ptr;
     channels[3] = chanD_ptr;
-    selectedChannel = 0;
     touchInterupt.fall(callback(this, &GlobalControl::handleTouchInterupt));
   }
   
   void init();
   void poll();
+  void selectChannel(int channel);
   void handleFreeze();
   void handleTouch(int pad);
   void handleRelease(int pad);

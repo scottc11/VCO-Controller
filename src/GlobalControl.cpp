@@ -3,9 +3,9 @@
 
 void GlobalControl::init() {
   cap->init();
-  display.init(0);
+  display.init(channels[selectedChannel]->numLoopSteps);
   encoder.init(0, 99);
-  encoder.setValue(DEFAULT_CHANNEL_LOOP_STEPS);
+  selectChannel(0);
 }
 
 
@@ -17,6 +17,21 @@ void GlobalControl::poll() {
   if (encoder.getValue() != channels[selectedChannel]->numLoopSteps) {
     handleEncoderRotation();
   }
+}
+
+void GlobalControl::selectChannel(int channel) {
+  for (int i = 0; i < 4; i++) {
+    if (i != channel) {
+      channels[i]->ctrlLed.write(LOW);
+      channels[i]->isSelected = false;
+    }
+  }
+  
+  selectedChannel = channel;
+  channels[selectedChannel]->isSelected = true;
+  channels[selectedChannel]->ctrlLed.write(HIGH);
+  encoder.setValue(channels[selectedChannel]->numLoopSteps);
+  display.write(encoder.value);
 }
 
 void GlobalControl::handleEncoderRotation() {
@@ -48,10 +63,6 @@ void GlobalControl::handleTouchEvent() {
 }
 
 void GlobalControl::handleTouch(int pad) {
-  channels[0]->ctrlLed.write(LOW);
-  channels[1]->ctrlLed.write(LOW);
-  channels[2]->ctrlLed.write(LOW);
-  channels[3]->ctrlLed.write(LOW);
   
   switch (pad) {
     case CTRL_FREEZE:
@@ -60,22 +71,18 @@ void GlobalControl::handleTouch(int pad) {
     case CTRL_ALT:
       break;
     case CTRL_A:
-      selectedChannel = 0;
+      selectChannel(0);
       break;
     case CTRL_B:
-      selectedChannel = 1;
+      selectChannel(1);
       break;
     case CTRL_C:
-      selectedChannel = 2;
+      selectChannel(2);
       break;
     case CTRL_D:
-      selectedChannel = 3;
+      selectChannel(3);
       break;
   }
-  
-  channels[selectedChannel]->ctrlLed.write(HIGH);
-  encoder.setValue(channels[selectedChannel]->numLoopSteps);
-  display.write(encoder.value);
 }
 
 void GlobalControl::handleRelease(int pad) {

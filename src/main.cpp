@@ -66,12 +66,6 @@ void extTick() {
 
 int main() {
   
-  timer.start();
-  newClockPeriod = timer.read_us();
-  metronome.init();
-
-  ticker.attach_us(&tick, (1000000/2) / PPQN); //approx 120 bpm
-  extClockInput.rise(&extTick);
 
   degrees.init();
 
@@ -81,6 +75,14 @@ int main() {
   channelD.init();
 
   globalCTRL.init();
+
+
+  timer.start();
+  newClockPeriod = timer.read_us();
+  metronome.init();
+
+  ticker.attach_us(&tick, (1000000/2) / PPQN); //approx 120 bpm
+  extClockInput.rise(&extTick);
 
   while(1) {
 
