@@ -50,13 +50,17 @@ int clockPeriod;
 
 void tick() {
   metronome.tick();
+  channelA.advanceLoopPosition();
+  channelB.advanceLoopPosition();
+  channelC.advanceLoopPosition();
+  channelD.advanceLoopPosition();
 }
 
 void extTick() {
   oldClockPeriod = newClockPeriod;
   newClockPeriod = timer.read_us();
   clockPeriod = newClockPeriod - oldClockPeriod;
-  ticker.attach_us(&tick, clockPeriod / PPQ);  // potentially write this as a flag and update in main loop
+  ticker.attach_us(&tick, clockPeriod / PPQN);  // potentially write this as a flag and update in main loop
 }
 
 
@@ -66,7 +70,7 @@ int main() {
   newClockPeriod = timer.read_us();
   metronome.init();
 
-  ticker.attach_us(&tick, (1000000/2) / PPQ); //approx 120 bpm
+  ticker.attach_us(&tick, (1000000/2) / PPQN); //approx 120 bpm
   extClockInput.rise(&extTick);
 
   degrees.init();

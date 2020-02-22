@@ -3,8 +3,9 @@
 
 void GlobalControl::init() {
   cap->init();
-  display.init();
+  display.init(0);
   encoder.init(0, 99);
+  encoder.setValue(DEFAULT_CHANNEL_LOOP_STEPS);
 }
 
 

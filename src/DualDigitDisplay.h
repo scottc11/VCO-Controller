@@ -14,9 +14,13 @@ public:
     // nothing
   }
 
-  void init() {    
-    shiftReg.writeByte16(0b0000000000000000);
-    shiftReg.pulseLatch();
+  void init(int initialDisplayValue = 0) {    
+    if (initialDisplayValue != 0) {
+      write(initialDisplayValue);
+    } else {
+      shiftReg.writeByte16(0b0000000000000000); // all leds off
+      shiftReg.pulseLatch();
+    }
   }
 
   void write(int number) {

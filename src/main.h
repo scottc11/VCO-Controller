@@ -5,7 +5,7 @@
 
 #define LOW                  0
 #define HIGH                 1
-#define PPQ                  24
+#define PPQN                  24
 
 #define MIDI_BAUD            31250
 #define MIDI_TX              PA_2

@@ -5,7 +5,7 @@ void Metronome::init() {
   bpm = 120;
   currStep = 1;
   numSteps = 8;
-  ticksPerStep = PPQ;
+  ticksPerStep = PPQN;
   currTick = 1;
   pulseDuration = 5;
 }
@@ -33,19 +33,4 @@ void Metronome::tick() {
       startLed->write(HIGH);
     }
   }
-}
-
-void Metronome::handleEncoder() {
-  // Encoder_Status encoderStatus = Encoder_Get_Status();
-
-  // switch(encoderStatus) {
-  //   case Incremented:
-  //     if (numSteps < 16) { numSteps += 1; }
-  //     break;
-  //   case Decremented:
-  //     if (numSteps > 1) { numSteps -= 1; }
-  //     break;
-  //   case Neutral:
-  //     break;
-  // }
 }

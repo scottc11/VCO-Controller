@@ -58,7 +58,29 @@ void TouchChannel::poll() {
   }
 
   if (mode == LOOPER && hasEventInQueue() && ETL ) {
-    handleQueuedEvent(metronome->position);
+    handleQueuedEvent(currPosition);
+  }
+}
+
+void TouchChannel::calculateLoopLength() {
+  loopLength = numLoopSteps * PPQN;
+}
+
+// advance the channels loop position by 1 'tick', a 'tick' being a single Pulse Per Quarter Note or "PPQN"
+void TouchChannel::advanceLoopPosition() {
+  currTick += 1;
+  currPosition += 1;
+  
+  // when currTick exceeds PPQN, reset to 1 and increment currStep by 1
+  if (currTick > PPQN ) {
+    currTick = 1;  // NOTE: maybe experiment with setting this value to '0' 🤔
+    currStep += 1;
+    
+    // when currStep exceeds number of steps in loop, reset currStep and currPosition to 1
+    if (currStep > numLoopSteps) {
+      currStep = 1;
+      currPosition = 1;
+    }
   }
 }
 
@@ -95,7 +117,7 @@ void TouchChannel::handleTouch() {
             break;
           case LOOPER:
             ETL = false; // deactivate event triggering loop
-            createEvent(metronome->position, i);
+            createEvent(currPosition, i);
             writeLed(i, HIGH);
             break;
         }
@@ -110,7 +132,7 @@ void TouchChannel::handleTouch() {
           case QUANTIZER:
             break;
           case LOOPER:
-            addEvent(metronome->position);
+            addEvent(currPosition);
             writeLed(i, LOW);
             ETL = true; // activate event triggering loop
             break;

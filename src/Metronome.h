@@ -13,8 +13,8 @@ class Metronome {
     uint8_t bpm;
     uint8_t currStep;          // used to calculate an events position
     uint8_t numSteps;          // used to calculate total clock loop length (in ticks)
-    uint8_t ticksPerStep;      // equal to PPQ
-    uint8_t currTick;          // relative to PPQ
+    uint8_t ticksPerStep;      // equal to PPQN
+    uint8_t currTick;          // relative to PPQN
     uint16_t position;         // the clocks current position with the loop. Will be a multiplication of currTick and currStep
     uint32_t loopStart;        // time when the first step occurs on the system clock
     uint32_t pulseDuration;    // how long, in microseconds, the clock led will be lit

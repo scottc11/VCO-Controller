@@ -66,6 +66,10 @@ class TouchChannel {
     volatile bool touchDetected;
     
     int numLoopSteps;
+    int currStep;                  // the current 'step' of the loop
+    int currPosition;              // the current position in the loop measured by PPQN
+    int currTick;                  // the current PPQN position of the step (0..PPQN)
+    int loopLength;                // how many PPQN (in total) the loop contains
 
     uint8_t ledStates;
     unsigned int currCVInputValue; // 16 bit value (0..65,536)
@@ -120,6 +124,8 @@ class TouchChannel {
       currOctave = 0;
       prevOctave = 0;
       currNoteState = OFF;
+      currStep = 1;
+      currPosition = 1;
       touched = 0;
       prevTouched = 0;
       channel = _channel;
@@ -140,6 +146,8 @@ class TouchChannel {
     void handleSwitchInterupt();
     void handleModeSwitch(int state);
     void handleOctaveSwitch(int state);
+    void advanceLoopPosition();
+    void calculateLoopLength();
     int calculateMIDINoteValue(int index, int octave);
     int calculateDACNoteValue(int index, int octave);
     void triggerNote(int index, int octave, NoteState state);
