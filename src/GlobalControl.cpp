@@ -19,6 +19,10 @@ void GlobalControl::poll() {
   }
 }
 
+
+/**
+ * CHANNEL SELECT
+*/
 void GlobalControl::selectChannel(int channel) {
   for (int i = 0; i < 4; i++) {
     if (i != channel) {
@@ -34,6 +38,10 @@ void GlobalControl::selectChannel(int channel) {
   display.write(encoder.value);
 }
 
+
+/**
+ * HANDLE ENCODER ROTATION
+*/
 void GlobalControl::handleEncoderRotation() {
   int value = encoder.getValue();
 
@@ -46,6 +54,9 @@ void GlobalControl::handleEncoderRotation() {
   }
 }
 
+/**
+ * HANDLE TOUCH EVENT
+*/
 void GlobalControl::handleTouchEvent() {
   currTouched = cap->touched();
   if (currTouched != prevTouched) {
@@ -61,6 +72,10 @@ void GlobalControl::handleTouchEvent() {
   }
 }
 
+/**
+ * HANDLE TOUCH TOUCHED
+ * 
+*/
 void GlobalControl::handleTouch(int pad) {
   
   switch (pad) {
@@ -84,11 +99,18 @@ void GlobalControl::handleTouch(int pad) {
   }
 }
 
+/**
+ * HANDLE TOUCH RELEASE
+*/
 void GlobalControl::handleRelease(int pad) {
   // set display back to global clock
   display.write(metronome->numSteps);
 }
 
+
+/**
+ * HANDLE FREEZE
+*/
 void GlobalControl::handleFreeze() {
   if (currTouched & 0b00000001) {  // if no other pads being touched
     // freeze all channels
