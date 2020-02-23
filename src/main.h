@@ -21,6 +21,8 @@
 #define DAC_A_CS             PB_12
 #define DAC_B_CS             PC_7
 
+#define EXT_CLOCK_INPUT      PA_9
+
 #define DISPLAY_CLK          PB_2
 #define DISPLAY_DATA         PB_10
 #define DISPLAY_LATCH        PB_1
@@ -30,38 +32,35 @@
 #define ADC_C                PA_6
 #define ADC_D                PB_0
 
-#define GATE_OUT_A           PA_9   // HERE
+#define GATE_OUT_A           PC_6
 #define GATE_OUT_B           PA_10
 #define GATE_OUT_C           PA_11
 #define GATE_OUT_D           PA_12
 
-#define CTRL_LED_A           PC_3   // HERE
-#define CTRL_LED_B           PC_2   // HERE
+#define CTRL_LED_A           PC_3
+#define CTRL_LED_B           PC_2
 #define CTRL_LED_C           PC_1
 #define CTRL_LED_D           PC_0
 
 #define LOOP_START_LED_PIN   PC_4
 #define LOOP_STEP_LED_PIN    PC_5
 
-
-#define ENCODER_CHAN_B       PA_7
-
-// INTERUPT PINS
-#define ENCODER_BTN          PA_0
 #define ENCODER_CHAN_A       PA_1
-#define TOUCH_INT_D          PB_4
-#define TOUCH_INT_C          PB_5
-#define TOUCH_INT_B          PB_6
-#define EXT_CLOCK_INPUT      PC_6
+#define ENCODER_CHAN_B       PA_7
+#define ENCODER_BTN          PA_0
+
 #define TOUCH_INT_A          PB_7
-#define CHAN_INT_D           PC_8
-#define CHAN_INT_B           PC_10
-#define CHAN_INT_A           PC_11
-#define DEGREES_INT          PC_12
+#define TOUCH_INT_B          PB_6
+#define TOUCH_INT_C          PB_5
+#define TOUCH_INT_D          PB_4
 #define TOUCH_INT_CTRL       PC_13
+
+#define CHAN_INT_A           PC_11
+#define CHAN_INT_B           PC_10
 #define CHAN_INT_C           PA_15
+#define CHAN_INT_D           PC_8
 
-
+#define DEGREES_INT          PC_12
 
 
 #define TCA9544A_ADDR          0x70 // 1110000

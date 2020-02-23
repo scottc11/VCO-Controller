@@ -57,7 +57,7 @@ void TouchChannel::poll() {
     }
   }
 
-  if (mode == LOOPER && hasEventInQueue() && ETL ) {
+  if (mode == LOOPER && hasEventInQueue() && enableLoop ) {
     handleQueuedEvent(currPosition);
   }
 }
@@ -129,7 +129,7 @@ void TouchChannel::handleTouch() {
           case QUANTIZER:
             break;
           case LOOPER:
-            ETL = false; // deactivate event triggering loop
+            enableLoop = false; // deactivate event triggering loop
             createEvent(currPosition, i);
             triggerNote(i, currOctave, ON);
             break;
@@ -147,7 +147,7 @@ void TouchChannel::handleTouch() {
           case LOOPER:
             addEvent(currPosition);
             triggerNote(i, currOctave, OFF);
-            ETL = true; // activate event triggering loop
+            enableLoop = true; // activate event triggering loop
             break;
         }
       }
@@ -198,19 +198,19 @@ void TouchChannel::handleModeSwitch(int state) {
   
   switch (state) {
     case 0b00000011:
-      ETL = false;
+      enableLoop = false;
       mode = MONOPHONIC;
       if (currNoteState == ON) {
         triggerNote(prevNoteIndex, currOctave, ON);
       }
       break;
     case 0b00000010:
-      ETL = false;
+      enableLoop = false;
       mode = QUANTIZER;
       triggerNote(prevNoteIndex, currOctave, OFF);
       break;
     case 0b00000001:
-      ETL = true;
+      enableLoop = true;
       mode = LOOPER;
       triggerNote(prevNoteIndex, currOctave, OFF);
       break;
@@ -291,6 +291,96 @@ void TouchChannel::updateLeds(uint8_t touched) {
 void TouchChannel::setOctaveLed(int octave) {
   int state = 1 << (octave + 4);
   io->digitalWrite(MCP23017_PORTB, state);
+}
+
+void TouchChannel::triggerNote(int index, int octave, NoteState state) {
+  switch (state) {
+    case ON:
+      // if mideNoteState == ON, midi->sendNoteOff(prevNoteIndex, prevOctave)
+      currNoteIndex = index;
+      currNoteState = ON;
+      gateOut.write(HIGH);
+      writeLed(index, HIGH);
+      dac->write_u12(dacChannel, calculateDACNoteValue(index, octave));
+      midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
+      break;
+    case OFF:
+      currNoteState = OFF;
+      gateOut.write(LOW);
+      writeLed(index, LOW);
+      midi->sendNoteOff(channel, calculateMIDINoteValue(index, octave), 100);
+      wait_us(5);
+      break;
+  }
+  prevOctave = octave;
+  prevNoteIndex = index;
+}
+
+int TouchChannel::calculateDACNoteValue(int index, int octave) {
+  return DAC_NOTE_MAP[index][degrees->switchStates[index]] + DAC_OCTAVE_MAP[octave];
+}
+
+int TouchChannel::calculateMIDINoteValue(int index, int octave) {
+  return MIDI_NOTE_MAP[index][degrees->switchStates[index]] + MIDI_OCTAVE_MAP[octave];
+}
+
+// enableFreeze(), disableFreeze(), handleFreeze()
+void TouchChannel::freeze() {
+  // hold all gates in their current state
+  switch (mode) {
+    case MONOPHONIC:
+      break;
+    case QUANTIZER:
+      // turn quantizer off
+      break;
+    case LOOPER:
+      enableLoop = false;
+      break;
+  }
+}
+
+void TouchChannel::reset() {
+  switch (mode) {
+    case MONOPHONIC:
+      break;
+    case QUANTIZER:
+      break;
+    case LOOPER:
+      // NOTE: you probably don't want to reset the 'tick' value, as it would make it very dificult to line up with the global clock;
+      currPosition = 1;
+      currStep = 1;
+      break;
+  }
+}
+
+void TouchChannel::setNumLoopSteps(int num) {
+  numLoopSteps = num;
+}
+
+
+// ---------------------------------------------------------------
+// LOOPER MODE FUNCTIONS
+
+bool TouchChannel::hasEventInQueue() {
+  return queued ? true : false;
+}
+
+void TouchChannel::handleQueuedEvent(int position) {
+  if (queued->triggered == false ) {
+    if (position == queued->startPos) {
+      triggerNote(queued->index, currOctave, ON);
+      queued->triggered = true;
+    }
+  }
+  else if (position == queued->endPos) {
+    triggerNote(queued->index, currOctave, OFF);
+    queued->triggered = false;
+    if (queued->next != NULL) {
+      queued = queued->next;
+    } else {
+      queued = head;
+    }
+  }
 }
 
 void TouchChannel::createEvent(int position, int noteIndex) {
@@ -380,88 +470,20 @@ void TouchChannel::addEvent(int position) {
 
 }
 
-
-bool TouchChannel::hasEventInQueue() {
-  if (queued) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-void TouchChannel::handleQueuedEvent(int position) {
-  if (queued->triggered == false ) {
-    if (position == queued->startPos) {
-      triggerNote(queued->index, currOctave, ON);
-      queued->triggered = true;
-    }
-  }
-  else if (position == queued->endPos) {
-    triggerNote(queued->index, currOctave, OFF);
-    queued->triggered = false;
-    if (queued->next != NULL) {
-      queued = queued->next;
-    } else {
-      queued = head;
-    }
-  }
-}
-
-void TouchChannel::triggerNote(int index, int octave, NoteState state) {
-  switch (state) {
-    case ON:
-      // if mideNoteState == ON, midi->sendNoteOff(prevNoteIndex, prevOctave)
-      currNoteIndex = index;
-      currNoteState = ON;
-      gateOut.write(HIGH);
-      writeLed(index, HIGH);
-      dac->write_u12(dacChannel, calculateDACNoteValue(index, octave));
-      midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
-      break;
-    case OFF:
-      currNoteState = OFF;
-      gateOut.write(LOW);
-      writeLed(index, LOW);
-      midi->sendNoteOff(channel, calculateMIDINoteValue(index, octave), 100);
-      wait_us(5);
-      break;
-  }
-  prevOctave = octave;
-  prevNoteIndex = index;
-}
-
-int TouchChannel::calculateDACNoteValue(int index, int octave) {
-  return DAC_NOTE_MAP[index][degrees->switchStates[index]] + DAC_OCTAVE_MAP[octave];
-}
-
-int TouchChannel::calculateMIDINoteValue(int index, int octave) {
-  return MIDI_NOTE_MAP[index][degrees->switchStates[index]] + MIDI_OCTAVE_MAP[octave];
-}
-
-// enableFreeze(), disableFreeze(), handleFreeze()
-void TouchChannel::freeze() {
-  switch (mode) {
-    case MONOPHONIC:
-      break;
-    case QUANTIZER:
-      // turn quantizer off
-      break;
-    case LOOPER:
-      break;
-  }
-}
-
-void TouchChannel::reset() {
-  switch (mode) {
-    case MONOPHONIC:
-      break;
-    case QUANTIZER:
-      break;
-    case LOOPER:
-      break;
-  }
-}
-
-void TouchChannel::setNumLoopSteps(int num) {
-  numLoopSteps = num;
-}
+/**
+ * MODES:
+ * 
+ * Each mode should have additional modes within it for handling the GATE output.
+ * 
+ * MONOPHONIC mode 
+ * the global control display should show divisions of numbers -> 1, 2, 4, 8, 16, 32, 64
+ * each number represents how frequent the date will be triggered relative to the clock
+ * there should be some way to do triplets
+ * 
+ * another gate mode would be to trigger a gate on touch/release (default)
+ * 
+ *
+ * LOOPER mode
+ * one mode would output gates similiar to monophonic mode
+ * the other would output gates as events occur 
+*/

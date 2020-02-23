@@ -37,6 +37,7 @@ public:
   void poll();
   void selectChannel(int channel);
   void handleFreeze();
+  void handleReset();
   void handleTouch(int pad);
   void handleRelease(int pad);
   void handleTouchEvent();
@@ -47,7 +48,7 @@ public:
 private:
   enum PadNames {
     CTRL_FREEZE = 0,
-    CTRL_ALT = 1,
+    CTRL_RESET = 1,
     CTRL_A = 5,
     CTRL_B = 4,
     CTRL_C = 3,

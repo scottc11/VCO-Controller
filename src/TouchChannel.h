@@ -51,7 +51,7 @@ class TouchChannel {
     int channel;                     // 0 based index to represent channel
     bool isSelected;
     Mode mode;                       // which mode channel is currently in
-    bool ETL = false;                // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
+    bool enableLoop = false;                // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
     DigitalOut gateOut;              // gate output pin
     DigitalOut ctrlLed;              // via global controls
     Metronome *metronome;
@@ -67,9 +67,9 @@ class TouchChannel {
     volatile bool touchDetected;
     
     int numLoopSteps;
-    int currStep;                  // the current 'step' of the loop
-    int currPosition;              // the current position in the loop measured by PPQN
-    int currTick;                  // the current PPQN position of the step (0..PPQN)
+    int currStep;                  // the current 'step' of the loop (lowest value == 1)
+    int currPosition;              // the current position in the loop measured by PPQN (lowest value == 1)
+    int currTick;                  // the current PPQN position of the step (0..PPQN) (lowest value == 1)
     int loopLength;                // how many PPQN (in total) the loop contains
 
     uint8_t ledStates;

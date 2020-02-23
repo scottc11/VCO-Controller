@@ -1,5 +1,11 @@
 #include "GlobalControl.h"
 
+/**
+ * TODO:
+ * clear button for loop mode
+ * reset button for loop mode
+ * freeze button
+*/
 
 void GlobalControl::init() {
   cap->init();
@@ -44,14 +50,8 @@ void GlobalControl::selectChannel(int channel) {
 */
 void GlobalControl::handleEncoderRotation() {
   int value = encoder.getValue();
-
-  if (currTouched != 0x00) {
-    channels[selectedChannel]->setNumLoopSteps(value);
-    display.write(channels[selectedChannel]->numLoopSteps);
-  } else {
-    metronome->setNumberOfSteps(value);
-    display.write(metronome->numSteps);
-  }
+  channels[selectedChannel]->setNumLoopSteps(value);
+  display.write(channels[selectedChannel]->numLoopSteps);
 }
 
 /**
@@ -82,7 +82,8 @@ void GlobalControl::handleTouch(int pad) {
     case CTRL_FREEZE:
       handleFreeze();
       break;
-    case CTRL_ALT:
+    case CTRL_RESET:
+      handleReset();
       break;
     case CTRL_A:
       selectChannel(0);
@@ -103,8 +104,20 @@ void GlobalControl::handleTouch(int pad) {
  * HANDLE TOUCH RELEASE
 */
 void GlobalControl::handleRelease(int pad) {
-  // set display back to global clock
-  display.write(metronome->numSteps);
+  switch (pad) {
+    case CTRL_FREEZE:
+      break;
+    case CTRL_RESET:
+      break;
+    case CTRL_A:
+      break;
+    case CTRL_B:
+      break;
+    case CTRL_C:
+      break;
+    case CTRL_D:
+      break;
+  }
 }
 
 
@@ -118,6 +131,20 @@ void GlobalControl::handleFreeze() {
     channels[1]->freeze();
     channels[2]->freeze();
     channels[3]->freeze();
+  }
+}
+
+
+/**
+ * HANDLE RESET
+*/
+void GlobalControl::handleReset() {
+  if (currTouched & 0b00000010) {  // if no other pads being touched
+    // freeze all channels
+    channels[0]->reset();
+    channels[1]->reset();
+    channels[2]->reset();
+    channels[3]->reset();
   }
 }
 
