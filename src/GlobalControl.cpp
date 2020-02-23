@@ -80,7 +80,7 @@ void GlobalControl::handleTouch(int pad) {
   
   switch (pad) {
     case CTRL_FREEZE:
-      handleFreeze();
+      handleFreeze(true);
       break;
     case CTRL_RESET:
       handleReset();
@@ -106,6 +106,7 @@ void GlobalControl::handleTouch(int pad) {
 void GlobalControl::handleRelease(int pad) {
   switch (pad) {
     case CTRL_FREEZE:
+      handleFreeze(false);
       break;
     case CTRL_RESET:
       break;
@@ -124,14 +125,12 @@ void GlobalControl::handleRelease(int pad) {
 /**
  * HANDLE FREEZE
 */
-void GlobalControl::handleFreeze() {
-  if (currTouched & 0b00000001) {  // if no other pads being touched
-    // freeze all channels
-    channels[0]->freeze();
-    channels[1]->freeze();
-    channels[2]->freeze();
-    channels[3]->freeze();
-  }
+void GlobalControl::handleFreeze(bool enable) {
+  // freeze all channels
+  channels[0]->freeze(enable);
+  channels[1]->freeze(enable);
+  channels[2]->freeze(enable);
+  channels[3]->freeze(enable);
 }
 
 
@@ -139,12 +138,10 @@ void GlobalControl::handleFreeze() {
  * HANDLE RESET
 */
 void GlobalControl::handleReset() {
-  if (currTouched & 0b00000010) {  // if no other pads being touched
-    // freeze all channels
-    channels[0]->reset();
-    channels[1]->reset();
-    channels[2]->reset();
-    channels[3]->reset();
-  }
+  // reset all channels
+  channels[0]->reset();
+  channels[1]->reset();
+  channels[2]->reset();
+  channels[3]->reset();
 }
 

@@ -152,7 +152,7 @@ class TouchChannel {
     int calculateMIDINoteValue(int index, int octave);
     int calculateDACNoteValue(int index, int octave);
     void triggerNote(int index, int octave, NoteState state);
-    void freeze();
+    void freeze(bool enable);
     void reset();
     void createEvent(int position, int noteIndex);
     void addEvent(int position);

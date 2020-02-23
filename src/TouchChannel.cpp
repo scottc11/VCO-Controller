@@ -324,8 +324,12 @@ int TouchChannel::calculateMIDINoteValue(int index, int octave) {
   return MIDI_NOTE_MAP[index][degrees->switchStates[index]] + MIDI_OCTAVE_MAP[octave];
 }
 
-// enableFreeze(), disableFreeze(), handleFreeze()
-void TouchChannel::freeze() {
+
+/**
+ * FREEZE
+ * takes boolean to either freeze or unfreeze
+*/ 
+void TouchChannel::freeze(bool freeze) {
   // hold all gates in their current state
   switch (mode) {
     case MONOPHONIC:
@@ -334,7 +338,11 @@ void TouchChannel::freeze() {
       // turn quantizer off
       break;
     case LOOPER:
-      enableLoop = false;
+      if (freeze == true) {
+        enableLoop = false;
+      } else {
+        enableLoop = true;
+      }
       break;
   }
 }
@@ -372,13 +380,15 @@ void TouchChannel::handleQueuedEvent(int position) {
       queued->triggered = true;
     }
   }
-  else if (position == queued->endPos) {
-    triggerNote(queued->index, currOctave, OFF);
-    queued->triggered = false;
-    if (queued->next != NULL) {
-      queued = queued->next;
-    } else {
-      queued = head;
+  else {
+    if (position == queued->endPos) {
+      triggerNote(queued->index, currOctave, OFF);
+      queued->triggered = false;
+      if (queued->next != NULL) {
+        queued = queued->next;
+      } else {
+        queued = head;
+      }
     }
   }
 }
