@@ -36,8 +36,6 @@ class TouchChannel {
       ON,
       OFF,
       SUSTAIN,
-      PREV_ON,
-      PREV_OFF,
     };
 
     enum Mode {
@@ -125,7 +123,9 @@ class TouchChannel {
       currOctave = 0;
       prevOctave = 0;
       currNoteState = OFF;
+      numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
       currStep = 1;
+      currTick = 1;
       currPosition = 1;
       touched = 0;
       prevTouched = 0;

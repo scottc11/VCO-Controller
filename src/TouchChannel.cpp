@@ -2,7 +2,6 @@
 
 
 void TouchChannel::init() {
-  numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
   touch->init();
   
   if (!touch->isConnected()) {
@@ -11,7 +10,6 @@ void TouchChannel::init() {
   }
   touch->calibrate();
   touch->clearInterupt();
-
 
   io->init();
   io->setDirection(MCP23017_PORTA, 0x00);           // set all of the PORTA pins to output
@@ -32,6 +30,11 @@ void TouchChannel::init() {
   dac->referenceMode(dacChannel, MCP4922::REF_UNBUFFERED);
   dac->gainMode(dacChannel, MCP4922::GAIN_1X);
   dac->powerMode(dacChannel, MCP4922::POWER_NORMAL);
+
+  currNoteIndex = 0;
+  currOctave = 0;
+  dac->write_u12(dacChannel, calculateDACNoteValue(currNoteIndex, currOctave));
+
 }
 
 // HANDLE ALL INTERUPT FLAGS
@@ -62,11 +65,18 @@ void TouchChannel::poll() {
   }
 }
 
+/**
+ * CALCULATE LOOP LENGTH
+*/
 void TouchChannel::calculateLoopLength() {
   loopLength = numLoopSteps * PPQN;
 }
 
-// advance the channels loop position by 1 'tick', a 'tick' being a single Pulse Per Quarter Note or "PPQN"
+/**
+ * ADVANCE LOOP POSITION
+ * advance the channels loop position by 1 'tick', a 'tick' being a single Pulse Per Quarter Note or "PPQN"
+*/
+
 void TouchChannel::advanceLoopPosition() {
   currTick += 1;
   currPosition += 1;
@@ -80,7 +90,7 @@ void TouchChannel::advanceLoopPosition() {
   }
 
   // when currTick exceeds PPQN, reset to 1 and increment currStep by 1
-  if (currTick > PPQN ) {
+  if (currTick > PPQN) {
     currTick = 1;  // NOTE: maybe experiment with setting this value to '0' 🤔
     currStep += 1;
     
@@ -97,6 +107,9 @@ void TouchChannel::advanceLoopPosition() {
   }
 }
 
+/**
+ * HANDLE SWITCH INTERUPT
+*/
 void TouchChannel::handleSwitchInterupt() {
   wait_us(5); // debounce
   currSwitchStates = readSwitchStates();
@@ -200,9 +213,7 @@ void TouchChannel::handleModeSwitch(int state) {
     case 0b00000011:
       enableLoop = false;
       mode = MONOPHONIC;
-      if (currNoteState == ON) {
-        triggerNote(prevNoteIndex, currOctave, ON);
-      }
+      triggerNote(currNoteIndex, currOctave, ON);
       break;
     case 0b00000010:
       enableLoop = false;
@@ -236,10 +247,7 @@ void TouchChannel::handleOctaveSwitch(int state) {
   if (state == OCTAVE_UP || state == OCTAVE_DOWN) {  // only want this to happen once
     switch (mode) {
       case MONOPHONIC:
-        if (currNoteState == ON) {
-          triggerNote(prevNoteIndex, prevOctave, OFF);
-          triggerNote(prevNoteIndex, currOctave, ON);
-        }
+        triggerNote(currNoteIndex, currOctave, ON);
         break;
       case QUANTIZER:
         break;
@@ -253,10 +261,7 @@ void TouchChannel::handleOctaveSwitch(int state) {
 void TouchChannel::handleDegreeChange() {
   switch (mode) {
     case MONOPHONIC:
-        if (currNoteState == ON) {
-          triggerNote(prevNoteIndex, currOctave, OFF);
-          triggerNote(prevNoteIndex, currOctave, ON);
-        }
+      triggerNote(currNoteIndex, currOctave, ON);
       break;
     case QUANTIZER:
       break;
@@ -298,16 +303,15 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state) {
     case ON:
       // if mideNoteState == ON, midi->sendNoteOff(prevNoteIndex, prevOctave)
       currNoteIndex = index;
-      currNoteState = ON;
-      gateOut.write(HIGH);
+      currOctave = octave;
+      writeLed(prevNoteIndex, LOW);
       writeLed(index, HIGH);
+      gateOut.write(HIGH);
       dac->write_u12(dacChannel, calculateDACNoteValue(index, octave));
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
     case OFF:
-      currNoteState = OFF;
       gateOut.write(LOW);
-      writeLed(index, LOW);
       midi->sendNoteOff(channel, calculateMIDINoteValue(index, octave), 100);
       wait_us(5);
       break;
@@ -366,8 +370,10 @@ void TouchChannel::setNumLoopSteps(int num) {
 }
 
 
-// ---------------------------------------------------------------
+
+// ========================================================================================================================
 // LOOPER MODE FUNCTIONS
+// ========================================================================================================================
 
 bool TouchChannel::hasEventInQueue() {
   return queued ? true : false;
