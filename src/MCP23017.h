@@ -94,8 +94,6 @@ private:
 
 		// IC setting
 		// bank/mirror/seqop/disslw/haen/odr/intpol/notimp
-		// must be set bank = 0 for using this library
-		// See MCP23017 datasheet
 		REG_IOCON = 0x0A,
 
 		// Pullup

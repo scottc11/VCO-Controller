@@ -22,7 +22,7 @@ void TouchChannel::init() {
 
   for (int i = 0; i < 8; i++) {
     this->updateLeds(leds[i]);
-    wait_ms(50);
+    wait_ms(25);
   }
   this->updateLeds(0x00);
   this->setOctaveLed(currOctave);
@@ -126,8 +126,11 @@ void TouchChannel::stepClock() {
  * HANDLE SWITCH INTERUPT
 */
 void TouchChannel::handleSwitchInterupt() {
-  wait_us(5); // debounce
+  
   currSwitchStates = readSwitchStates();
+  wait_us(5); // debounce
+  currSwitchStates = readSwitchStates(); // reading a second time because something is fucked
+  
   int modeSwitchState = currSwitchStates & 0b00000011;   // set first 6 bits to zero
   int octaveSwitchState = currSwitchStates & 0b00001100; // set first 4 bits, and last 2 bits to zero
   

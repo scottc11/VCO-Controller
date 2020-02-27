@@ -19,21 +19,22 @@ void Metronome::tick() {
     stepLed->write(LOW);
     startLed->write(LOW);
   }
+}
+
+void Metronome::step() {
+  currTick = 1;
+  currStep += 1;
+  stepLed->write(HIGH);
   
-  // reset tick count and increment step by 1
-  if (currTick > ticksPerStep) {
-    currTick = 1;
-    currStep += 1;
-    stepLed->write(HIGH);
-    
-    // reset step count / reset loop
-    if (currStep > numSteps) {
-      currStep = 1;
-      position = 1;
-      startLed->write(HIGH);
-    }
+  // reset step count / reset loop
+  if (currStep > numSteps) {
+    currStep = 1;
+    position = 1;
+    startLed->write(HIGH);
   }
 }
+
+
 
 void Metronome::setNumberOfSteps(int num) {
   numSteps = num;

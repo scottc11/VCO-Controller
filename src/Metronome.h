@@ -25,6 +25,7 @@ class Metronome {
 
     void init();
     void tick();
+    void step();
     void reset();
     void setNumberOfSteps(int num);
     void handleEncoder();

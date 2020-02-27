@@ -64,7 +64,7 @@ void extTick() {
   lastClockTimeStamp = newClockTimeStamp;
   newClockTimeStamp = timer.read_us();
   clockPeriod = newClockTimeStamp - lastClockTimeStamp;
-  
+  metronome.step();
   channelA.stepClock();
   channelB.stepClock();
   channelC.stepClock();
