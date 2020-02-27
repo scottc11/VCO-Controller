@@ -36,6 +36,7 @@ public:
   void init();
   void poll();
   void selectChannel(int channel);
+  void handleClearAllEvents();
   void handleFreeze(bool enable);
   void handleReset();
   void handleTouch(int pad);

@@ -64,11 +64,11 @@ class TouchChannel {
     volatile bool switchHasChanged;  // toggle switches interupt flag
     volatile bool touchDetected;
     
-    int numLoopSteps;
-    int currStep;                  // the current 'step' of the loop (lowest value == 1)
-    int currPosition;              // the current position in the loop measured by PPQN (lowest value == 1)
-    int currTick;                  // the current PPQN position of the step (0..PPQN) (lowest value == 1)
-    int loopLength;                // how many PPQN (in total) the loop contains
+    volatile int numLoopSteps;
+    volatile int currStep;                  // the current 'step' of the loop (lowest value == 1)
+    volatile int currPosition;              // the current position in the loop measured by PPQN (lowest value == 1)
+    volatile int currTick;                  // the current PPQN position of the step (0..PPQN) (lowest value == 1)
+    volatile int loopLength;                // how many PPQN (in total) the loop contains
 
     uint8_t ledStates;
     unsigned int currCVInputValue; // 16 bit value (0..65,536)
@@ -156,6 +156,8 @@ class TouchChannel {
     void triggerNote(int index, int octave, NoteState state);
     void freeze(bool enable);
     void reset();
+
+    // EVENT LOOP FUNCTIONS
     void createEvent(int position, int noteIndex);
     void addEvent(int position);
     bool hasEventInQueue();

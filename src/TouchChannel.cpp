@@ -126,11 +126,8 @@ void TouchChannel::stepClock() {
  * HANDLE SWITCH INTERUPT
 */
 void TouchChannel::handleSwitchInterupt() {
-  
+  wait_us(10); // debounce
   currSwitchStates = readSwitchStates();
-  wait_us(5); // debounce
-  currSwitchStates = readSwitchStates(); // reading a second time because something is fucked
-
   int modeSwitchState = currSwitchStates & 0b00000011;   // set first 6 bits to zero
   int octaveSwitchState = currSwitchStates & 0b00001100; // set first 4 bits, and last 2 bits to zero
   
@@ -377,7 +374,7 @@ void TouchChannel::reset() {
       break;
     case LOOPER:
       // NOTE: you probably don't want to reset the 'tick' value, as it would make it very dificult to line up with the global clock;
-      currPosition = 1;
+      currPosition = 0;
       currStep = 1;
       break;
   }
@@ -419,7 +416,7 @@ void TouchChannel::handleQueuedEvent(int position) {
 
 int TouchChannel::quantizePosition(int position) {
   
-  int pos = position < 24 ? 0 : PPQN * currStep;
+  int pos = position < PPQN ? 0 : PPQN * currStep;
 
   if (currTick < 6) { // set position to first tick in step
     return pos;
@@ -436,7 +433,7 @@ void TouchChannel::createEvent(int position, int noteIndex) {
   newEvent = new EventNode;
   newEvent->index = noteIndex;
   int startPosition = quantizePosition(position);
-  newEvent->startPos = startPosition;
+  newEvent->startPos = position;
   newEvent->triggered = false;
   newEvent->next = NULL;
 }
