@@ -44,22 +44,32 @@ TouchChannel channelD(3, GATE_OUT_D, CHAN_INT_D, TOUCH_INT_D, CTRL_LED_D, ADC_D,
 
 GlobalControl globalCTRL(&touchCTRL, TOUCH_INT_CTRL, DISPLAY_DATA, DISPLAY_CLK, DISPLAY_LATCH, ENCODER_CHAN_A, ENCODER_CHAN_B, ENCODER_BTN, &channelA, &channelB, &channelC, &channelD, &metronome);
 
-int newClockPeriod;
-int oldClockPeriod;
+int newClockTimeStamp;
+int lastClockTimeStamp;
 int clockPeriod;
 
 void tick() {
   metronome.tick();
-  channelA.advanceLoopPosition();
-  channelB.advanceLoopPosition();
-  channelC.advanceLoopPosition();
-  channelD.advanceLoopPosition();
+  channelA.tickClock();
+  channelB.tickClock();
+  channelC.tickClock();
+  channelD.tickClock();
 }
 
 void extTick() {
-  oldClockPeriod = newClockPeriod;
-  newClockPeriod = timer.read_us();
-  clockPeriod = newClockPeriod - oldClockPeriod;
+  // you need to advance every quarter note when an external clock signal is detected
+  // additionally, set the ticker timer to a division of the input pulse duration / PPQN
+  // the ticker will handle precise timing between quarter notes, and this interupt will advance each channels step
+
+  lastClockTimeStamp = newClockTimeStamp;
+  newClockTimeStamp = timer.read_us();
+  clockPeriod = newClockTimeStamp - lastClockTimeStamp;
+  
+  channelA.stepClock();
+  channelB.stepClock();
+  channelC.stepClock();
+  channelD.stepClock();
+
   ticker.attach_us(&tick, clockPeriod / PPQN);  // potentially write this as a flag and update in main loop
 }
 
@@ -78,7 +88,7 @@ int main() {
 
 
   timer.start();
-  newClockPeriod = timer.read_us();
+  newClockTimeStamp = timer.read_us();
   metronome.init();
 
   ticker.attach_us(&tick, (1000000/2) / PPQN); //approx 120 bpm

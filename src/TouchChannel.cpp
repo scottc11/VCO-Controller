@@ -60,6 +60,16 @@ void TouchChannel::poll() {
     }
   }
 
+  // clock is ticking, so for every tick per qaurter note, set gate high for a few ticks, then gate low
+
+  if (mode == MONOPHONIC) {
+    if (currTick == 1) {
+      this->gateOut.write(HIGH);
+    } else if (currTick == 3) {
+      this->gateOut.write(LOW);
+    }
+  }
+
   if (mode == LOOPER && hasEventInQueue() && enableLoop ) {
     handleQueuedEvent(currPosition);
   }
@@ -77,7 +87,7 @@ void TouchChannel::calculateLoopLength() {
  * advance the channels loop position by 1 'tick', a 'tick' being a single Pulse Per Quarter Note or "PPQN"
 */
 
-void TouchChannel::advanceLoopPosition() {
+void TouchChannel::tickClock() {
   currTick += 1;
   currPosition += 1;
   
@@ -92,17 +102,22 @@ void TouchChannel::advanceLoopPosition() {
   // when currTick exceeds PPQN, reset to 1 and increment currStep by 1
   if (currTick > PPQN) {
     currTick = 1;  // NOTE: maybe experiment with setting this value to '0' 🤔
-    currStep += 1;
+  }
+}
+
+void TouchChannel::stepClock() {
+  currTick = 1;
+  currStep += 1;
+  // when currStep exceeds number of steps in loop, reset currStep and currPosition to 1
+  if (currStep > numLoopSteps) {
+    currStep = 1;
+    currPosition = 1;
     
-    // when currStep exceeds number of steps in loop, reset currStep and currPosition to 1
-    if (currStep > numLoopSteps) {
-      currStep = 1;
-      currPosition = 1;
-      if (isSelected) {
-        ctrlLed.write(LOW);
-      } else {
-        ctrlLed.write(HIGH);
-      }
+    // signal end of loop via control led
+    if (isSelected) { 
+      ctrlLed.write(LOW);
+    } else {
+      ctrlLed.write(HIGH);
     }
   }
 }

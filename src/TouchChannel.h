@@ -147,7 +147,8 @@ class TouchChannel {
     void handleSwitchInterupt();
     void handleModeSwitch(int state);
     void handleOctaveSwitch(int state);
-    void advanceLoopPosition();
+    void tickClock();
+    void stepClock();
     void calculateLoopLength();
     int calculateMIDINoteValue(int index, int octave);
     int calculateDACNoteValue(int index, int octave);
