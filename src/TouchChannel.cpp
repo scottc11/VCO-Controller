@@ -100,18 +100,18 @@ void TouchChannel::tickClock() {
   }
 
   // when currTick exceeds PPQN, reset to 1 and increment currStep by 1
-  if (currTick > PPQN) {
-    currTick = 1;  // NOTE: maybe experiment with setting this value to '0' 🤔
+  if (currTick > PPQN - 1) {
+    currTick = 0;  // NOTE: maybe experiment with setting this value to '0' 🤔
   }
 }
 
 void TouchChannel::stepClock() {
-  currTick = 1;
+  currTick = 0;
   currStep += 1;
   // when currStep exceeds number of steps in loop, reset currStep and currPosition to 1
   if (currStep > numLoopSteps) {
     currStep = 1;
-    currPosition = 1;
+    currPosition = 0;
     
     // signal end of loop via control led
     if (isSelected) { 
@@ -130,7 +130,7 @@ void TouchChannel::handleSwitchInterupt() {
   currSwitchStates = readSwitchStates();
   wait_us(5); // debounce
   currSwitchStates = readSwitchStates(); // reading a second time because something is fucked
-  
+
   int modeSwitchState = currSwitchStates & 0b00000011;   // set first 6 bits to zero
   int octaveSwitchState = currSwitchStates & 0b00001100; // set first 4 bits, and last 2 bits to zero
   
@@ -417,16 +417,38 @@ void TouchChannel::handleQueuedEvent(int position) {
   }
 }
 
+int TouchChannel::quantizePosition(int position) {
+  
+  int pos = position < 24 ? 0 : PPQN * currStep;
+
+  if (currTick < 6) { // set position to first tick in step
+    return pos;
+  }
+  if (currTick >= 6 && currTick < 18 ) {
+    return pos + 12;
+  }
+  if (currTick >= 18) {
+    return pos + 24;
+  }
+}
+
 void TouchChannel::createEvent(int position, int noteIndex) {
   newEvent = new EventNode;
   newEvent->index = noteIndex;
-  newEvent->startPos = position;
+  int startPosition = quantizePosition(position);
+  newEvent->startPos = startPosition;
   newEvent->triggered = false;
   newEvent->next = NULL;
 }
 
 void TouchChannel::addEvent(int position) {
-  newEvent->endPos = position;
+  
+  if (position == newEvent->startPos) {
+    newEvent->endPos = position + EVENT_END_BUFFER;
+  } else {
+    newEvent->endPos = position;
+  }
+
   if (head == NULL) { // initialize the list
     head = newEvent;
     queued = head;

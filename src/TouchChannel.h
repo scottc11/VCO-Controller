@@ -125,8 +125,8 @@ class TouchChannel {
       currNoteState = OFF;
       numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
       currStep = 1;
-      currTick = 1;
-      currPosition = 1;
+      currTick = 0;
+      currPosition = 0;
       touched = 0;
       prevTouched = 0;
       channel = _channel;
@@ -149,6 +149,7 @@ class TouchChannel {
     void handleOctaveSwitch(int state);
     void tickClock();
     void stepClock();
+    int quantizePosition(int position);
     void calculateLoopLength();
     int calculateMIDINoteValue(int index, int octave);
     int calculateDACNoteValue(int index, int octave);
