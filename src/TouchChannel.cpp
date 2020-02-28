@@ -70,7 +70,7 @@ void TouchChannel::poll() {
     }
   }
 
-  if (mode == LOOPER && !events.empty() && enableLoop ) {
+  if (mode == LOOPER && !eventList.empty() && enableLoop ) {
     handleQueuedEvent(currPosition);
   }
 }
@@ -173,7 +173,7 @@ void TouchChannel::handleTouch() {
           case QUANTIZER:
             break;
           case LOOPER:
-            addEvent(currPosition);
+            addEventToList(currPosition);
             triggerNote(i, currOctave, OFF);
             enableLoop = true; // activate event triggering loop
             break;

@@ -68,8 +68,8 @@ class TouchChannel {
     volatile bool touchDetected;
     
     EventNode newEvent;                     // instead of creating a new object everytime a new event gets created, just modify this
-    list<EventNode> events;                 // std::list for holding event nodes
-    list<EventNode>::iterator queuedEvent;  
+    list<EventNode> eventList;              // std::list for holding event nodes
+    list<EventNode>::iterator queuedEvent;
     volatile int numLoopSteps;
     volatile int currStep;                  // the current 'step' of the loop (lowest value == 1)
     volatile int currPosition;              // the current position in the loop measured by PPQN (lowest value == 1)
@@ -160,7 +160,7 @@ class TouchChannel {
 
     // EVENT LOOP FUNCTIONS
     void createEvent(int position, int noteIndex);
-    void addEventToList(list<EventNode> *_list, int endPosition);
+    void addEventToList(int endPosition);
     bool hasEventInQueue();
     void handleQueuedEvent(int position);
 
