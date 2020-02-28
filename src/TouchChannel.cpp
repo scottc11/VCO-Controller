@@ -70,7 +70,7 @@ void TouchChannel::poll() {
     }
   }
 
-  if (mode == LOOPER && hasEventInQueue() && enableLoop ) {
+  if (mode == LOOPER && !events.empty() && enableLoop ) {
     handleQueuedEvent(currPosition);
   }
 }
