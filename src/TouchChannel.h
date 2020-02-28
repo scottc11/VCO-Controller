@@ -14,6 +14,8 @@
 #include "TCA9544A.h"
 #include "MIDI.h"
 
+using namespace std;
+
 class EventNode {
 public:
   EventNode() {};

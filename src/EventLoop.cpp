@@ -4,25 +4,21 @@
 // LOOPER MODE FUNCTIONS
 // ========================================================================================================================
 
-bool TouchChannel::hasEventInQueue() {
-  return queued ? true : false;
-}
-
 void TouchChannel::handleQueuedEvent(int position) {
-  if (queued->triggered == false ) {
-    if (position == queued->startPos) {
-      triggerNote(queued->index, currOctave, ON);
-      queued->triggered = true;
+  if (queuedEvent->triggered == false ) {
+    if (position == queuedEvent->startPos) {
+      triggerNote(queuedEvent->index, currOctave, ON);
+      queuedEvent->triggered = true;
     }
   }
   else {
-    if (position == queued->endPos) {
-      triggerNote(queued->index, currOctave, OFF);
-      queued->triggered = false;
-      if (queued->next != NULL) {
-        queued = queued->next;
+    if (position == queuedEvent->endPos) {
+      triggerNote(queuedEvent->index, currOctave, OFF);
+      queuedEvent->triggered = false;
+      if (next(queuedEvent)->exists) {
+        queuedEvent = next(queuedEvent);
       } else {
-        queued = head;
+        queuedEvent = eventList.begin();
       }
     }
   }
@@ -44,95 +40,90 @@ int TouchChannel::quantizePosition(int position) {
 }
 
 void TouchChannel::createEvent(int position, int noteIndex) {
-  newEvent = new EventNode;
-  newEvent->index = noteIndex;
-  int startPosition = quantizePosition(position);
-  newEvent->startPos = position;
-  newEvent->triggered = false;
-  newEvent->next = NULL;
+  newEvent.index = noteIndex;
+  newEvent.startPos = position;
+  newEvent.triggered = false;
+  newEvent.exists = true;
 }
 
-void TouchChannel::addEvent(int position) {
+void TouchChannel::addEventToList(int endPosition) {
   
-  if (position == newEvent->startPos) {
-    newEvent->endPos = position + EVENT_END_BUFFER;
+  if (endPosition == newEvent.startPos) {
+    newEvent.endPos = endPosition + EVENT_END_BUFFER;
   } else {
-    newEvent->endPos = position;
+    newEvent.endPos = endPosition;
   }
 
-  if (head == NULL) { // initialize the list
-    head = newEvent;
-    queued = head;
+  if (eventList.empty()) { // initialize the list
+    eventList.push_back(newEvent);
+    queuedEvent = eventList.begin();
   }
+
   // algorithm
   else {
     // iterate over all existing events in list, placing the new event in the list relative to those events
-    EventNode *iteration = head;
-    EventNode *prev = head;
-
-    while(iteration != NULL) {
+    for (list<EventNode>::iterator it = eventList.begin(); it != eventList.end(); it++) {
       
-      // OCCURS BEFORE ITERATION->START
-      if (newEvent->startPos < iteration->startPos) {
-        
-        // does the new event end before the iteration starts?
-        if (newEvent->endPos <= iteration->startPos) {
-          
-          // If iteration is head, reset head to new event
-          if (iteration == head) {
-            newEvent->next = iteration;
-            head = newEvent;
+      // OCCURS BEFORE ITERATOR->START
+      if (newEvent.startPos < it->startPos) {
+        // new event ends before the current iterations begins
+        if (newEvent.endPos < it->startPos) {
+          // If new event occurs before the first event in list, place at front of list
+          if (it == eventList.begin()) {
+            eventList.push_front(newEvent);
             break;
           }
-          
           // place inbetween the previous iteration and current iteration
           else {
-            prev->next = newEvent;
-            newEvent->next = iteration;
+            eventList.insert(it, newEvent);
             break;
           }
         }
-        
-        // newEvent overlaps the current iteration start? delete this iteration and set iteration to iteration->next
-        else {
-          if (iteration == head) { // if iteration is head, set head to the newEvent
-            head = newEvent;
-          } else {
-            prev->next = newEvent; // right here
-          }
+        // does newEvent end after the current iteration starts?
+        else if (newEvent.endPos >= it->startPos) {
           
-          EventNode *temp = iteration;
-          iteration = iteration->next;    // repoint to next iteration in loop
-          delete temp;                    // delete current iteration
-          queued = iteration ? iteration : head;
-          continue;                       // continue the while loop for further placement of newEvent
-        }
-      }
-      
-      // OCCURS AFTER ITERATION->START
-      else {
-        
-        // if the newEvent begins after the end of current iteration, move on to next iteration
-        if (newEvent->startPos > iteration->endPos) {
-          if (iteration->next) {
-            prev = iteration;
-            iteration = iteration->next;
+          if (next(it)->exists) { // if there is another event after this one
+            queuedEvent = next(it);  // update the queued event, as it will be the next one to be triggered after addEventToList() finishes executing
+            eventList.erase(it); // delete iteration and continue
             continue;
           }
-          iteration->next = newEvent;
-          break;
+          // delete this iteration and replace with new event
+          else {
+            queuedEvent = eventList.begin(); // set queued event to first in list
+            eventList.insert(it, newEvent);
+            eventList.erase(it);
+            break;
+          }
         }
-        
-        // if newEvent starts before iteration ends, update end position of current iteration and place after
-        else {
-          iteration->endPos = newEvent->startPos - 2;
-          prev = iteration;
-          iteration = iteration->next;
+      }
+
+      // OCCURS AFTER ITERATOR->START
+      else {
+        // if the newEvent starts after the end of current iteration
+        if (newEvent.startPos > it->endPos) {
+          
+          // if there is an event after the current iterator, continue through loop, else add new event to end of list
+          if (next(it)->exists) {
+            continue;
+          } else {
+            eventList.insert(next(it), newEvent);
+            break;
+          }
+        }
+
+        // if newEvent starts before iteration ends, update end position of current iteration and continue
+        else if (newEvent.startPos <= it->endPos) {
+          it->endPos = newEvent.startPos - 1;
+          if (next(it)->exists) {
+            continue;
+          } else {
+            queuedEvent = eventList.begin(); // set queued event to first in list
+            eventList.insert(next(it), newEvent); // add new event to end of list
+            break;
+          }
           continue;
         }
       }
-    } // END OF WHILE LOOP
+    }
   }
-  newEvent = NULL;
-
 }
