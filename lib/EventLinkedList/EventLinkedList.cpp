@@ -1,11 +1,47 @@
-#include "TouchChannel.h"
+#include <iostream>
 
-// ========================================================================================================================
-// LOOPER MODE FUNCTIONS
-// ========================================================================================================================
+#define PPQN  24
+#define EVENT_END_BUFFER 4
+
+using namespace std;
+
+typedef struct EventNode {
+  uint8_t index;             // note index between 0 and 7
+  uint16_t startPos;         // the point in time in which the EventNode occured
+  uint16_t endPos;           // the point in time the EventNode finishes
+  bool triggered;            // has the EventNode been triggered
+  struct EventNode *next;    // pointer to the 'next' EventNode to occur (linked list)
+} EventNode;
 
 
-int TouchChannel::length() {
+class EventLinkedList {
+public:
+
+  EventLinkedList() {
+    head = NULL;
+    newEvent = NULL;
+    queuedEvent = NULL;
+  }
+
+  EventNode* head;
+  EventNode* newEvent;       // to be created and deleted everytime a user presses event create button
+  EventNode* queuedEvent;    // the currently active / next / ensuing / succeeding event
+
+  volatile int numLoopSteps;
+  volatile int currStep;                  // the current 'step' of the loop (lowest value == 1)
+  volatile int currPosition;              // the current position in the loop measured by PPQN (lowest value == 1)
+  volatile int currTick;                  // the current PPQN position of the step (0..PPQN) (lowest value == 1)
+  volatile int loopLength;                // how many PPQN (in total) the loop contains
+
+  void clearEventList();
+  int length();
+  void createEvent(int position, int noteIndex);
+  void addEventToList(int endPosition);
+  void handleQueuedEvent(int position);
+};
+
+
+int EventLinkedList::length() {
   int32_t count = 0;
   EventNode *iteration = head;
   //loop until the end of the list is found
@@ -16,16 +52,28 @@ int TouchChannel::length() {
   return count;
 }
 
-void TouchChannel::handleQueuedEvent(int position) {
+void EventLinkedList::clearEventList() {
+  EventNode *iteration;
+  iteration = head;
+  while (iteration) {
+    EventNode *tmp = iteration;
+    iteration = iteration->next;
+    delete tmp;
+  }
+  head = NULL;
+  queuedEvent = NULL;
+}
+
+void EventLinkedList::handleQueuedEvent(int position) {
   if (queuedEvent->triggered == false ) {
     if (position == queuedEvent->startPos) {
-      triggerNote(queuedEvent->index, currOctave, ON);
+      // triggerNote(queuedEvent->index, currOctave, ON);
       queuedEvent->triggered = true;
     }
   }
   else {
     if (position == queuedEvent->endPos) {
-      triggerNote(queuedEvent->index, currOctave, OFF);
+      // triggerNote(queuedEvent->index, currOctave, OFF);
       queuedEvent->triggered = false;
       if (queuedEvent->next != NULL) {
         queuedEvent = queuedEvent->next;
@@ -38,7 +86,7 @@ void TouchChannel::handleQueuedEvent(int position) {
 
 
 
-void TouchChannel::createEvent(int position, int noteIndex) {
+void EventLinkedList::createEvent(int position, int noteIndex) {
   newEvent = new EventNode;
   newEvent->index = noteIndex;
   newEvent->startPos = position;
@@ -48,7 +96,7 @@ void TouchChannel::createEvent(int position, int noteIndex) {
 
 
 
-void TouchChannel::addEventToList(int endPosition) {
+void EventLinkedList::addEventToList(int endPosition) {
   if (endPosition == newEvent->startPos) {
     newEvent->endPos = endPosition + EVENT_END_BUFFER;
   } else {

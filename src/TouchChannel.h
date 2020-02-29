@@ -1,9 +1,6 @@
 #ifndef __TOUCH_CHANNEL_H
 #define __TOUCH_CHANNEL_H
 
-#include <iterator>
-#include <list>
-
 #include "main.h"
 #include "Metronome.h"
 #include "Degrees.h"
@@ -14,18 +11,14 @@
 #include "TCA9544A.h"
 #include "MIDI.h"
 
-using namespace std;
 
-class EventNode {
-public:
-  EventNode() {};
-  ~EventNode() {};
+typedef struct EventNode {
   uint8_t index;             // note index between 0 and 7
   uint16_t startPos;         // the point in time in which the EventNode occured
   uint16_t endPos;           // the point in time the EventNode finishes
-  bool triggered;            // has this EventNode been triggered yet?
-  bool exists;               // this is purely for the std::iterator use for determining if an object exists with next(), prev(), etc.
-};
+  bool triggered;            // has the EventNode been triggered
+  struct EventNode *next;    // pointer to the 'next' EventNode to occur (linked list)
+} EventNode;
 
 
 class TouchChannel {
@@ -49,6 +42,10 @@ class TouchChannel {
     };
 
   public:
+
+    EventNode* head;
+    EventNode* newEvent;       // to be created and deleted everytime a user presses event create button
+    EventNode* queuedEvent;    // the currently active / next / ensuing / succeeding event
   
     int channel;                     // 0 based index to represent channel
     bool isSelected;
@@ -69,9 +66,6 @@ class TouchChannel {
     volatile bool switchHasChanged;  // toggle switches interupt flag
     volatile bool touchDetected;
     
-    EventNode newEvent;                     // instead of creating a new object everytime a new event gets created, just modify this
-    list<EventNode> eventList;              // std::list for holding event nodes
-    list<EventNode>::iterator queuedEvent;
     volatile int numLoopSteps;
     volatile int currStep;                  // the current 'step' of the loop (lowest value == 1)
     volatile int currPosition;              // the current position in the loop measured by PPQN (lowest value == 1)
@@ -114,6 +108,10 @@ class TouchChannel {
       ctrlLed(ctrlLedPin),
       cvInput(cvInputPin) {
       
+      head = NULL;
+      newEvent = NULL;
+      queuedEvent = NULL;
+
       touch = touch_ptr;
       degrees = degrees_ptr;
       metronome = _clock;
@@ -161,9 +159,9 @@ class TouchChannel {
     void reset();
 
     // EVENT LOOP FUNCTIONS
+    int length();
     void createEvent(int position, int noteIndex);
     void addEventToList(int endPosition);
-    bool hasEventInQueue();
     void handleQueuedEvent(int position);
 
 };

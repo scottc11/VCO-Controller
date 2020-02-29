@@ -145,7 +145,6 @@ void EventList::addEventToList(int endPosition) {
             eventList.insert(next(it), newEvent); // add new event to end of list
             break;
           }
-          continue;
         }
       }
     }
