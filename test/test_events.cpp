@@ -172,6 +172,27 @@ void test_insert_at_front_and_overlap(void) {
   TEST_ASSERT_EQUAL(2, mylist.eventList.size());
 }
 
+void test_handle_queued_event(void) {
+  EventList mylist;
+  
+  mylist.createEvent(12, 1);
+  mylist.addEventToList(15);
+  
+  // queuedEvent should be the first event in list
+  TEST_ASSERT_TRUE(mylist.queuedEvent == mylist.eventList.begin());
+
+  // next should return false
+  TEST_ASSERT_FALSE(next(mylist.queuedEvent)->exists);
+
+  mylist.handleQueuedEvent(12);
+  TEST_ASSERT_TRUE(mylist.queuedEvent->triggered);
+
+  mylist.handleQueuedEvent(15);
+  TEST_ASSERT_EQUAL(1, mylist.eventList.size());
+
+  printList(&mylist);
+}
+
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     RUN_TEST(test_create_events);
@@ -181,6 +202,9 @@ int main(int argc, char **argv) {
     RUN_TEST(test_insert_double_overlapping_event);
     RUN_TEST(test_insert_at_front);
     RUN_TEST(test_insert_at_front_and_overlap);
+    
+    RUN_TEST(test_handle_queued_event);
+
     UNITY_END();
     return 0;
 }

@@ -16,7 +16,7 @@ void TouchChannel::handleQueuedEvent(int position) {
       triggerNote(queuedEvent->index, currOctave, OFF);
       queuedEvent->triggered = false;
       if (next(queuedEvent)->exists) {
-        queuedEvent = next(queuedEvent);
+        queuedEvent++;
       } else {
         queuedEvent = eventList.begin();
       }
@@ -106,7 +106,7 @@ void TouchChannel::addEventToList(int endPosition) {
           if (next(it)->exists) {
             continue;
           } else {
-            eventList.insert(next(it), newEvent);
+            eventList.push_back(newEvent);
             break;
           }
         }
@@ -118,7 +118,7 @@ void TouchChannel::addEventToList(int endPosition) {
             continue;
           } else {
             queuedEvent = eventList.begin(); // set queued event to first in list
-            eventList.insert(next(it), newEvent); // add new event to end of list
+            eventList.push_back(newEvent);   // add new event to end of list
             break;
           }
           continue;
