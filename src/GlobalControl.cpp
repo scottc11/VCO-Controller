@@ -11,6 +11,7 @@ void GlobalControl::init() {
   cap->init();
   display.init(channels[selectedChannel]->numLoopSteps);
   encoder.init(0, 99);
+  encoder.attachBtnCallback(callback(this, &GlobalControl::handleEncoderPressed));
   selectChannel(0);
 }
 
@@ -25,6 +26,10 @@ void GlobalControl::poll() {
   }
 }
 
+
+void GlobalControl::handleEncoderPressed() {
+  channels[selectedChannel]->clearEventList();
+}
 
 /**
  * CHANNEL SELECT

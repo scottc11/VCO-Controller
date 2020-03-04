@@ -17,6 +17,9 @@ public:
   InterruptIn touchInterupt;
   DualDigitDisplay display;
   RotaryEncoder encoder;
+
+  bool currBtnState;
+  bool prevBtnState;
   int selectedChannel;
   int currTouchedChannel;
   int currTouched;              // variable for holding the currently touched buttons
@@ -37,6 +40,7 @@ public:
   void poll();
   void selectChannel(int channel);
   void handleClearAllEvents();
+  void handleEncoderPressed();
   void handleFreeze(bool enable);
   void handleReset();
   void handleTouch(int pad);

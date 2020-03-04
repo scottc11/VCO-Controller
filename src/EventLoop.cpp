@@ -4,6 +4,18 @@
 // LOOPER MODE FUNCTIONS
 // ========================================================================================================================
 
+void TouchChannel::clearEventList() {
+  EventNode *iteration;
+  iteration = head;
+  while (iteration) {
+    EventNode *tmp = iteration;
+    iteration = iteration->next;
+    delete tmp;
+  }
+  head = NULL;
+  queuedEvent = NULL;
+}
+
 
 int TouchChannel::length() {
   int32_t count = 0;

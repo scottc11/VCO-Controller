@@ -326,6 +326,13 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state) {
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
     case OFF:
+      switch (mode) {
+        case LOOPER:
+          writeLed(index, LOW);
+          break;
+        default:
+          break;
+      }
       gateOut.write(LOW);
       midi->sendNoteOff(channel, calculateMIDINoteValue(index, octave), 100);
       wait_us(5);

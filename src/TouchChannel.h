@@ -159,6 +159,7 @@ class TouchChannel {
     void reset();
 
     // EVENT LOOP FUNCTIONS
+    void clearEventList();
     int length();
     void createEvent(int position, int noteIndex);
     void addEventToList(int endPosition);

@@ -14,14 +14,20 @@ public:
     COUNTERCLOCKWISE = 0,
   };
 
+  enum ButtonState {
+    PRESSED,
+    RELEASED
+  };
+
   InterruptIn channelA;
   DigitalIn channelB;
   InterruptIn button;
-  Direction direction;    // 0 or 1
-  bool btnState;          // non-blocking state of encoder button
+  Direction direction;             // 0 or 1
+  Callback<void()> _function;      // 
+  bool btnState;                   // non-blocking state of encoder button
   int position;
-  bool btnPressed;        // interupt flag
-  bool btnReleased;       // interupt flag
+  bool btnPressed;                 // interupt flag
+  bool btnReleased;                // interupt flag
   int maxValue;
   int minValue;
   int value;
@@ -39,6 +45,14 @@ public:
     // channelA.rise(callback(this, &RotaryEncoder::encode));
     button.fall(callback(this, &RotaryEncoder::btnPressCallback));
     button.rise(callback(this, &RotaryEncoder::btnReleaseCallback));
+  }
+
+  /**
+   * to attach a function     -->   attachBtnCallback(&myFunc)
+   * to attach a class method -->   attachBtnCallback(callback(this, &MyClass::myClassMethod))
+  */ 
+  void attachBtnCallback(Callback<void()> func) {
+    _function = func;
   }
 
   void poll() {
@@ -76,11 +90,11 @@ public:
   }
 
   void btnPressCallback() {
-    btnPressed = true;
+    _function();
   }
 
   void btnReleaseCallback() {
-    btnReleased = true;
+    _function();
   }
 
   bool btnIsPressed() {
