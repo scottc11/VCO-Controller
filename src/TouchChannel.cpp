@@ -99,18 +99,18 @@ void TouchChannel::tickClock() {
     }
   }
 
-  // when currTick exceeds PPQN, reset to 1 and increment currStep by 1
-  if (currTick > PPQN - 1) {
-    currTick = 0;  // NOTE: maybe experiment with setting this value to '0' 🤔
+  // when currTick exceeds PPQN, reset to 0
+  if (currTick >= PPQN) {
+    currTick = 0;
   }
 }
 
 void TouchChannel::stepClock() {
   currTick = 0;
   currStep += 1;
-  // when currStep exceeds number of steps in loop, reset currStep and currPosition to 1
-  if (currStep > numLoopSteps) {
-    currStep = 1;
+  // when currStep eqauls number of steps in loop, reset currStep and currPosition to 0
+  if (currStep >= numLoopSteps) {
+    currStep = 0;
     currPosition = 0;
     
     // signal end of loop via control led

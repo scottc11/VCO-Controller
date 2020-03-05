@@ -1,6 +1,6 @@
 #include <unity.h>
 #include <iostream>
-#include "EventLinkedList.cpp"
+#include "EventLinkedList.h"
 
 void setUp(void) {
   // set stuff up here
@@ -238,17 +238,17 @@ void test_loop_end_overlap() {
 void test_quantization_8th_notes() {
   EventLinkedList list;
   list.numLoopSteps = 8;
-  list.timeQuantizationMode = EventLinkedList::QUANT_8;
+  list.timeQuantizationMode = QUANT_8;
   
   // test event quantizes beginning of step
-  list.currStep = 1;
-  list.createEvent(26, 1);
+  list.currStep = 0;
+  list.createEvent(22, 1);
   list.addEventToList(88);
   TEST_ASSERT_EQUAL(24, list.head->startPos);
 
   // test event quantizes over to the next start of the step
   list.currStep = 3;
-  list.createEvent(78, 1);
+  list.createEvent(82, 1);
   list.addEventToList(88);
   TEST_ASSERT_EQUAL(84, list.head->next->startPos);
 
@@ -257,10 +257,6 @@ void test_quantization_8th_notes() {
   list.createEvent(142, 1);
   list.addEventToList(88);
   TEST_ASSERT_EQUAL(144, list.head->next->next->startPos);
-
-  list.currStep = 8;
-  list.createEvent(191, 1);
-  list.addEventToList(88);
 
   printList(&list);
 }

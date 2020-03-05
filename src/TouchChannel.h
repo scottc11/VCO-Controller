@@ -125,7 +125,7 @@ class TouchChannel {
       currOctave = 0;
       prevOctave = 0;
       numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
-      currStep = 1;
+      currStep = 0;
       currTick = 0;
       currPosition = 0;
       touched = 0;

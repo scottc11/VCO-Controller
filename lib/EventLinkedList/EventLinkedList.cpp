@@ -1,54 +1,4 @@
-#include <iostream>
-#include "QuantizeMethods.cpp"
-
-#define PPQN  24
-#define EVENT_END_BUFFER 4
-
-using namespace std;
-
-typedef struct EventNode {
-  uint8_t index;             // note index between 0 and 7
-  uint16_t startPos;         // the point in time in which the EventNode occured
-  uint16_t endPos;           // the point in time the EventNode finishes
-  bool triggered;            // has the EventNode been triggered
-  struct EventNode *next;    // pointer to the 'next' EventNode to occur (linked list)
-} EventNode;
-
-
-class EventLinkedList {
-public:  
-  enum QuantizeMode {
-    NONE,
-    QUANT_8,
-    QUANT_16,
-    QUANT_32,
-    QUANT_64,
-  };
-
-  EventLinkedList() {
-    head = NULL;
-    newEvent = NULL;
-    queuedEvent = NULL;
-  }
-
-  EventNode* head;
-  EventNode* newEvent;       // to be created and deleted everytime a user presses event create button
-  EventNode* queuedEvent;    // the currently active / next / ensuing / succeeding event
-  QuantizeMode timeQuantizationMode;
-  volatile int numLoopSteps;
-  volatile int currStep;                  // the current 'step' of the loop (lowest value == 1)
-  volatile int currPosition;              // the current position in the loop measured by PPQN (lowest value == 1)
-  volatile int currTick;                  // the current PPQN position of the step (0..PPQN) (lowest value == 1)
-  volatile int loopLength;                // how many PPQN (in total) the loop contains
-
-  void clearEventList();
-  int length();
-  void createEvent(int position, int noteIndex);
-  void addEventToList(int endPosition);
-  void handleQueuedEvent(int position);
-  int handleQuantization(int pos);
-};
-
+#include "EventLinkedList.h"
 
 int EventLinkedList::length() {
   int32_t count = 0;
@@ -93,26 +43,11 @@ void EventLinkedList::handleQueuedEvent(int position) {
   }
 }
 
-int EventLinkedList::handleQuantization(int pos) {
-  switch (timeQuantizationMode) {
-    case NONE:
-      return pos;
-    case QUANT_8:
-      return quantize8th(pos, currStep, numLoopSteps, PPQN);
-    case QUANT_16:
-      return pos;
-    case QUANT_32:
-      return pos;
-    case QUANT_64:
-      return pos;
-  }
-}
-
 
 void EventLinkedList::createEvent(int position, int noteIndex) {
   newEvent = new EventNode;
   newEvent->index = noteIndex;
-  newEvent->startPos = handleQuantization(position);
+  newEvent->startPos = quantize(timeQuantizationMode, position, currStep, numLoopSteps, PPQN);
   newEvent->triggered = false;
   newEvent->next = NULL;
 }
