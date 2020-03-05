@@ -97,8 +97,11 @@ void EventLinkedList::createEvent(int position, int noteIndex) {
 
 
 void EventLinkedList::addEventToList(int endPosition) {
-  if (endPosition == newEvent->startPos) {
-    newEvent->endPos = endPosition + EVENT_END_BUFFER;
+  
+  if (endPosition < newEvent->startPos ) {
+    newEvent->endPos = (numLoopSteps * PPQN) - 1;
+  } else if (endPosition == newEvent->startPos) {
+    newEvent->endPos = endPosition + EVENT_END_BUFFER > (numLoopSteps * PPQN) - 1 ? (numLoopSteps * PPQN) - 1 : endPosition + EVENT_END_BUFFER;
   } else {
     newEvent->endPos = endPosition;
   }

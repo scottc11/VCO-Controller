@@ -221,8 +221,26 @@ void test_delete_all_events() {
   list.clearEventList();
 
   TEST_ASSERT_EQUAL(0, list.length());
-
 }
+
+void test_loop_end_overlap() {
+  EventLinkedList list;
+  list.numLoopSteps = 8;
+  list.createEvent(189, 1);
+  list.addEventToList(189);
+  list.createEvent(188, 1);
+  list.addEventToList(20);
+
+  printList(&list);
+  TEST_ASSERT_EQUAL((list.numLoopSteps * PPQN) - 1, list.head->endPos);
+}
+
+void test_quantization() {
+  EventLinkedList list;
+  list.createEvent(8, 1);
+  list.addEventToList(23);
+}
+
 
 int main(int argc, char **argv) {
     UNITY_BEGIN();
@@ -236,6 +254,7 @@ int main(int argc, char **argv) {
     
     RUN_TEST(test_handle_queued_event);
     RUN_TEST(test_delete_all_events);
+    RUN_TEST(test_loop_end_overlap);
     UNITY_END();
     return 0;
 }
