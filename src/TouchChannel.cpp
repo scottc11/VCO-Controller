@@ -1,6 +1,5 @@
 #include "TouchChannel.h"
 
-
 void TouchChannel::init() {
   touch->init();
   
@@ -57,16 +56,6 @@ void TouchChannel::poll() {
     if (currCVInputValue != prevCVInputValue) {
       handleCVInput(currCVInputValue);
       prevCVInputValue = currCVInputValue;
-    }
-  }
-
-  // clock is ticking, so for every tick per qaurter note, set gate high for a few ticks, then gate low
-
-  if (mode == MONOPHONIC) {
-    if (currTick == 1) {
-      this->gateOut.write(HIGH);
-    } else if (currTick == 3) {
-      this->gateOut.write(LOW);
     }
   }
 
@@ -155,6 +144,7 @@ void TouchChannel::handleTouch() {
             triggerNote(i, currOctave, ON);
             break;
           case QUANTIZER:
+            this->setActiveDegrees(i);
             break;
           case LOOPER:
             enableLoop = false; // deactivate event triggering loop
@@ -182,40 +172,6 @@ void TouchChannel::handleTouch() {
     }
     // reg.writeByte(touched); // toggle channel LEDs
     prevTouched = touched;
-  }
-}
-
-void TouchChannel::handleCVInput(int value) {
-  // 65,536 / 4 == 16,384
-  // 16,384 / 8 == 2,048
-
-  int clippedValue = 0;
-  int octave = 0;
-
-  for (int i=0; i < 4; i++) {
-
-    if (value < 16384) {
-      clippedValue = value;
-      octave = 0;
-      break;
-    }
-
-    if (value > CV_OCTAVES[i] && value < CV_OCTAVES[i] + 16384) {
-      octave = i + 1;
-      clippedValue = value - CV_OCTAVES[i];
-      break;
-    }
-  }
-
-  for (int i=0; i < 8; i++) {
-    if (clippedValue < CV_INPUT_MAP[i]) {
-      if (prevNoteIndex != i) {
-        triggerNote(prevNoteIndex, prevOctave, OFF);
-        triggerNote(i, octave, ON);
-        setOctaveLed(octave);
-      }
-      break;
-    }
   }
 }
 

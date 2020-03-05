@@ -11,6 +11,7 @@
 #include "TCA9544A.h"
 #include "MIDI.h"
 #include "QuantizeMethods.h"
+#include "BitwiseMethods.h"
 
 
 typedef struct EventNode {
@@ -24,7 +25,7 @@ typedef struct EventNode {
 
 class TouchChannel {
   private:  
-    enum SWITCH_STATES {      
+    enum SWITCH_STATES {
       // octave switch
       OCTAVE_UP = 0b00001000,
       OCTAVE_DOWN = 0b00000100,
@@ -42,24 +43,18 @@ class TouchChannel {
       LOOPER,
     };
 
-  public:
-
-    EventNode* head;
-    EventNode* newEvent;       // to be created and deleted everytime a user presses event create button
-    EventNode* queuedEvent;    // the currently active / next / ensuing / succeeding event
-  
-    int channel;                     // 0 based index to represent channel
+  public:  
+    int channel;                    // 0 based index to represent channel
     bool isSelected;
-    Mode mode;                       // which mode channel is currently in
+    Mode mode;                      // which mode channel is currently in
     QuantizeMode timeQuantizationMode;
-    bool enableLoop = false;                // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
-    DigitalOut gateOut;              // gate output pin
-    DigitalOut ctrlLed;              // via global controls
+    DigitalOut gateOut;             // gate output pin
+    DigitalOut ctrlLed;             // via global controls
     Metronome *metronome;
-    MIDI *midi;                      // pointer to mbed midi instance
-    CAP1208 *touch;                   // i2c touch IC
+    MIDI *midi;                     // pointer to mbed midi instance
+    CAP1208 *touch;                 // i2c touch IC
     MCP4922 *dac;                   // pointer to dual channel digital-analog-converter
-    MCP4922::_DAC dacChannel;        // which dac to address
+    MCP4922::_DAC dacChannel;       // which dac to address
     MCP23017 *io;                   // for leds and switches
     Degrees *degrees;
     InterruptIn touchInterupt;
@@ -68,11 +63,22 @@ class TouchChannel {
     volatile bool switchHasChanged;  // toggle switches interupt flag
     volatile bool touchDetected;
     
+    // quantizer variables
+    int activeDegrees;               // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
+    int numActiveDegrees;            // number of degrees which are active (to quantize voltage input)
+    int activeDegreeValues[8];       // array to hold currently active scale degree values to output to DAC (ex. {136.5, 341.25, 682.50, 819.0, 0, 0, 0, 0} )
+    int voltageInputMap[8];          // holds values between 0 and 1023 in order to map analogRead(voltage_input_pin) to the active_degree_values array
+
+    // looper variables
+    EventNode* head;
+    EventNode* newEvent;             // to be created and deleted everytime a user presses event create button
+    EventNode* queuedEvent;          // the currently active / next / ensuing / succeeding event
+    bool enableLoop = false;         // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
     volatile int numLoopSteps;
-    volatile int currStep;                  // the current 'step' of the loop (lowest value == 1)
-    volatile int currPosition;              // the current position in the loop measured by PPQN (lowest value == 1)
-    volatile int currTick;                  // the current PPQN position of the step (0..PPQN) (lowest value == 1)
-    volatile int loopLength;                // how many PPQN (in total) the loop contains
+    volatile int currStep;           // the current 'step' of the loop (lowest value == 1)
+    volatile int currPosition;       // the current position in the loop measured by PPQN (lowest value == 1)
+    volatile int currTick;           // the current PPQN position of the step (0..PPQN) (lowest value == 1)
+    volatile int loopLength;         // how many PPQN (in total) the loop contains
 
     uint8_t ledStates;
     unsigned int currCVInputValue; // 16 bit value (0..65,536)
@@ -168,6 +174,8 @@ class TouchChannel {
     void addEventToList(int endPosition);
     void handleQueuedEvent(int position);
 
+    // QUANTIZER FUNCTIONS
+    void setActiveDegrees(int degree);
 };
 
 #endif
