@@ -53,7 +53,7 @@ void TouchChannel::handleQueuedEvent(int position) {
 void TouchChannel::createEvent(int position, int noteIndex) {
   newEvent = new EventNode;
   newEvent->index = noteIndex;
-  newEvent->startPos = position;
+  newEvent->startPos = quantize(timeQuantizationMode, position, currStep, numLoopSteps, PPQN);
   newEvent->triggered = false;
   newEvent->next = NULL;
 }
@@ -61,8 +61,10 @@ void TouchChannel::createEvent(int position, int noteIndex) {
 
 
 void TouchChannel::addEventToList(int endPosition) {
-  if (endPosition == newEvent->startPos) {
-    newEvent->endPos = endPosition + EVENT_END_BUFFER;
+  if (endPosition < newEvent->startPos ) {
+    newEvent->endPos = (numLoopSteps * PPQN) - 1;
+  } else if (endPosition == newEvent->startPos) {
+    newEvent->endPos = endPosition + EVENT_END_BUFFER > (numLoopSteps * PPQN) - 1 ? (numLoopSteps * PPQN) - 1 : endPosition + EVENT_END_BUFFER;
   } else {
     newEvent->endPos = endPosition;
   }

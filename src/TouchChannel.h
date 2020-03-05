@@ -10,6 +10,7 @@
 #include "CAP1208.h"
 #include "TCA9544A.h"
 #include "MIDI.h"
+#include "QuantizeMethods.h"
 
 
 typedef struct EventNode {
@@ -50,6 +51,7 @@ class TouchChannel {
     int channel;                     // 0 based index to represent channel
     bool isSelected;
     Mode mode;                       // which mode channel is currently in
+    QuantizeMode timeQuantizationMode;
     bool enableLoop = false;                // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
     DigitalOut gateOut;              // gate output pin
     DigitalOut ctrlLed;              // via global controls
@@ -125,6 +127,7 @@ class TouchChannel {
       currOctave = 0;
       prevOctave = 0;
       numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
+      timeQuantizationMode = QUANT_16;
       currStep = 0;
       currTick = 0;
       currPosition = 0;
