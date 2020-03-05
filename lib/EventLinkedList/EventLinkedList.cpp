@@ -1,4 +1,5 @@
 #include <iostream>
+#include "QuantizeMethods.cpp"
 
 #define PPQN  24
 #define EVENT_END_BUFFER 4
@@ -15,7 +16,14 @@ typedef struct EventNode {
 
 
 class EventLinkedList {
-public:
+public:  
+  enum QuantizeMode {
+    NONE,
+    QUANT_8,
+    QUANT_16,
+    QUANT_32,
+    QUANT_64,
+  };
 
   EventLinkedList() {
     head = NULL;
@@ -26,7 +34,7 @@ public:
   EventNode* head;
   EventNode* newEvent;       // to be created and deleted everytime a user presses event create button
   EventNode* queuedEvent;    // the currently active / next / ensuing / succeeding event
-
+  QuantizeMode timeQuantizationMode;
   volatile int numLoopSteps;
   volatile int currStep;                  // the current 'step' of the loop (lowest value == 1)
   volatile int currPosition;              // the current position in the loop measured by PPQN (lowest value == 1)
@@ -38,6 +46,7 @@ public:
   void createEvent(int position, int noteIndex);
   void addEventToList(int endPosition);
   void handleQueuedEvent(int position);
+  int handleQuantization(int pos);
 };
 
 
@@ -84,12 +93,26 @@ void EventLinkedList::handleQueuedEvent(int position) {
   }
 }
 
+int EventLinkedList::handleQuantization(int pos) {
+  switch (timeQuantizationMode) {
+    case NONE:
+      return pos;
+    case QUANT_8:
+      return quantize8th(pos, currStep, numLoopSteps, PPQN);
+    case QUANT_16:
+      return pos;
+    case QUANT_32:
+      return pos;
+    case QUANT_64:
+      return pos;
+  }
+}
 
 
 void EventLinkedList::createEvent(int position, int noteIndex) {
   newEvent = new EventNode;
   newEvent->index = noteIndex;
-  newEvent->startPos = position;
+  newEvent->startPos = handleQuantization(position);
   newEvent->triggered = false;
   newEvent->next = NULL;
 }

@@ -235,10 +235,34 @@ void test_loop_end_overlap() {
   TEST_ASSERT_EQUAL((list.numLoopSteps * PPQN) - 1, list.head->endPos);
 }
 
-void test_quantization() {
+void test_quantization_8th_notes() {
   EventLinkedList list;
-  list.createEvent(8, 1);
-  list.addEventToList(23);
+  list.numLoopSteps = 8;
+  list.timeQuantizationMode = EventLinkedList::QUANT_8;
+  
+  // test event quantizes beginning of step
+  list.currStep = 1;
+  list.createEvent(26, 1);
+  list.addEventToList(88);
+  TEST_ASSERT_EQUAL(24, list.head->startPos);
+
+  // test event quantizes over to the next start of the step
+  list.currStep = 3;
+  list.createEvent(78, 1);
+  list.addEventToList(88);
+  TEST_ASSERT_EQUAL(84, list.head->next->startPos);
+
+  // test event quantizes over to the next start of the step
+  list.currStep = 5;
+  list.createEvent(142, 1);
+  list.addEventToList(88);
+  TEST_ASSERT_EQUAL(144, list.head->next->next->startPos);
+
+  list.currStep = 8;
+  list.createEvent(191, 1);
+  list.addEventToList(88);
+
+  printList(&list);
 }
 
 
@@ -255,6 +279,7 @@ int main(int argc, char **argv) {
     RUN_TEST(test_handle_queued_event);
     RUN_TEST(test_delete_all_events);
     RUN_TEST(test_loop_end_overlap);
+    RUN_TEST(test_quantization_8th_notes);
     UNITY_END();
     return 0;
 }
