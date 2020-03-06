@@ -23,7 +23,7 @@ void TouchChannel::initQuantizer() {
     activeDegreeValues[i].threshold = CV_INPUT_MAP[i];
   }
   
-  if (this->mode == QUANTIZE) {
+  if (this->mode == QUANTIZE || this->mode == QUANTIZE_LOOP) {
     this->updateLeds(activeDegrees);
   }
 }

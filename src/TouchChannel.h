@@ -60,10 +60,9 @@ class TouchChannel : public EventLinkedList {
     volatile bool touchDetected;
     
     // quantizer variables
-    int activeDegrees;               // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
-    int numActiveDegrees;            // number of degrees which are active (to quantize voltage input)
-    QuantizerValue activeDegreeValues[8];       // array to hold currently active scale degree values to output to DAC (ex. {136.5, 341.25, 682.50, 819.0, 0, 0, 0, 0} )
-    int voltageInputMap[8];          // holds values between 0 and 1023 in order to map analogRead(voltage_input_pin) to the active_degree_values array
+    int activeDegrees;                    // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
+    int numActiveDegrees;                 // number of degrees which are active (to quantize voltage input)
+    QuantizerValue activeDegreeValues[8]; // array which holes noteIndex values and their associated DAC/1vo values
 
 
     uint8_t ledStates;

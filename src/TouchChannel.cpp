@@ -53,7 +53,7 @@ void TouchChannel::poll() {
     handleDegreeChange();
   }
 
-  if (mode == QUANTIZE) {
+  if (mode == QUANTIZE || mode == QUANTIZE_LOOP) {
     currCVInputValue = cvInput.read_u16();
     if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER ) {
       handleCVInput(currCVInputValue);
@@ -61,7 +61,7 @@ void TouchChannel::poll() {
     }
   }
 
-  if (mode == MONO_LOOP && queuedEvent && enableLoop ) {
+  if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && queuedEvent && enableLoop ) {
     handleQueuedEvent(currPosition);
   }
 }
@@ -181,6 +181,7 @@ void TouchChannel::handleTouch() {
             // every touch detected, take a snapshot of all active degree values and apply them to a EventNode
             // no need to set any quantizer variables here, as they will be set later by the queued event loop
             enableLoop = false;
+            setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
             createChordEvent(currPosition, bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
             break;
           case MONO_LOOP:
@@ -198,7 +199,8 @@ void TouchChannel::handleTouch() {
             triggerNote(i, currOctave, OFF);
             break;
           case QUANTIZE_LOOP:
-            enableLoop = false;
+            addEventToList(currPosition);
+            enableLoop = true;
             break;
           case MONO_LOOP:
             addEventToList(currPosition);
@@ -225,8 +227,14 @@ void TouchChannel::handleModeSwitch(int state) {
       triggerNote(currNoteIndex, currOctave, ON);
       break;
     case 0b00000010:
-      enableLoop = false;
-      mode = QUANTIZE;
+      // enableLoop = false;
+      // mode = QUANTIZE;
+      // triggerNote(prevNoteIndex, currOctave, OFF);
+      
+      // delete previous loop objects for safety
+      this->clearEventList();
+      enableLoop = true;
+      mode = QUANTIZE_LOOP;
       triggerNote(prevNoteIndex, currOctave, OFF);
       break;
     case 0b00000001:
@@ -311,7 +319,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state) {
   switch (state) {
     case ON:
       // if mideNoteState == ON, midi->sendNoteOff(prevNoteIndex, prevOctave)
-      if (mode != QUANTIZE) {
+      if (mode == MONO || mode == MONO_LOOP) {
         writeLed(prevNoteIndex, LOW);
         writeLed(index, HIGH);
       }
