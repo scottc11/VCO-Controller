@@ -34,9 +34,9 @@ class TouchChannel : public EventLinkedList {
     };
 
     enum Mode {
-      MONOPHONIC,
-      QUANTIZER,
-      LOOPER,
+      MONO,
+      MONO_LOOP,
+      QUANTIZE,
       QUANTIZE_LOOP,
     };
 
@@ -149,7 +149,7 @@ class TouchChannel : public EventLinkedList {
     
     void handleQueuedEvent(int position);
 
-    // QUANTIZER FUNCTIONS
+    // QUANTIZE FUNCTIONS
     void initQuantizer();
     void handleCVInput(int value);
     void setActiveDegrees(int degrees);

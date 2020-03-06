@@ -53,7 +53,7 @@ void TouchChannel::poll() {
     handleDegreeChange();
   }
 
-  if (mode == QUANTIZER) {
+  if (mode == QUANTIZE) {
     currCVInputValue = cvInput.read_u16();
     if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER ) {
       handleCVInput(currCVInputValue);
@@ -61,7 +61,7 @@ void TouchChannel::poll() {
     }
   }
 
-  if (mode == LOOPER && queuedEvent && enableLoop ) {
+  if (mode == MONO_LOOP && queuedEvent && enableLoop ) {
     handleQueuedEvent(currPosition);
   }
 }
@@ -71,7 +71,7 @@ void TouchChannel::handleQueuedEvent(int position) {
   if (queuedEvent->triggered == false ) {
     if (position == queuedEvent->startPos) {
       switch (mode) {
-        case LOOPER:
+        case MONO_LOOP:
           triggerNote(queuedEvent->noteIndex, currOctave, ON);
           break;
         case QUANTIZE_LOOP:
@@ -83,7 +83,7 @@ void TouchChannel::handleQueuedEvent(int position) {
   }
   else {
     if (position == queuedEvent->endPos) {
-      if (mode == LOOPER) triggerNote(queuedEvent->noteIndex, currOctave, OFF);
+      if (mode == MONO_LOOP) triggerNote(queuedEvent->noteIndex, currOctave, OFF);
       queuedEvent->triggered = false;
       if (queuedEvent->next != NULL) {
         queuedEvent = queuedEvent->next;
@@ -171,10 +171,10 @@ void TouchChannel::handleTouch() {
       if (touch->getBitStatus(touched, i) && !touch->getBitStatus(prevTouched, i)) {
 
         switch (mode) {
-          case MONOPHONIC:
+          case MONO:
             triggerNote(i, currOctave, ON);
             break;
-          case QUANTIZER:
+          case QUANTIZE:
             setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
             break;
           case QUANTIZE_LOOP:
@@ -183,7 +183,7 @@ void TouchChannel::handleTouch() {
             enableLoop = false;
             createChordEvent(currPosition, bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
             break;
-          case LOOPER:
+          case MONO_LOOP:
             enableLoop = false;
             createEvent(currPosition, i);
             triggerNote(i, currOctave, ON);
@@ -194,13 +194,13 @@ void TouchChannel::handleTouch() {
       if (!touch->getBitStatus(touched, i) && touch->getBitStatus(prevTouched, i)) {
         
         switch (mode) {
-          case MONOPHONIC:
+          case MONO:
             triggerNote(i, currOctave, OFF);
             break;
           case QUANTIZE_LOOP:
             enableLoop = false;
             break;
-          case LOOPER:
+          case MONO_LOOP:
             addEventToList(currPosition);
             triggerNote(i, currOctave, OFF);
             enableLoop = true;
@@ -221,17 +221,17 @@ void TouchChannel::handleModeSwitch(int state) {
   switch (state) {
     case 0b00000011:
       enableLoop = false;
-      mode = MONOPHONIC;
+      mode = MONO;
       triggerNote(currNoteIndex, currOctave, ON);
       break;
     case 0b00000010:
       enableLoop = false;
-      mode = QUANTIZER;
+      mode = QUANTIZE;
       triggerNote(prevNoteIndex, currOctave, OFF);
       break;
     case 0b00000001:
       enableLoop = true;
-      mode = LOOPER;
+      mode = MONO_LOOP;
       triggerNote(prevNoteIndex, currOctave, OFF);
       break;
   }
@@ -255,12 +255,12 @@ void TouchChannel::handleOctaveSwitch(int state) {
 
   if (state == OCTAVE_UP || state == OCTAVE_DOWN) {  // only want this to happen once
     switch (mode) {
-      case MONOPHONIC:
+      case MONO:
         triggerNote(currNoteIndex, currOctave, ON);
         break;
-      case QUANTIZER:
+      case QUANTIZE:
         break;
-      case LOOPER:
+      case MONO_LOOP:
         break;
     }
   }
@@ -269,12 +269,12 @@ void TouchChannel::handleOctaveSwitch(int state) {
 
 void TouchChannel::handleDegreeChange() {
   switch (mode) {
-    case MONOPHONIC:
+    case MONO:
       triggerNote(currNoteIndex, currOctave, ON);
       break;
-    case QUANTIZER:
+    case QUANTIZE:
       break;
-    case LOOPER:
+    case MONO_LOOP:
       break;
   }
   degrees->hasChanged[channel] = false;
@@ -311,7 +311,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state) {
   switch (state) {
     case ON:
       // if mideNoteState == ON, midi->sendNoteOff(prevNoteIndex, prevOctave)
-      if (mode != QUANTIZER) {
+      if (mode != QUANTIZE) {
         writeLed(prevNoteIndex, LOW);
         writeLed(index, HIGH);
       }
@@ -323,7 +323,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state) {
       break;
     case OFF:
       switch (mode) {
-        case LOOPER:
+        case MONO_LOOP:
           writeLed(index, LOW);
           break;
         default:
@@ -354,12 +354,12 @@ int TouchChannel::calculateMIDINoteValue(int index, int octave) {
 void TouchChannel::freeze(bool freeze) {
   // hold all gates in their current state
   switch (mode) {
-    case MONOPHONIC:
+    case MONO:
       break;
-    case QUANTIZER:
+    case QUANTIZE:
       // turn quantizer off
       break;
-    case LOOPER:
+    case MONO_LOOP:
       if (freeze == true) {
         enableLoop = false;
       } else {
@@ -371,11 +371,11 @@ void TouchChannel::freeze(bool freeze) {
 
 void TouchChannel::reset() {
   switch (mode) {
-    case MONOPHONIC:
+    case MONO:
       break;
-    case QUANTIZER:
+    case QUANTIZE:
       break;
-    case LOOPER:
+    case MONO_LOOP:
       // NOTE: you probably don't want to reset the 'tick' value, as it would make it very dificult to line up with the global clock;
       currPosition = 0;
       currStep = 1;
