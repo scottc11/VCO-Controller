@@ -22,11 +22,15 @@ typedef struct EventNode {
   struct EventNode *next;    // pointer to the 'next' EventNode to occur (linked list)
 } EventNode;
 
+typedef struct QuantizerValue {
+  int threshold;
+  int noteIndex;
+} QuantizerValue;
+
 
 class TouchChannel {
   private:  
     enum SWITCH_STATES {
-      // octave switch
       OCTAVE_UP = 0b00001000,
       OCTAVE_DOWN = 0b00000100,
     };
@@ -66,7 +70,7 @@ class TouchChannel {
     // quantizer variables
     int activeDegrees;               // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
     int numActiveDegrees;            // number of degrees which are active (to quantize voltage input)
-    int activeDegreeValues[8];       // array to hold currently active scale degree values to output to DAC (ex. {136.5, 341.25, 682.50, 819.0, 0, 0, 0, 0} )
+    QuantizerValue activeDegreeValues[8];       // array to hold currently active scale degree values to output to DAC (ex. {136.5, 341.25, 682.50, 819.0, 0, 0, 0, 0} )
     int voltageInputMap[8];          // holds values between 0 and 1023 in order to map analogRead(voltage_input_pin) to the active_degree_values array
 
     // looper variables
@@ -143,15 +147,13 @@ class TouchChannel {
     };
 
     void init();
+    void poll();
     void handleioInterupt() { switchHasChanged = true; }
     void handleTouchInterupt() { touchDetected = true; }
-    void poll();
     int readSwitchStates();
     void writeLed(int index, int state);
     void updateLeds(uint8_t touched);
     void setOctaveLed(int octave);
-    void setNumLoopSteps(int num);
-    void handleCVInput(int value);
     void handleTouch();
     void handleDegreeChange();
     void handleSwitchInterupt();
@@ -173,8 +175,11 @@ class TouchChannel {
     void createEvent(int position, int noteIndex);
     void addEventToList(int endPosition);
     void handleQueuedEvent(int position);
+    void setNumLoopSteps(int num);
 
     // QUANTIZER FUNCTIONS
+    void initQuantizer();
+    void handleCVInput(int value);
     void setActiveDegrees(int degree);
 };
 

@@ -34,6 +34,8 @@ void TouchChannel::init() {
   currOctave = 0;
   dac->write_u12(dacChannel, calculateDACNoteValue(currNoteIndex, currOctave));
 
+  this->initQuantizer();
+
 }
 
 // HANDLE ALL INTERUPT FLAGS
@@ -53,7 +55,7 @@ void TouchChannel::poll() {
 
   if (mode == QUANTIZER) {
     currCVInputValue = cvInput.read_u16();
-    if (currCVInputValue != prevCVInputValue) {
+    if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER ) {
       handleCVInput(currCVInputValue);
       prevCVInputValue = currCVInputValue;
     }
@@ -273,10 +275,12 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state) {
   switch (state) {
     case ON:
       // if mideNoteState == ON, midi->sendNoteOff(prevNoteIndex, prevOctave)
+      if (mode != QUANTIZER) {
+        writeLed(prevNoteIndex, LOW);
+        writeLed(index, HIGH);
+      }
       currNoteIndex = index;
       currOctave = octave;
-      writeLed(prevNoteIndex, LOW);
-      writeLed(index, HIGH);
       gateOut.write(HIGH);
       dac->write_u12(dacChannel, calculateDACNoteValue(index, octave));
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
