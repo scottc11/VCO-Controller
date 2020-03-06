@@ -66,6 +66,28 @@ void TouchChannel::poll() {
   }
 }
 
+
+void TouchChannel::handleQueuedEvent(int position) {
+  if (queuedEvent->triggered == false ) {
+    if (position == queuedEvent->startPos) {
+      triggerNote(queuedEvent->noteIndex, currOctave, ON);
+      queuedEvent->triggered = true;
+    }
+  }
+  else {
+    if (position == queuedEvent->endPos) {
+      triggerNote(queuedEvent->noteIndex, currOctave, OFF);
+      queuedEvent->triggered = false;
+      if (queuedEvent->next != NULL) {
+        queuedEvent = queuedEvent->next;
+      } else {
+        queuedEvent = head;
+      }
+    }
+  }
+}
+
+
 /**
  * CALCULATE LOOP LENGTH
 */
@@ -345,8 +367,4 @@ void TouchChannel::reset() {
       currStep = 1;
       break;
   }
-}
-
-void TouchChannel::setNumLoopSteps(int num) {
-  numLoopSteps = num;
 }

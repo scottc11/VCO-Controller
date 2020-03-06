@@ -1,6 +1,30 @@
 #include "EventLinkedList.h"
 
-int EventLinkedList::length() {
+// only here
+void EventLinkedList::handleQueuedEvent(int position) {
+  if (queuedEvent->triggered == false ) {
+    if (position == queuedEvent->startPos) {
+      queuedEvent->triggered = true;
+    }
+  }
+  else {
+    if (position == queuedEvent->endPos) {
+      queuedEvent->triggered = false;
+      if (queuedEvent->next != NULL) {
+        queuedEvent = queuedEvent->next;
+      } else {
+        queuedEvent = head;
+      }
+    }
+  }
+}
+
+
+void EventLinkedList::setNumLoopSteps(int num) {
+  numLoopSteps = num;
+}
+
+int EventLinkedList::getListLength() {
   int32_t count = 0;
   EventNode *iteration = head;
   //loop until the end of the list is found
@@ -23,35 +47,22 @@ void EventLinkedList::clearEventList() {
   queuedEvent = NULL;
 }
 
-void EventLinkedList::handleQueuedEvent(int position) {
-  if (queuedEvent->triggered == false ) {
-    if (position == queuedEvent->startPos) {
-      // triggerNote(queuedEvent->index, currOctave, ON);
-      queuedEvent->triggered = true;
-    }
-  }
-  else {
-    if (position == queuedEvent->endPos) {
-      // triggerNote(queuedEvent->index, currOctave, OFF);
-      queuedEvent->triggered = false;
-      if (queuedEvent->next != NULL) {
-        queuedEvent = queuedEvent->next;
-      } else {
-        queuedEvent = head;
-      }
-    }
-  }
-}
-
-
 void EventLinkedList::createEvent(int position, int noteIndex) {
   newEvent = new EventNode;
-  newEvent->index = noteIndex;
+  newEvent->noteIndex = noteIndex;
   newEvent->startPos = quantize(timeQuantizationMode, position, currStep, numLoopSteps, PPQN);
   newEvent->triggered = false;
   newEvent->next = NULL;
 }
 
+// every touch detected, take a snapshot of all active degree values and apply them to a ChordNode
+void EventLinkedList::createChordEvent(int position, uint8_t notes) {
+  newEvent = new EventNode;
+  newEvent->notes = notes;
+  newEvent->startPos = quantize(timeQuantizationMode, position, currStep, numLoopSteps, PPQN);
+  newEvent->triggered = false;
+  newEvent->next = NULL;
+}
 
 
 void EventLinkedList::addEventToList(int endPosition) {

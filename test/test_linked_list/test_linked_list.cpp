@@ -14,7 +14,7 @@ void printList(EventLinkedList * list) {
   EventNode *iterator;
   iterator = list->head;
   while (iterator) {
-    cout << "index: " << iterator->index << " startPos: " << iterator->startPos << " endPos: " << iterator->endPos << endl;
+    cout << "index: " << iterator->noteIndex << " startPos: " << iterator->startPos << " endPos: " << iterator->endPos << endl;
     iterator = iterator->next;
   }
 }

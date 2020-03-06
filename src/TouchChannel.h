@@ -12,15 +12,7 @@
 #include "MIDI.h"
 #include "QuantizeMethods.h"
 #include "BitwiseMethods.h"
-
-
-typedef struct EventNode {
-  uint8_t index;             // note index between 0 and 7
-  uint16_t startPos;         // the point in time in which the EventNode occured
-  uint16_t endPos;           // the point in time the EventNode finishes
-  bool triggered;            // has the EventNode been triggered
-  struct EventNode *next;    // pointer to the 'next' EventNode to occur (linked list)
-} EventNode;
+#include "EventLinkedList.h"
 
 typedef struct QuantizerValue {
   int threshold;
@@ -28,7 +20,7 @@ typedef struct QuantizerValue {
 } QuantizerValue;
 
 
-class TouchChannel {
+class TouchChannel : public EventLinkedList {
   private:  
     enum SWITCH_STATES {
       OCTAVE_UP = 0b00001000,
@@ -51,7 +43,6 @@ class TouchChannel {
     int channel;                    // 0 based index to represent channel
     bool isSelected;
     Mode mode;                      // which mode channel is currently in
-    QuantizeMode timeQuantizationMode;
     DigitalOut gateOut;             // gate output pin
     DigitalOut ctrlLed;             // via global controls
     Metronome *metronome;
@@ -73,16 +64,6 @@ class TouchChannel {
     QuantizerValue activeDegreeValues[8];       // array to hold currently active scale degree values to output to DAC (ex. {136.5, 341.25, 682.50, 819.0, 0, 0, 0, 0} )
     int voltageInputMap[8];          // holds values between 0 and 1023 in order to map analogRead(voltage_input_pin) to the active_degree_values array
 
-    // looper variables
-    EventNode* head;
-    EventNode* newEvent;             // to be created and deleted everytime a user presses event create button
-    EventNode* queuedEvent;          // the currently active / next / ensuing / succeeding event
-    bool enableLoop = false;         // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
-    volatile int numLoopSteps;
-    volatile int currStep;           // the current 'step' of the loop (lowest value == 1)
-    volatile int currPosition;       // the current position in the loop measured by PPQN (lowest value == 1)
-    volatile int currTick;           // the current PPQN position of the step (0..PPQN) (lowest value == 1)
-    volatile int loopLength;         // how many PPQN (in total) the loop contains
 
     uint8_t ledStates;
     unsigned int currCVInputValue; // 16 bit value (0..65,536)
@@ -113,16 +94,17 @@ class TouchChannel {
         Metronome *_clock,
         MCP4922 *dac_ptr,
         MCP4922::_DAC _dacChannel
-      ) : 
-      gateOut(gateOutPin),
-      ioInterupt(ioIntPin, PullUp),
-      touchInterupt(tchIntPin, PullUp),
-      ctrlLed(ctrlLedPin),
-      cvInput(cvInputPin) {
+      ) : gateOut(gateOutPin), ioInterupt(ioIntPin, PullUp), touchInterupt(tchIntPin, PullUp), ctrlLed(ctrlLedPin), cvInput(cvInputPin) {
       
+      // inheritance
       head = NULL;
       newEvent = NULL;
       queuedEvent = NULL;
+      numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
+      timeQuantizationMode = QUANT_16;
+      currStep = 0;
+      currTick = 0;
+      currPosition = 0;
 
       touch = touch_ptr;
       degrees = degrees_ptr;
@@ -136,11 +118,6 @@ class TouchChannel {
       counter = 0;
       currOctave = 0;
       prevOctave = 0;
-      numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
-      timeQuantizationMode = QUANT_16;
-      currStep = 0;
-      currTick = 0;
-      currPosition = 0;
       touched = 0;
       prevTouched = 0;
       channel = _channel;
@@ -168,14 +145,8 @@ class TouchChannel {
     void triggerNote(int index, int octave, NoteState state);
     void freeze(bool enable);
     void reset();
-
-    // EVENT LOOP FUNCTIONS
-    void clearEventList();
-    int length();
-    void createEvent(int position, int noteIndex);
-    void addEventToList(int endPosition);
+    
     void handleQueuedEvent(int position);
-    void setNumLoopSteps(int num);
 
     // QUANTIZER FUNCTIONS
     void initQuantizer();
