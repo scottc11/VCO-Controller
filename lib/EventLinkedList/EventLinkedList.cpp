@@ -90,24 +90,25 @@ void EventLinkedList::addEventToList(int endPosition) {
     while (iteration != NULL) {
       
       // OCCURS BEFORE ITERATOR->START
-      if (newEvent->startPos < iteration->startPos) {
+      if (newEvent->startPos <= iteration->startPos) {
 
         // new event ends before the current iterations begins
         if (newEvent->endPos < iteration->startPos) {
 
-          // If new event occurs before the first event in list, place at front of list
-          if (iteration == head) {
-            newEvent->next = iteration;
-            head = newEvent;
-            break;
-          }
-          // place inbetween the previous iteration and current iteration
-          else {
-            prev->next = newEvent;
-            newEvent->next = iteration;
-            break;
-          }
+            // If new event occurs before the first event in list, place at front of list
+            if (iteration == head) {
+              newEvent->next = iteration;
+              head = newEvent;
+              break;
+            }
+            // place inbetween the previous iteration and current iteration
+            else {
+              prev->next = newEvent;
+              newEvent->next = iteration;
+              break;
+            }
         }
+        
         // does newEvent end after the current iteration starts?
         else if (newEvent->endPos >= iteration->startPos) {
           

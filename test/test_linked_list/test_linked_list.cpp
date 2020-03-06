@@ -37,7 +37,28 @@ void test_create_events(void) {
 
   printList(&list);
 
-  TEST_ASSERT_EQUAL(4, list.length());
+  TEST_ASSERT_EQUAL(4, list.getListLength());
+}
+
+void test_create_events_with_same_start_pos(void) {
+  EventLinkedList list;
+  list.numLoopSteps = 8;
+  list.timeQuantizationMode = QUANT_16;
+
+  list.createEvent(12, 1);
+  list.addEventToList(16);
+
+  list.createEvent(13, 1);
+  list.addEventToList(18);
+
+  list.createEvent(14, 1);
+  list.addEventToList(18);
+
+  list.createEvent(13, 1);
+  list.addEventToList(198);
+  
+  printList(&list);
+  TEST_ASSERT_EQUAL(1, list.getListLength());
 }
 
 void test_insert_event_between_two_events(void) {
@@ -60,7 +81,7 @@ void test_insert_event_between_two_events(void) {
 
   printList(&list);
 
-  TEST_ASSERT_EQUAL(5, list.length());
+  TEST_ASSERT_EQUAL(5, list.getListLength());
 }
 
 
@@ -80,7 +101,7 @@ void test_insert_between_and_overlap(void) {
   list.addEventToList(30);
 
   printList(&list);
-  TEST_ASSERT_EQUAL(3, list.length());
+  TEST_ASSERT_EQUAL(3, list.getListLength());
 }
 
 // new event start position overlaps the current iterations end position
@@ -100,7 +121,7 @@ void test_insert_overlapping_end_event(void) {
 
   TEST_ASSERT_EQUAL_INT(14, list.head->endPos);
 
-  TEST_ASSERT_EQUAL(3, list.length());
+  TEST_ASSERT_EQUAL(3, list.getListLength());
 }
 
 // new event start position overlaps the current iterations end position, AND new event end position overlaps the next iterations start position
@@ -120,7 +141,7 @@ void test_insert_double_overlapping_event(void) {
 
   TEST_ASSERT_EQUAL_INT(14, list.head->endPos);
 
-  TEST_ASSERT_EQUAL(2, list.length());
+  TEST_ASSERT_EQUAL(2, list.getListLength());
 }
 
 void test_insert_at_front(void) {
@@ -139,7 +160,7 @@ void test_insert_at_front(void) {
 
   TEST_ASSERT_EQUAL_INT(10, list.head->startPos);
 
-  TEST_ASSERT_EQUAL(3, list.length());
+  TEST_ASSERT_EQUAL(3, list.getListLength());
 }
 
 void test_insert_at_front_and_overlap(void) {
@@ -165,7 +186,7 @@ void test_insert_at_front_and_overlap(void) {
   TEST_ASSERT_EQUAL_INT(10, list.head->startPos);
   TEST_ASSERT_EQUAL_INT(37, list.head->endPos);
 
-  TEST_ASSERT_EQUAL(2, list.length());
+  TEST_ASSERT_EQUAL(2, list.getListLength());
 }
 
 void test_handle_queued_event(void) {
@@ -216,19 +237,17 @@ void test_delete_all_events() {
 
   printList(&list);
 
-  TEST_ASSERT_EQUAL(5, list.length());
+  TEST_ASSERT_EQUAL(5, list.getListLength());
 
   list.clearEventList();
 
-  TEST_ASSERT_EQUAL(0, list.length());
+  TEST_ASSERT_EQUAL(0, list.getListLength());
 }
 
 void test_loop_end_overlap() {
   EventLinkedList list;
   list.numLoopSteps = 8;
-  list.createEvent(189, 1);
-  list.addEventToList(189);
-  list.createEvent(188, 1);
+  list.createEvent(172, 1);
   list.addEventToList(20);
 
   printList(&list);
@@ -265,6 +284,8 @@ void test_quantization_8th_notes() {
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     RUN_TEST(test_create_events);
+    RUN_TEST(test_create_events_with_same_start_pos);
+
     RUN_TEST(test_insert_event_between_two_events);
     RUN_TEST(test_insert_between_and_overlap);
     RUN_TEST(test_insert_overlapping_end_event);

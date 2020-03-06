@@ -163,6 +163,12 @@ void TouchChannel::handleSwitchInterupt() {
   switchHasChanged = false;
 }
 
+
+/**
+ * 
+ * NOTE: you need a way to trigger events after a series of touches have happened, and the channel is now not being touched
+ * 
+*/ 
 void TouchChannel::handleTouch() {
   touched = touch->touched();
   if (touched != prevTouched) {

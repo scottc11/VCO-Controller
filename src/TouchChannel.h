@@ -97,11 +97,8 @@ class TouchChannel : public EventLinkedList {
       ) : gateOut(gateOutPin), ioInterupt(ioIntPin, PullUp), touchInterupt(tchIntPin, PullUp), ctrlLed(ctrlLedPin), cvInput(cvInputPin) {
       
       // inheritance
-      head = NULL;
-      newEvent = NULL;
-      queuedEvent = NULL;
       numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
-      timeQuantizationMode = QUANT_16;
+      timeQuantizationMode = QUANT_NONE;
       currStep = 0;
       currTick = 0;
       currPosition = 0;
