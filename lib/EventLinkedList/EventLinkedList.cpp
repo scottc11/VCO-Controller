@@ -55,10 +55,10 @@ void EventLinkedList::createEvent(int position, int noteIndex) {
   newEvent->next = NULL;
 }
 
-// every touch detected, take a snapshot of all active degree values and apply them to a ChordNode
+
 void EventLinkedList::createChordEvent(int position, uint8_t notes) {
   newEvent = new EventNode;
-  newEvent->notes = notes;
+  newEvent->activeNotes = notes;
   newEvent->startPos = quantize(timeQuantizationMode, position, currStep, numLoopSteps, PPQN);
   newEvent->triggered = false;
   newEvent->next = NULL;

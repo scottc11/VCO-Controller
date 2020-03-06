@@ -70,13 +70,20 @@ void TouchChannel::poll() {
 void TouchChannel::handleQueuedEvent(int position) {
   if (queuedEvent->triggered == false ) {
     if (position == queuedEvent->startPos) {
-      triggerNote(queuedEvent->noteIndex, currOctave, ON);
+      switch (mode) {
+        case LOOPER:
+          triggerNote(queuedEvent->noteIndex, currOctave, ON);
+          break;
+        case QUANTIZE_LOOP:
+          setActiveDegrees(queuedEvent->activeNotes);
+          break;
+      }
       queuedEvent->triggered = true;
     }
   }
   else {
     if (position == queuedEvent->endPos) {
-      triggerNote(queuedEvent->noteIndex, currOctave, OFF);
+      if (mode == LOOPER) triggerNote(queuedEvent->noteIndex, currOctave, OFF);
       queuedEvent->triggered = false;
       if (queuedEvent->next != NULL) {
         queuedEvent = queuedEvent->next;
@@ -168,10 +175,16 @@ void TouchChannel::handleTouch() {
             triggerNote(i, currOctave, ON);
             break;
           case QUANTIZER:
-            this->setActiveDegrees(i);
+            setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
+            break;
+          case QUANTIZE_LOOP:
+            // every touch detected, take a snapshot of all active degree values and apply them to a EventNode
+            // no need to set any quantizer variables here, as they will be set later by the queued event loop
+            enableLoop = false;
+            createChordEvent(currPosition, bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
             break;
           case LOOPER:
-            enableLoop = false; // deactivate event triggering loop
+            enableLoop = false;
             createEvent(currPosition, i);
             triggerNote(i, currOctave, ON);
             break;
@@ -184,12 +197,13 @@ void TouchChannel::handleTouch() {
           case MONOPHONIC:
             triggerNote(i, currOctave, OFF);
             break;
-          case QUANTIZER:
+          case QUANTIZE_LOOP:
+            enableLoop = false;
             break;
           case LOOPER:
             addEventToList(currPosition);
             triggerNote(i, currOctave, OFF);
-            enableLoop = true; // activate event triggering loop
+            enableLoop = true;
             break;
         }
       }

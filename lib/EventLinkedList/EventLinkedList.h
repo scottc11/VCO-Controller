@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "QuantizeMethods.h"
+#include "BitwiseMethods.h"
 
 
 #define PPQN  24
@@ -11,7 +12,7 @@
 using namespace std;
 
 typedef struct EventNode {
-  uint8_t notes;             // byte for holding active/inactive notes for a chord
+  uint8_t activeNotes;       // byte for holding active/inactive notes for a chord
   uint8_t noteIndex;         // note index between 0 and 7
   uint16_t startPos;         // the point in time in which the EventNode occured
   uint16_t endPos;           // the point in time the EventNode finishes

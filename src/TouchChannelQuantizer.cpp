@@ -28,6 +28,7 @@ void TouchChannel::initQuantizer() {
   }
 }
 
+
 void TouchChannel::handleCVInput(int value) {
   // 65,536 / 4 == 16,384
   // 16,384 / 8 == 2,048
@@ -63,12 +64,11 @@ void TouchChannel::handleCVInput(int value) {
 }
 
 // when a channels degree is touched, toggle the active/inactive status of the touched degree
-void TouchChannel::setActiveDegrees(int degree) {
-  activeDegrees = bitWrite(activeDegrees, degree, !bitRead(activeDegrees, degree));
+void TouchChannel::setActiveDegrees(int degrees) {
+  activeDegrees = degrees;
   this->updateLeds(activeDegrees);
   
   // apply the number of active degrees to numActiveDegrees variable
-  // maybe use a struct here, so you can attach both a cv threshold value AND a note index value
   numActiveDegrees = 0;
   for (int i = 0; i < 8; i++) {
     if (bitRead(activeDegrees, i)) {

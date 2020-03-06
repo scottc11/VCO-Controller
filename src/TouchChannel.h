@@ -37,6 +37,7 @@ class TouchChannel : public EventLinkedList {
       MONOPHONIC,
       QUANTIZER,
       LOOPER,
+      QUANTIZE_LOOP,
     };
 
   public:  
@@ -151,7 +152,7 @@ class TouchChannel : public EventLinkedList {
     // QUANTIZER FUNCTIONS
     void initQuantizer();
     void handleCVInput(int value);
-    void setActiveDegrees(int degree);
+    void setActiveDegrees(int degrees);
 };
 
 #endif
