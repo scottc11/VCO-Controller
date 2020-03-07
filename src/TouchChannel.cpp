@@ -188,10 +188,12 @@ void TouchChannel::handleTouch() {
             enableLoop = false;
             setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
             createChordEvent(currPosition, activeDegrees);
+            addEventToList(currPosition);
             break;
           case MONO_LOOP:
             enableLoop = false;
             createEvent(currPosition, i);
+            addEventToList(currPosition);
             triggerNote(i, currOctave, ON);
             break;
         }
@@ -204,11 +206,11 @@ void TouchChannel::handleTouch() {
             triggerNote(i, currOctave, OFF);
             break;
           case QUANTIZE_LOOP:
-            addEventToList(currPosition);
+            
             enableLoop = true;
             break;
           case MONO_LOOP:
-            addEventToList(currPosition);
+            
             triggerNote(i, currOctave, OFF);
             enableLoop = true;
             break;

@@ -177,7 +177,10 @@ void EventLinkedList::addEventToList(int endPosition) {
             break;
           }
         }
-      }
-    }
-  }
+
+      } // end of if else statements
+
+    } // end of algorithm while loop
+
+  } // end of algorithm block
 }
