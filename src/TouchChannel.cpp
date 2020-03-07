@@ -45,7 +45,7 @@ void TouchChannel::poll() {
     touchDetected = false;
   }
 
-  if (switchHasChanged) {
+  if (ioInterupt.read() == LOW) {
     handleSwitchInterupt();
   }
 
@@ -53,7 +53,7 @@ void TouchChannel::poll() {
     handleDegreeChange();
   }
 
-  if (mode == QUANTIZE || mode == QUANTIZE_LOOP) {
+  if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer) {
     currCVInputValue = cvInput.read_u16();
     if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER ) {
       handleCVInput(currCVInputValue);
@@ -185,10 +185,9 @@ void TouchChannel::handleTouch() {
             break;
           case QUANTIZE_LOOP:
             // every touch detected, take a snapshot of all active degree values and apply them to a EventNode
-            // no need to set any quantizer variables here, as they will be set later by the queued event loop
             enableLoop = false;
             setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
-            createChordEvent(currPosition, bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
+            createChordEvent(currPosition, activeDegrees);
             break;
           case MONO_LOOP:
             enableLoop = false;
@@ -231,6 +230,7 @@ void TouchChannel::handleModeSwitch(int state) {
       enableLoop = false;
       mode = MONO;
       triggerNote(currNoteIndex, currOctave, ON);
+      triggerNote(currNoteIndex, currOctave, OFF);
       break;
     case 0b00000010:
       // enableLoop = false;
@@ -371,14 +371,15 @@ void TouchChannel::freeze(bool freeze) {
     case MONO:
       break;
     case QUANTIZE:
+      enableQuantizer = freeze ? false : true;
+      break;
+    case QUANTIZE_LOOP:
       // turn quantizer off
+      enableLoop = freeze ? false : true;
+      enableQuantizer = freeze ? false : true;
       break;
     case MONO_LOOP:
-      if (freeze == true) {
-        enableLoop = false;
-      } else {
-        enableLoop = true;
-      }
+      enableLoop = freeze ? false : true;
       break;
   }
 }
@@ -387,12 +388,14 @@ void TouchChannel::reset() {
   switch (mode) {
     case MONO:
       break;
-    case QUANTIZE:
+    case QUANTIZE_LOOP:
+      currPosition = 0;
+      currStep = 0;
       break;
     case MONO_LOOP:
       // NOTE: you probably don't want to reset the 'tick' value, as it would make it very dificult to line up with the global clock;
       currPosition = 0;
-      currStep = 1;
+      currStep = 0;
       break;
   }
 }

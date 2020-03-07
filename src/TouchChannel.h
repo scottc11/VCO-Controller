@@ -60,6 +60,7 @@ class TouchChannel : public EventLinkedList {
     volatile bool touchDetected;
     
     // quantizer variables
+    bool enableQuantizer;                 // by default set to true, only ever changes with a 'freeze' event
     int activeDegrees;                    // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
     int numActiveDegrees;                 // number of degrees which are active (to quantize voltage input)
     QuantizerValue activeDegreeValues[8]; // array which holes noteIndex values and their associated DAC/1vo values
@@ -102,6 +103,8 @@ class TouchChannel : public EventLinkedList {
       currStep = 0;
       currTick = 0;
       currPosition = 0;
+
+      enableQuantizer = true;
 
       touch = touch_ptr;
       degrees = degrees_ptr;
