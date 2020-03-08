@@ -54,6 +54,7 @@ void TouchChannel::poll() {
   }
 
   if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer) {
+    this->flashNoteLed(currNoteIndex);
     currCVInputValue = cvInput.read_u16();
     if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER ) {
       handleCVInput(currCVInputValue);
@@ -66,6 +67,11 @@ void TouchChannel::poll() {
   }
 }
 
+void TouchChannel::flashNoteLed(int index) {
+  if (currPosition % 6 == 0) {
+    this->toggleLed(currNoteIndex);
+  }
+}
 
 void TouchChannel::handleQueuedEvent(int position) {
   if (queuedEvent->triggered == false ) {
@@ -314,6 +320,12 @@ void TouchChannel::writeLed(int index, int state) {
   
 }
 
+void TouchChannel::toggleLed(int index) {
+  int toggles = activeDegrees;
+  toggles ^= 1UL << index;
+  io->digitalWrite(MCP23017_PORTA, toggles);
+}
+
 void TouchChannel::updateLeds(uint8_t touched) {
   io->digitalWrite(MCP23017_PORTA, touched);
 }
@@ -338,13 +350,6 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state) {
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
     case OFF:
-      switch (mode) {
-        case MONO_LOOP:
-          writeLed(index, LOW);
-          break;
-        default:
-          break;
-      }
       gateOut.write(LOW);
       midi->sendNoteOff(channel, calculateMIDINoteValue(index, octave), 100);
       wait_us(5);
