@@ -27,17 +27,27 @@ const char16_t DIGITS[100] = { 0b1011111001111110, 0b1011100001001110, 0b0111111
 
 int main()
 {
-  unsigned char a = 0b00000011;
-  unsigned char b = 0b00000011;
-  int chanA = 0b00001100;
-  int chanB = 0b00000010;
+  uint16_t num = 14507;
+  int chanA = 0;
+  int chanB = 1;
+  int chanC = 2;
+  int chanD = 3;
 
+  int controlBits = 0b00010000;
   
+  std::bitset<16> integerOutput = num;
 
-  std::bitset<16> output(DIGITS[0]);
-  int integerOutput = DIGITS[0];
+  std::bitset<8> byte1( controlBits |= (chanD << 1));
   
-  std::cout << output << std::endl;
+  std::bitset<8> byte2((num >> 8) & 0xFF);
+  
+  std::bitset<8> byte3(num & 0xFF);
+  
+  std::cout << byte1 << std::endl;
+  std::cout << byte2 << std::endl;
+  std::cout << byte3 << std::endl;
+  
+  
   std::cout << integerOutput << std::endl;
   return 0;
 }
