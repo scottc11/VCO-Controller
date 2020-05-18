@@ -33,11 +33,11 @@ int main()
   int chanC = 2;
   int chanD = 3;
 
-  int controlBits = 0b00010000;
+  int controlBits = 0b01010000;
   
   std::bitset<16> integerOutput = num;
 
-  std::bitset<8> byte1( controlBits |= (chanD << 1));
+  std::bitset<8> byte1( controlBits |= 0b00000101);
   
   std::bitset<8> byte2((num >> 8) & 0xFF);
   
