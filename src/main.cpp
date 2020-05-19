@@ -86,20 +86,21 @@ int main() {
   ctrlLedA = 1;
   octLeds.initialize();
   octLeds.setLedOutput(0, TLC59116::LedState::ON);
-  wait_ms(1000);
   octLeds.setLedOutput(1, TLC59116::LedState::ON);
-  wait_ms(1000);
   octLeds.setLedOutput(2, TLC59116::LedState::ON);
-  wait_ms(1000);
   octLeds.setLedOutput(3, TLC59116::LedState::ON);
   octLeds.setLedOutput(4, TLC59116::LedState::ON);
   octLeds.setLedOutput(5, TLC59116::LedState::ON);
   octLeds.setLedOutput(6, TLC59116::LedState::ON);
   octLeds.setLedOutput(7, TLC59116::LedState::ON);
-  octLeds.setLedOutput(8, TLC59116::LedState::PWM, 100);
-  octLeds.setLedOutput(9, TLC59116::LedState::PWM, 20);
-  octLeds.setLedOutput(10, TLC59116::LedState::PWM, 255);
-  octLeds.setLedOutput(11, TLC59116::LedState::PWM, 50);
+  octLeds.setLedOutput(8, TLC59116::LedState::ON);
+  octLeds.setLedOutput(9, TLC59116::LedState::ON);
+  octLeds.setLedOutput(10, TLC59116::LedState::ON);
+  octLeds.setLedOutput(11, TLC59116::LedState::ON);
+  octLeds.setLedOutput(12, TLC59116::LedState::ON);
+  octLeds.setLedOutput(13, TLC59116::LedState::ON);
+  octLeds.setLedOutput(14, TLC59116::LedState::ON);
+  octLeds.setLedOutput(15, TLC59116::LedState::ON);
   // channelA.init();
   // channelB.init();
   // channelC.init();
@@ -116,13 +117,6 @@ int main() {
   // extClockInput.rise(&extTick);
 
   while(1) {
-    ctrlLedA = 0;
-    octLeds.setLedPWM(8, 50);
-    wait_ms(1000);
-    ctrlLedA = 1;
-    octLeds.setLedPWM(8, 100);
-    wait_ms(1000);
-    
 
     // degrees.poll();
     // channelA.poll();
