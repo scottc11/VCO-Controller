@@ -4,11 +4,10 @@
 #include "main.h"
 #include "Metronome.h"
 #include "Degrees.h"
-#include "ShiftRegister.h"
-#include "MCP23017.h"
-#include "MCP4922.h"
+#include "DAC8554.h"
 #include "CAP1208.h"
 #include "TCA9544A.h"
+#include "TLC59116.h"
 #include "MIDI.h"
 #include "QuantizeMethods.h"
 #include "BitwiseMethods.h"
@@ -21,7 +20,7 @@ typedef struct QuantizerValue {
 
 
 class TouchChannel : public EventLinkedList {
-  private:  
+  private:
     enum SWITCH_STATES {
       OCTAVE_UP = 0b00001000,
       OCTAVE_DOWN = 0b00000100,
@@ -33,6 +32,11 @@ class TouchChannel : public EventLinkedList {
       SUSTAIN,
     };
 
+    enum LedColor {
+      RED,
+      GREEN
+    };
+
     enum Mode {
       MONO,
       MONO_LOOP,
@@ -40,7 +44,7 @@ class TouchChannel : public EventLinkedList {
       QUANTIZE_LOOP,
     };
 
-  public:  
+  public:
     int channel;                    // 0 based index to represent channel
     bool isSelected;
     Mode mode;                      // which mode channel is currently in
@@ -49,12 +53,11 @@ class TouchChannel : public EventLinkedList {
     Metronome *metronome;
     MIDI *midi;                     // pointer to mbed midi instance
     CAP1208 *touch;                 // i2c touch IC
-    MCP4922 *dac;                   // pointer to dual channel digital-analog-converter
-    MCP4922::_DAC dacChannel;       // which dac to address
-    MCP23017 *io;                   // for leds and switches
+    DAC8554 *dac;                   // pointer to dual channel digital-analog-converter
+    DAC8554::Channels dacChannel;   // which dac to address
+    TLC59116 *leds;
     Degrees *degrees;
     InterruptIn touchInterupt;
-    InterruptIn ioInterupt;          // gpio interupt pin
     AnalogIn cvInput;                // CV Input Pin
     volatile bool switchHasChanged;  // toggle switches interupt flag
     volatile bool touchDetected;
@@ -66,7 +69,7 @@ class TouchChannel : public EventLinkedList {
     QuantizerValue activeDegreeValues[8]; // array which holes noteIndex values and their associated DAC/1vo values
 
 
-    uint8_t ledStates;
+    uint16_t ledStates;            // 16 bits to represent each bi-color led  | 0-Red | 0-Green | 1-Red | 1-Green | 2-Red | 2-Green | etc...
     unsigned int currCVInputValue; // 16 bit value (0..65,536)
     unsigned int prevCVInputValue; // 16 bit value (0..65,536)
     int touched;                 // variable for holding the currently touched degrees
@@ -79,23 +82,20 @@ class TouchChannel : public EventLinkedList {
     int currNoteIndex;
     int prevNoteIndex;
     
-    int leds[8] = { 0b00000001, 0b00000010, 0b00000100, 0b00001000, 0b00010000, 0b00100000, 0b01000000, 0b10000000 };
-
     TouchChannel(
         int _channel,
         PinName gateOutPin,
-        PinName ioIntPin,
         PinName tchIntPin,
         PinName ctrlLedPin,
         PinName cvInputPin,
         CAP1208 *touch_ptr,
+        TLC59116 *leds_ptr,
         Degrees *degrees_ptr,
-        MCP23017 *io_p,
         MIDI *midi_p,
         Metronome *_clock,
-        MCP4922 *dac_ptr,
-        MCP4922::_DAC _dacChannel
-      ) : gateOut(gateOutPin), ioInterupt(ioIntPin, PullUp), touchInterupt(tchIntPin, PullUp), ctrlLed(ctrlLedPin), cvInput(cvInputPin) {
+        DAC8554 *dac_ptr,
+        DAC8554::Channels _dacChannel
+      ) : gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), ctrlLed(ctrlLedPin), cvInput(cvInputPin) {
       
       // inheritance
       numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
@@ -105,16 +105,15 @@ class TouchChannel : public EventLinkedList {
       currPosition = 0;
 
       enableQuantizer = true;
-
+      mode = MONO;
       touch = touch_ptr;
+      leds = leds_ptr;
       degrees = degrees_ptr;
       metronome = _clock;
       dac = dac_ptr;
       dacChannel = _dacChannel;
-      io = io_p;
       midi = midi_p;
       touchInterupt.fall(callback(this, &TouchChannel::handleTouchInterupt));
-      ioInterupt.fall(callback(this, &TouchChannel::handleioInterupt));
       counter = 0;
       currOctave = 0;
       prevOctave = 0;

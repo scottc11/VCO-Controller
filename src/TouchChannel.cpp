@@ -2,6 +2,7 @@
 
 void TouchChannel::init() {
   touch->init();
+  leds->initialize();
   
   if (!touch->isConnected()) {
     this->updateLeds(0xFF);
@@ -10,29 +11,14 @@ void TouchChannel::init() {
   touch->calibrate();
   touch->clearInterupt();
 
-  io->init();
-  io->setDirection(MCP23017_PORTA, 0x00);           // set all of the PORTA pins to output
-  io->setDirection(MCP23017_PORTB, 0b00001111);     // set PORTB pins 0-3 as input, 4-7 as output
-  io->setPullUp(MCP23017_PORTB, 0b00001111);        // activate PORTB pin pull-ups for toggle switches
-  io->setInputPolarity(MCP23017_PORTB, 0b00000000); // invert PORTB pins input polarity for toggle switches
-  io->setInterupt(MCP23017_PORTB, 0b00001111);
-
-  handleSwitchInterupt();
-
-  for (int i = 0; i < 8; i++) {
-    this->updateLeds(leds[i]);
-    wait_ms(25);
-  }
   this->updateLeds(0x00);
   this->setOctaveLed(currOctave);
 
-  dac->referenceMode(dacChannel, MCP4922::REF_UNBUFFERED);
-  dac->gainMode(dacChannel, MCP4922::GAIN_1X);
-  dac->powerMode(dacChannel, MCP4922::POWER_NORMAL);
+  dac->init();
 
   currNoteIndex = 0;
   currOctave = 0;
-  dac->write_u12(dacChannel, calculateDACNoteValue(currNoteIndex, currOctave));
+  // dac->write_u12(dacChannel, calculateDACNoteValue(currNoteIndex, currOctave));
 
   this->initQuantizer();
 
@@ -40,31 +26,29 @@ void TouchChannel::init() {
 
 // HANDLE ALL INTERUPT FLAGS
 void TouchChannel::poll() {
-  if (touchDetected) {
-    handleTouch();
-    touchDetected = false;
-  }
+  // if (touchDetected) {
+  //   handleTouch();
+  //   touchDetected = false;
+  // }
 
-  if (ioInterupt.read() == LOW) {
-    handleSwitchInterupt();
-  }
+  handleTouch();
 
-  if (degrees->hasChanged[channel]) {
-    handleDegreeChange();
-  }
+  // if (degrees->hasChanged[channel]) {
+  //   handleDegreeChange();
+  // }
 
-  if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer) {
-    this->flashNoteLed(currNoteIndex);
-    currCVInputValue = cvInput.read_u16();
-    if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER ) {
-      handleCVInput(currCVInputValue);
-      prevCVInputValue = currCVInputValue;
-    }
-  }
+  // if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer) {
+  //   this->flashNoteLed(currNoteIndex);
+  //   currCVInputValue = cvInput.read_u16();
+  //   if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER ) {
+  //     handleCVInput(currCVInputValue);
+  //     prevCVInputValue = currCVInputValue;
+  //   }
+  // }
 
-  if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && queuedEvent && enableLoop ) {
-    handleQueuedEvent(currPosition);
-  }
+  // if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && queuedEvent && enableLoop ) {
+  //   handleQueuedEvent(currPosition);
+  // }
 }
 
 void TouchChannel::flashNoteLed(int index) {
@@ -303,18 +287,19 @@ void TouchChannel::handleDegreeChange() {
 }
 
 int TouchChannel::readSwitchStates() {
-  return io->digitalRead(MCP23017_PORTB) & 0xF;
+  // return io->digitalRead(MCP23017_PORTB) & 0xF;
+  return 0;
 }
 
 void TouchChannel::writeLed(int index, int state) {
   switch (state) {
     case HIGH:
       ledStates |= 1 << index;
-      io->digitalWrite(MCP23017_PORTA, ledStates);
+      leds->setLedOutput(index, TLC59116::ON);
       break;
     case LOW:
       ledStates &= ~(1 << index);
-      io->digitalWrite(MCP23017_PORTA, ledStates);
+      leds->setLedOutput(index, TLC59116::OFF);
       break;
   }
   
@@ -323,22 +308,22 @@ void TouchChannel::writeLed(int index, int state) {
 void TouchChannel::toggleLed(int index) {
   int toggles = activeDegrees;
   toggles ^= 1UL << index;
-  io->digitalWrite(MCP23017_PORTA, toggles);
+  // io->digitalWrite(MCP23017_PORTA, toggles);
 }
 
 void TouchChannel::updateLeds(uint8_t touched) {
-  io->digitalWrite(MCP23017_PORTA, touched);
+  leds->setLedOutput16(ledStates);
 }
 
 void TouchChannel::setOctaveLed(int octave) {
   int state = 1 << (octave + 4);
-  io->digitalWrite(MCP23017_PORTB, state);
+  // io->digitalWrite(MCP23017_PORTB, state);
 }
 
 void TouchChannel::triggerNote(int index, int octave, NoteState state) {
   switch (state) {
     case ON:
-      // if mideNoteState == ON, midi->sendNoteOff(prevNoteIndex, prevOctave)
+      // if midiNoteState == ON, midi->sendNoteOff(prevNoteIndex, prevOctave)
       if (mode == MONO || mode == MONO_LOOP) {
         writeLed(prevNoteIndex, LOW);
         writeLed(index, HIGH);
@@ -346,7 +331,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state) {
       currNoteIndex = index;
       currOctave = octave;
       gateOut.write(HIGH);
-      dac->write_u12(dacChannel, calculateDACNoteValue(index, octave));
+      // dac->write_u12(dacChannel, calculateDACNoteValue(index, octave));
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
     case OFF:

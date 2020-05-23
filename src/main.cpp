@@ -5,43 +5,46 @@
 #include "Degrees.h"
 #include "CAP1208.h"
 #include "MIDI.h"
+#include "DAC8554.h"
 #include "TCA9544A.h"
 #include "MCP23017.h"
 #include "MCP4922.h"
 #include "TLC59116.h"
 
 
-I2C i2c1(I2C_SDA, I2C_SCL);
+I2C i2c1(I2C1_SDA, I2C1_SCL);
 I2C i2c3(I2C3_SDA, I2C3_SCL);
 
 Ticker ticker;
 Timer timer;
-MIDI midi;
-Metronome metronome(LOOP_STEP_LED_PIN, LOOP_START_LED_PIN);
+MIDI midi(MIDI_TX, MIDI_RX);
+Metronome metronome;
 InterruptIn extClockInput(EXT_CLOCK_INPUT);
 
-MCP4922 dacA(SPI2_MOSI, SPI2_SCK, DAC_A_CS);
-MCP4922 dacB(SPI2_MOSI, SPI2_SCK, DAC_B_CS);
+DAC8554 dac(SPI2_MOSI, SPI2_SCK, DAC_CS);
 
 MCP23017 io(&i2c3, MCP23017_DEGREES_ADDR);
+
 TLC59116 ledsA(&i2c3, TLC59116_CHAN_A_ADDR);
-TLC59116 ledsB(&i2c3, TLC59116_CHAN_B_ADDR);
-TLC59116 ledsC(&i2c3, TLC59116_CHAN_C_ADDR);
-TLC59116 ledsD(&i2c3, TLC59116_CHAN_D_ADDR);
+// TLC59116 ledsB(&i2c3, TLC59116_CHAN_B_ADDR);
+// TLC59116 ledsC(&i2c3, TLC59116_CHAN_C_ADDR);
+// TLC59116 ledsD(&i2c3, TLC59116_CHAN_D_ADDR);
+TLC59116 octaveLeds(&i2c3, TLC59116_OCT_LEDS_ADDR);
+
 TCA9544A i2cMux(&i2c1, TCA9544A_ADDR);
 
 // CAP1208 touchCTRL(&i2c3);
-// CAP1208 touchA(&i2c1, &i2cMux, 0);
-// CAP1208 touchB(&i2c1, &i2cMux, 1);
-// CAP1208 touchC(&i2c1, &i2cMux, 2);
-// CAP1208 touchD(&i2c1, &i2cMux, 3);
+CAP1208 touchA(&i2c1, &i2cMux, 1);
+// CAP1208 touchB(&i2c1, &i2cMux, 0);
+// CAP1208 touchC(&i2c1, &i2cMux, 3);
+// CAP1208 touchD(&i2c1, &i2cMux, 2);
 
 Degrees degrees(DEGREES_INT, &io);
 
-// TouchChannel channelA(0, GATE_OUT_A, CHAN_INT_A, TOUCH_INT_A, CTRL_LED_A, ADC_A, &touchA, &degrees, &ioA, &midi, &metronome, &dacA, MCP4922::DAC_A);
-// TouchChannel channelB(1, GATE_OUT_B, CHAN_INT_B, TOUCH_INT_B, CTRL_LED_B, ADC_B, &touchB, &degrees, &ioB, &midi, &metronome, &dacA, MCP4922::DAC_B);
-// TouchChannel channelC(2, GATE_OUT_C, CHAN_INT_C, TOUCH_INT_C, CTRL_LED_C, ADC_C, &touchC, &degrees, &ioC, &midi, &metronome, &dacB, MCP4922::DAC_A);
-// TouchChannel channelD(3, GATE_OUT_D, CHAN_INT_D, TOUCH_INT_D, CTRL_LED_D, ADC_D, &touchD, &degrees, &ioD, &midi, &metronome, &dacB, MCP4922::DAC_B);
+TouchChannel channelA(0, GATE_OUT_A, TOUCH_INT_A, CTRL_LED_A, ADC_A, &touchA, &ledsA, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_A);
+// TouchChannel channelB(1, GATE_OUT_B, TOUCH_INT_B, CTRL_LED_B, ADC_B, &touchB, &degrees, &midi, &metronome, &dacA, MCP4922::DAC_B);
+// TouchChannel channelC(2, GATE_OUT_C, TOUCH_INT_C, CTRL_LED_C, ADC_C, &touchC, &degrees, &midi, &metronome, &dacB, MCP4922::DAC_A);
+// TouchChannel channelD(3, GATE_OUT_D, TOUCH_INT_D, CTRL_LED_D, ADC_D, &touchD, &degrees, &midi, &metronome, &dacB, MCP4922::DAC_B);
 
 // GlobalControl globalCTRL(&touchCTRL, TOUCH_INT_CTRL, DISPLAY_DATA, DISPLAY_CLK, DISPLAY_LATCH, ENCODER_CHAN_A, ENCODER_CHAN_B, ENCODER_BTN, &channelA, &channelB, &channelC, &channelD, &metronome);
 
@@ -74,34 +77,14 @@ void extTick() {
   ticker.attach_us(&tick, clockPeriod / PPQN);  // potentially write this as a flag and update in main loop
 }
 
-DigitalOut ctrlLedA(PB_7);
-TLC59116 octLeds(&i2c3, TLC59116_OCT_LEDS_ADDR);
 
 int main() {
   
   
 
   degrees.init();
-
-  ctrlLedA = 1;
-  octLeds.initialize();
-  octLeds.setLedOutput(0, TLC59116::LedState::ON);
-  octLeds.setLedOutput(1, TLC59116::LedState::ON);
-  octLeds.setLedOutput(2, TLC59116::LedState::ON);
-  octLeds.setLedOutput(3, TLC59116::LedState::ON);
-  octLeds.setLedOutput(4, TLC59116::LedState::ON);
-  octLeds.setLedOutput(5, TLC59116::LedState::ON);
-  octLeds.setLedOutput(6, TLC59116::LedState::ON);
-  octLeds.setLedOutput(7, TLC59116::LedState::ON);
-  octLeds.setLedOutput(8, TLC59116::LedState::ON);
-  octLeds.setLedOutput(9, TLC59116::LedState::ON);
-  octLeds.setLedOutput(10, TLC59116::LedState::ON);
-  octLeds.setLedOutput(11, TLC59116::LedState::ON);
-  octLeds.setLedOutput(12, TLC59116::LedState::ON);
-  octLeds.setLedOutput(13, TLC59116::LedState::ON);
-  octLeds.setLedOutput(14, TLC59116::LedState::ON);
-  octLeds.setLedOutput(15, TLC59116::LedState::ON);
-  // channelA.init();
+  
+  channelA.init();
   // channelB.init();
   // channelC.init();
   // channelD.init();
@@ -119,7 +102,7 @@ int main() {
   while(1) {
 
     // degrees.poll();
-    // channelA.poll();
+    channelA.poll();
     // channelB.poll();
     // channelC.poll();
     // channelD.poll();

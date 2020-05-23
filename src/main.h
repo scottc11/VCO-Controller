@@ -13,6 +13,8 @@
 
 #define I2C3_SDA             PC_9
 #define I2C3_SCL             PA_8
+#define I2C1_SDA             PB_9
+#define I2C1_SCL             PB_8
 
 #define SPI2_MOSI            PB_15
 #define SPI2_MISO            PB_14
