@@ -68,7 +68,8 @@ class TouchChannel : public EventLinkedList {
     int numActiveDegrees;                 // number of degrees which are active (to quantize voltage input)
     QuantizerValue activeDegreeValues[8]; // array which holes noteIndex values and their associated DAC/1vo values
 
-
+    int redLedPins[8] = { 14, 12, 10, 8, 6, 4, 2, 0 };    // hardcoded values to be passed to the 16 chan LED driver
+    int greenLedPins[8] = { 15, 13, 11, 9, 7, 5, 3, 1 };  // hardcoded values to be passed to the 16 chan LED driver
     uint16_t ledStates;            // 16 bits to represent each bi-color led  | 0-Red | 0-Green | 1-Red | 1-Green | 2-Red | 2-Green | etc...
     unsigned int currCVInputValue; // 16 bit value (0..65,536)
     unsigned int prevCVInputValue; // 16 bit value (0..65,536)

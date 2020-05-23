@@ -294,14 +294,12 @@ int TouchChannel::readSwitchStates() {
 void TouchChannel::setLed(int index, int state) {
   switch (state) {
     case HIGH:
-      // take the touch index, plus an addition argument determining either RED or GREEN, or both, then set the 16 bit integer 
-
       ledStates |= 1 << index;
-      leds->setLedOutput(index*2, TLC59116::ON);
+      leds->setLedOutput(greenLedPins[index], TLC59116::ON);
       break;
     case LOW:
       ledStates &= ~(1 << index);
-      leds->setLedOutput(index*2, TLC59116::OFF);
+      leds->setLedOutput(greenLedPins[index], TLC59116::OFF);
       break;
   }
   
