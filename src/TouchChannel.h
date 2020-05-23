@@ -128,7 +128,7 @@ class TouchChannel : public EventLinkedList {
     void handleTouchInterupt() { touchDetected = true; }
     int readSwitchStates();
     void flashNoteLed(int index);
-    void writeLed(int index, int state);
+    void setLed(int index, int state);
     void updateLeds(uint8_t touched);
     void toggleLed(int index);
     void setOctaveLed(int octave);
