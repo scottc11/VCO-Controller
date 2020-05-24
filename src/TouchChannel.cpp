@@ -18,7 +18,7 @@ void TouchChannel::init() {
 
   currNoteIndex = 0;
   currOctave = 0;
-  // dac->write_u12(dacChannel, calculateDACNoteValue(currNoteIndex, currOctave));
+  dac->write(dacChannel, calculateDACNoteValue(currNoteIndex, currOctave));
 
   this->initQuantizer();
 
@@ -26,12 +26,10 @@ void TouchChannel::init() {
 
 // HANDLE ALL INTERUPT FLAGS
 void TouchChannel::poll() {
-  // if (touchDetected) {
-  //   handleTouch();
-  //   touchDetected = false;
-  // }
-
-  handleTouch();
+  if (touchDetected) {
+    handleTouch();
+    touchDetected = false;
+  }
 
   // if (degrees->hasChanged[channel]) {
   //   handleDegreeChange();
@@ -331,7 +329,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state) {
       currNoteIndex = index;
       currOctave = octave;
       gateOut.write(HIGH);
-      // dac->write_u12(dacChannel, calculateDACNoteValue(index, octave));
+      dac->write(dacChannel, calculateDACNoteValue(index, octave));
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
     case OFF:
