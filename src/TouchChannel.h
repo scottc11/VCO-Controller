@@ -55,7 +55,9 @@ class TouchChannel : public EventLinkedList {
     CAP1208 *touch;                 // i2c touch IC
     DAC8554 *dac;                   // pointer to dual channel digital-analog-converter
     DAC8554::Channels dacChannel;   // which dac to address
-    TLC59116 *leds;
+    TLC59116 *leds;                 // led driver
+    TLC59116 *octLeds;              // led driver
+    int *octLedPins;              // pin list for led Driver
     Degrees *degrees;
     InterruptIn touchInterupt;
     AnalogIn cvInput;                // CV Input Pin
@@ -91,6 +93,8 @@ class TouchChannel : public EventLinkedList {
         PinName cvInputPin,
         CAP1208 *touch_ptr,
         TLC59116 *leds_ptr,
+        TLC59116 *octLeds_ptr,
+        int *_octLedPins,
         Degrees *degrees_ptr,
         MIDI *midi_p,
         Metronome *_clock,
@@ -109,6 +113,8 @@ class TouchChannel : public EventLinkedList {
       mode = MONO;
       touch = touch_ptr;
       leds = leds_ptr;
+      octLeds = octLeds_ptr;
+      octLedPins = _octLedPins;
       degrees = degrees_ptr;
       metronome = _clock;
       dac = dac_ptr;

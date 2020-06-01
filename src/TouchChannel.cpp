@@ -3,7 +3,7 @@
 void TouchChannel::init() {
   touch->init();
   leds->initialize();
-  
+
   if (!touch->isConnected()) {
     this->updateLeds(0xFF);
     return;
@@ -314,8 +314,7 @@ void TouchChannel::updateLeds(uint8_t touched) {
 }
 
 void TouchChannel::setOctaveLed(int octave) {
-  int state = 1 << (octave + 4);
-  // io->digitalWrite(MCP23017_PORTB, state);
+  octLeds->setLedOutput(octLedPins[octave], TLC59116::ON);
 }
 
 void TouchChannel::triggerNote(int index, int octave, NoteState state) {

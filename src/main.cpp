@@ -12,6 +12,11 @@
 #include "TLC59116.h"
 
 
+int OCTAVE_LED_PINS_A[4] = { 0, 1, 2, 3 };     // via TLC59116
+int OCTAVE_LED_PINS_B[4] = { 4, 5, 6, 7 };     // via TLC59116
+int OCTAVE_LED_PINS_C[4] = { 8, 9, 10, 11 };   // via TLC59116
+int OCTAVE_LED_PINS_D[4] = { 12, 13, 14, 15 }; // via TLC59116
+
 I2C i2c1(I2C1_SDA, I2C1_SCL);
 I2C i2c3(I2C3_SDA, I2C3_SCL);
 
@@ -41,10 +46,10 @@ CAP1208 touchD(&i2c1, &i2cMux, 2);
 
 Degrees degrees(DEGREES_INT, &io);
 
-TouchChannel channelA(0, GATE_OUT_A, TOUCH_INT_A, CTRL_LED_A, ADC_A, &touchA, &ledsA, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_A);
-TouchChannel channelB(1, GATE_OUT_B, TOUCH_INT_B, CTRL_LED_B, ADC_B, &touchB, &ledsB, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_B);
-TouchChannel channelC(2, GATE_OUT_C, TOUCH_INT_C, CTRL_LED_C, ADC_C, &touchC, &ledsC, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_C);
-TouchChannel channelD(3, GATE_OUT_D, TOUCH_INT_D, CTRL_LED_D, ADC_D, &touchD, &ledsD, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_D);
+TouchChannel channelA(0, GATE_OUT_A, TOUCH_INT_A, CTRL_LED_A, ADC_A, &touchA, &ledsA, &octaveLeds, OCTAVE_LED_PINS_A, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_A);
+TouchChannel channelB(1, GATE_OUT_B, TOUCH_INT_B, CTRL_LED_B, ADC_B, &touchB, &ledsB, &octaveLeds, OCTAVE_LED_PINS_B, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_B);
+TouchChannel channelC(2, GATE_OUT_C, TOUCH_INT_C, CTRL_LED_C, ADC_C, &touchC, &ledsC, &octaveLeds, OCTAVE_LED_PINS_C, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_C);
+TouchChannel channelD(3, GATE_OUT_D, TOUCH_INT_D, CTRL_LED_D, ADC_D, &touchD, &ledsD, &octaveLeds, OCTAVE_LED_PINS_D, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_D);
 
 // GlobalControl globalCTRL(&touchCTRL, TOUCH_INT_CTRL, DISPLAY_DATA, DISPLAY_CLK, DISPLAY_LATCH, ENCODER_CHAN_A, ENCODER_CHAN_B, ENCODER_BTN, &channelA, &channelB, &channelC, &channelD, &metronome);
 
@@ -83,7 +88,8 @@ int main() {
   
 
   degrees.init();
-  
+  octaveLeds.initialize();
+
   channelA.init();
   channelB.init();
   channelC.init();
