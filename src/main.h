@@ -5,7 +5,7 @@
 
 #define LOW                  0
 #define HIGH                 1
-#define PPQN                  24
+#define PPQN                 24
 
 #define MIDI_BAUD            31250
 #define MIDI_TX              PA_2
@@ -68,6 +68,7 @@
 #define DEFAULT_CHANNEL_LOOP_STEPS     16
 #define EVENT_END_BUFFER               4
 #define CV_QUANT_BUFFER                300
+#define MAX_LOOP_STEPS                 32
 
 // 83.333, 166.666, 249.999, 333.332, 416.66499999999996, 499.99799999999993, 583.3309999999999, 666.6639999999999, 749.9969999999998, 833.3299999999998, 916.6629999999998, 999.9959999999998
 // 12-bit values => 83, 167, 250, 333, 417, 500, 583, 667, 750, 833, 917, 1000

@@ -56,30 +56,30 @@ void TouchChannel::flashNoteLed(int index) {
 }
 
 void TouchChannel::handleQueuedEvent(int position) {
-  if (queuedEvent->triggered == false ) {
-    if (position == queuedEvent->startPos) {
-      switch (mode) {
-        case MONO_LOOP:
-          triggerNote(queuedEvent->noteIndex, currOctave, ON);
-          break;
-        case QUANTIZE_LOOP:
-          setActiveDegrees(queuedEvent->activeNotes);
-          break;
-      }
-      queuedEvent->triggered = true;
-    }
-  }
-  else {
-    if (position == queuedEvent->endPos) {
-      if (mode == MONO_LOOP) triggerNote(queuedEvent->noteIndex, currOctave, OFF);
-      queuedEvent->triggered = false;
-      if (queuedEvent->next != NULL) {
-        queuedEvent = queuedEvent->next;
-      } else {
-        queuedEvent = head;
-      }
-    }
-  }
+  // if (queuedEvent->triggered == false ) {
+  //   if (position == queuedEvent->startPos) {
+  //     switch (mode) {
+  //       case MONO_LOOP:
+  //         triggerNote(queuedEvent->noteIndex, currOctave, ON);
+  //         break;
+  //       case QUANTIZE_LOOP:
+  //         setActiveDegrees(queuedEvent->activeNotes);
+  //         break;
+  //     }
+  //     queuedEvent->triggered = true;
+  //   }
+  // }
+  // else {
+  //   if (position == queuedEvent->endPos) {
+  //     if (mode == MONO_LOOP) triggerNote(queuedEvent->noteIndex, currOctave, OFF);
+  //     queuedEvent->triggered = false;
+  //     if (queuedEvent->next != NULL) {
+  //       queuedEvent = queuedEvent->next;
+  //     } else {
+  //       queuedEvent = head;
+  //     }
+  //   }
+  // }
 }
 
 
