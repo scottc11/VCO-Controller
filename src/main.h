@@ -51,7 +51,7 @@
 
 #define DEGREES_INT          PC_12
 
-#define TCA9544A_ADDR            0x70 // 1110000
+#define TCA9548A_ADDR            0x70 // 1110000
 #define CAP1208_ADDR             0x50 // 0010100  via mux
 #define CAP1208_CTRL_ADDR        0x50 // 0010100
 

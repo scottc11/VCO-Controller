@@ -5,13 +5,13 @@ void TouchChannel::init() {
   leds->initialize();
 
   if (!touch->isConnected()) {
-    this->updateLeds(0xFF);
+    this->setOctaveLed(3);
+    this->setOctaveLed(2);
     return;
   }
   touch->calibrate();
   touch->clearInterupt();
 
-  this->updateLeds(0x00);
   this->setOctaveLed(currOctave);
 
   dac->init();

@@ -6,7 +6,7 @@
 #include "CAP1208.h"
 #include "MIDI.h"
 #include "DAC8554.h"
-#include "TCA9544A.h"
+#include "TCA9548A.h"
 #include "MCP23017.h"
 #include "MCP4922.h"
 #include "TLC59116.h"
@@ -36,13 +36,16 @@ TLC59116 ledsC(&i2c3, TLC59116_CHAN_C_ADDR);
 TLC59116 ledsD(&i2c3, TLC59116_CHAN_D_ADDR);
 TLC59116 octaveLeds(&i2c3, TLC59116_OCT_LEDS_ADDR);
 
-TCA9544A i2cMux(&i2c1, TCA9544A_ADDR);
+TCA9548A i2cMux(&i2c1, TCA9548A_ADDR);
 
-// CAP1208 touchCTRL(&i2c3);
-CAP1208 touchA(&i2c1, &i2cMux, 1);
-CAP1208 touchB(&i2c1, &i2cMux, 0);
-CAP1208 touchC(&i2c1, &i2cMux, 3);
-CAP1208 touchD(&i2c1, &i2cMux, 2);
+
+CAP1208 touchA(&i2c1, &i2cMux, TCA9548A::CH6);
+CAP1208 touchB(&i2c1, &i2cMux, TCA9548A::CH7);
+CAP1208 touchC(&i2c1, &i2cMux, TCA9548A::CH1);
+CAP1208 touchD(&i2c1, &i2cMux, TCA9548A::CH0);
+CAP1208 touchCTRL(&i2c1, &i2cMux, TCA9548A::CH5);
+CAP1208 touchOctAB(&i2c1, &i2cMux, TCA9548A::CH4);
+CAP1208 touchOctCD(&i2c1, &i2cMux, TCA9548A::CH3);
 
 Degrees degrees(DEGREES_INT, &io);
 
@@ -51,7 +54,7 @@ TouchChannel channelB(1, GATE_OUT_B, TOUCH_INT_B, CTRL_LED_B, ADC_B, &touchB, &l
 TouchChannel channelC(2, GATE_OUT_C, TOUCH_INT_C, CTRL_LED_C, ADC_C, &touchC, &ledsC, &octaveLeds, OCTAVE_LED_PINS_C, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_C);
 TouchChannel channelD(3, GATE_OUT_D, TOUCH_INT_D, CTRL_LED_D, ADC_D, &touchD, &ledsD, &octaveLeds, OCTAVE_LED_PINS_D, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_D);
 
-// GlobalControl globalCTRL(&touchCTRL, TOUCH_INT_CTRL, DISPLAY_DATA, DISPLAY_CLK, DISPLAY_LATCH, ENCODER_CHAN_A, ENCODER_CHAN_B, ENCODER_BTN, &channelA, &channelB, &channelC, &channelD, &metronome);
+// GlobalControl globalCTRL(&touchCTRL, TOUCH_INT_CTRL, &channelA, &channelB, &channelC, &channelD, &metronome);
 
 int newClockTimeStamp;
 int lastClockTimeStamp;
