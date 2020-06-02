@@ -8,10 +8,15 @@
 */
 
 void GlobalControl::init() {
-  cap->init();
-  display.init(channels[selectedChannel]->numLoopSteps);
-  encoder.init(0, 99);
-  encoder.attachBtnCallback(callback(this, &GlobalControl::handleEncoderPressed));
+  touchCtrl->init();
+  touchOctAB->init();
+  touchOctCD->init();
+
+  if (!touchOctAB->isConnected()) {
+    channels[2]->ctrlLed.write(HIGH);
+  }
+
+  channels[0]->ctrlLed.write(HIGH);
   selectChannel(0);
 }
 
@@ -21,15 +26,14 @@ void GlobalControl::poll() {
     handleTouchEvent();
     touchDetected = false;
   }
-  if (encoder.getValue() != channels[selectedChannel]->numLoopSteps) {
-    handleEncoderRotation();
-  }
+  handleOctaveTouched();
+  // if (octaveTouchDetected) {
+    
+  //   octaveTouchDetected = false;
+  // }
 }
 
 
-void GlobalControl::handleEncoderPressed() {
-  channels[selectedChannel]->clearEventList();
-}
 
 /**
  * CHANNEL SELECT
@@ -45,37 +49,61 @@ void GlobalControl::selectChannel(int channel) {
   selectedChannel = channel;
   channels[selectedChannel]->isSelected = true;
   channels[selectedChannel]->ctrlLed.write(HIGH);
-  encoder.setValue(channels[selectedChannel]->numLoopSteps);
-  display.write(encoder.value);
-}
-
-
-/**
- * HANDLE ENCODER ROTATION
-*/
-void GlobalControl::handleEncoderRotation() {
-  int value = encoder.getValue();
-  channels[selectedChannel]->setNumLoopSteps(value);
-  display.write(channels[selectedChannel]->numLoopSteps);
 }
 
 /**
  * HANDLE TOUCH EVENT
 */
 void GlobalControl::handleTouchEvent() {
-  currTouched = cap->touched();
+  currTouched = touchCtrl->touched();
   if (currTouched != prevTouched) {
     for (int i=0; i<8; i++) {
-      if (cap->padIsTouched(i, currTouched, prevTouched)) {
+      if (touchCtrl->padIsTouched(i, currTouched, prevTouched)) {
         handleTouch(i);
       }
-      if (cap->padWasTouched(i, currTouched, prevTouched)) {
+      if (touchCtrl->padWasTouched(i, currTouched, prevTouched)) {
         handleRelease(i);
       }
     }
     prevTouched = currTouched;
   }
 }
+
+void GlobalControl::handleOctaveTouched() {
+  // put both touch ICs data into a 16 bit int
+  uint8_t touchedAB = touchOctAB->touched();
+  uint8_t touchedCD = touchOctCD->touched();
+  currOctavesTouched = two8sTo16(touchedCD, touchedAB);
+  if (currOctavesTouched != prevOctavesTouched) {
+    for (int i=0; i<16; i++) {
+      if (touchCtrl->padIsTouched(i, currOctavesTouched, prevOctavesTouched)) {
+        switch (i) {
+          case 0: channels[2]->handleOctaveChange(0); break;
+          case 1: channels[2]->handleOctaveChange(1); break;
+          case 2: channels[2]->handleOctaveChange(2); break;
+          case 3: channels[2]->handleOctaveChange(3); break;
+          case 4: channels[3]->handleOctaveChange(0); break;
+          case 5: channels[3]->handleOctaveChange(1); break;
+          case 6: channels[3]->handleOctaveChange(2); break;
+          case 7: channels[3]->handleOctaveChange(3); break;
+          case 8: channels[0]->handleOctaveChange(0); break;
+          case 9: channels[0]->handleOctaveChange(1); break;
+          case 10: channels[0]->handleOctaveChange(2); break;
+          case 11: channels[0]->handleOctaveChange(3); break;
+          case 12: channels[1]->handleOctaveChange(0); break;
+          case 13: channels[1]->handleOctaveChange(1); break;
+          case 14: channels[1]->handleOctaveChange(2); break;
+          case 15: channels[1]->handleOctaveChange(3); break;
+        }
+      }
+      if (touchCtrl->padWasTouched(i, currOctavesTouched, prevOctavesTouched)) {
+        
+      }
+    }
+    prevOctavesTouched = currOctavesTouched;
+  }
+}
+
 
 /**
  * HANDLE TOUCH TOUCHED

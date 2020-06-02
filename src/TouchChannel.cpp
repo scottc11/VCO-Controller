@@ -12,7 +12,7 @@ void TouchChannel::init() {
   touch->calibrate();
   touch->clearInterupt();
 
-  this->setOctaveLed(currOctave);
+  this->handleOctaveChange(currOctave);
 
   dac->init();
 
@@ -144,7 +144,7 @@ void TouchChannel::handleSwitchInterupt() {
   }
 
   if (octaveSwitchState != (prevSwitchStates & 0b00001100) ) {
-    handleOctaveSwitch(octaveSwitchState);
+    handleOctaveChange(octaveSwitchState);
   }
   
   prevSwitchStates = currSwitchStates;
@@ -243,31 +243,23 @@ void TouchChannel::handleModeSwitch(int state) {
 
 
 /**
- * octave switch states determined by bits 5 and 6 of io's port B
+ * take a number between 0 - 3 and apply to currOctave
 **/
-void TouchChannel::handleOctaveSwitch(int state) {
-  // update the octave value
-  switch (state) {
-    case OCTAVE_UP:
-      if (currOctave < 3) { currOctave += 1; }
-      break;
-    case OCTAVE_DOWN:
-      if (currOctave > 0) { currOctave -= 1; }
-      break;
-  }
+void TouchChannel::handleOctaveChange(int value) {
+  
+  currOctave = value;
   setOctaveLed(currOctave);
 
-  if (state == OCTAVE_UP || state == OCTAVE_DOWN) {  // only want this to happen once
-    switch (mode) {
-      case MONO:
-        triggerNote(currNoteIndex, currOctave, ON);
-        break;
-      case QUANTIZE:
-        break;
-      case MONO_LOOP:
-        break;
-    }
+  switch (mode) {
+    case MONO:
+      triggerNote(currNoteIndex, currOctave, ON);
+      break;
+    case QUANTIZE:
+      break;
+    case MONO_LOOP:
+      break;
   }
+
   prevOctave = currOctave;
 }
 
@@ -314,7 +306,13 @@ void TouchChannel::updateLeds(uint8_t touched) {
 }
 
 void TouchChannel::setOctaveLed(int octave) {
-  octLeds->setLedOutput(octLedPins[octave], TLC59116::ON);
+  for (int i = 0; i < 4; i++) {
+    if (i == octave) {
+      octLeds->setLedOutput(octLedPins[i], TLC59116::ON);
+    } else {
+      octLeds->setLedOutput(octLedPins[i], TLC59116::OFF);
+    }
+  }
 }
 
 void TouchChannel::triggerNote(int index, int octave, NoteState state) {

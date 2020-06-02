@@ -143,7 +143,7 @@ class TouchChannel : public EventLoop {
     void handleDegreeChange();
     void handleSwitchInterupt();
     void handleModeSwitch(int state);
-    void handleOctaveSwitch(int state);
+    void handleOctaveChange(int value);
     void tickClock();
     void stepClock();
     int quantizePosition(int position);

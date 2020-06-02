@@ -54,7 +54,7 @@ TouchChannel channelB(1, GATE_OUT_B, TOUCH_INT_B, CTRL_LED_B, ADC_B, &touchB, &l
 TouchChannel channelC(2, GATE_OUT_C, TOUCH_INT_C, CTRL_LED_C, ADC_C, &touchC, &ledsC, &octaveLeds, OCTAVE_LED_PINS_C, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_C);
 TouchChannel channelD(3, GATE_OUT_D, TOUCH_INT_D, CTRL_LED_D, ADC_D, &touchD, &ledsD, &octaveLeds, OCTAVE_LED_PINS_D, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_D);
 
-// GlobalControl globalCTRL(&touchCTRL, TOUCH_INT_CTRL, &channelA, &channelB, &channelC, &channelD, &metronome);
+GlobalControl globalCTRL(&touchCTRL, &touchOctAB, &touchOctCD, TOUCH_INT_CTRL, TOUCH_INT_OCT, &channelA, &channelB, &channelC, &channelD, &metronome);
 
 int newClockTimeStamp;
 int lastClockTimeStamp;
@@ -98,7 +98,7 @@ int main() {
   channelC.init();
   channelD.init();
 
-  // globalCTRL.init();
+  globalCTRL.init();
 
 
   // timer.start();
@@ -116,7 +116,7 @@ int main() {
     channelC.poll();
     channelD.poll();
 
-    // globalCTRL.poll();
+    globalCTRL.poll();
     
   }
 }

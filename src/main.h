@@ -48,6 +48,7 @@
 #define TOUCH_INT_C          PC_15
 #define TOUCH_INT_D          PC_14
 #define TOUCH_INT_CTRL       PC_13
+#define TOUCH_INT_OCT        PC_7
 
 #define DEGREES_INT          PC_12
 
