@@ -63,10 +63,14 @@ void TouchChannel::handleCVInput(int value) {
   }
 }
 
-// when a channels degree is touched, toggle the active/inactive status of the touched degree
-void TouchChannel::setActiveDegrees(int degrees) {
-  activeDegrees = degrees;
-  this->updateLeds(activeDegrees);
+/**
+ * when a channels degree is touched, toggle the active/inactive status of the 
+ * touched degree by flipping the bit of the given index that was touched
+*/
+void TouchChannel::setActiveDegrees(int index) {
+  activeDegrees = bitFlip(activeDegrees, index);
+  
+  this->updateActiveDegreeLEDs();
   
   // apply the number of active degrees to numActiveDegrees variable
   numActiveDegrees = 0;

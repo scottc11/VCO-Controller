@@ -3,25 +3,29 @@
 void TouchChannel::init() {
   touch->init();
   leds->initialize();
-
-  if (!touch->isConnected()) {
-    this->setOctaveLed(3);
-    this->setOctaveLed(2);
-    return;
-  }
+  if (!touch->isConnected()) { this->setOctaveLed(3); return; }
   touch->calibrate();
   touch->clearInterupt();
-
-  this->handleOctaveChange(currOctave);
-
   dac->init();
 
+  // intialize inheritance variables
+  numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
+  timeQuantizationMode = QUANT_NONE;
+  currStep = 0;
+  currTick = 0;
+  currPosition = 0;
+
+  // initialize default variables
   currNoteIndex = 0;
   currOctave = 0;
-  dac->write(dacChannel, calculateDACNoteValue(currNoteIndex, currOctave));
+  counter = 0;
+  touched = 0;
+  prevTouched = 0;
+  enableQuantizer = false;
+  mode = MONO;
 
+  this->handleOctaveChange(currOctave);
   this->initQuantizer();
-
 }
 
 // HANDLE ALL INTERUPT FLAGS
@@ -30,19 +34,26 @@ void TouchChannel::poll() {
     handleTouch();
     touchDetected = false;
   }
+  currModeBtnState = modeBtn.read();
+  if (currModeBtnState != prevModeBtnState) {
+    if (currModeBtnState == LOW) {
+      this->toggleMode();
+    }
+    prevModeBtnState = currModeBtnState;
+  }
 
   // if (degrees->hasChanged[channel]) {
   //   handleDegreeChange();
   // }
 
-  // if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer) {
-  //   this->flashNoteLed(currNoteIndex);
-  //   currCVInputValue = cvInput.read_u16();
-  //   if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER ) {
-  //     handleCVInput(currCVInputValue);
-  //     prevCVInputValue = currCVInputValue;
-  //   }
-  // }
+  if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer) {
+    // this->flashNoteLed(currNoteIndex);
+    currCVInputValue = cvInput.read_u16();
+    if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER ) {
+      handleCVInput(currCVInputValue);
+      prevCVInputValue = currCVInputValue;
+    }
+  }
 
   // if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && queuedEvent && enableLoop ) {
   //   handleQueuedEvent(currPosition);
@@ -130,27 +141,6 @@ void TouchChannel::stepClock() {
   }
 }
 
-/**
- * HANDLE SWITCH INTERUPT
-*/
-void TouchChannel::handleSwitchInterupt() {
-  wait_us(10); // debounce
-  currSwitchStates = readSwitchStates();
-  int modeSwitchState = currSwitchStates & 0b00000011;   // set first 6 bits to zero
-  int octaveSwitchState = currSwitchStates & 0b00001100; // set first 4 bits, and last 2 bits to zero
-  
-  if (modeSwitchState != (prevSwitchStates & 0b00000011) ) {
-    handleModeSwitch(modeSwitchState);
-  }
-
-  if (octaveSwitchState != (prevSwitchStates & 0b00001100) ) {
-    handleOctaveChange(octaveSwitchState);
-  }
-  
-  prevSwitchStates = currSwitchStates;
-  switchHasChanged = false;
-}
-
 
 /**
  * 
@@ -169,12 +159,12 @@ void TouchChannel::handleTouch() {
             triggerNote(i, currOctave, ON);
             break;
           case QUANTIZE:
-            setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
+            setActiveDegrees(i);
             break;
           case QUANTIZE_LOOP:
             // every touch detected, take a snapshot of all active degree values and apply them to a EventNode
             enableLoop = false;
-            setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
+            setActiveDegrees(i);
             createChordEvent(currPosition, activeDegrees);
             addEventToList(currPosition);
             break;
@@ -193,19 +183,19 @@ void TouchChannel::handleTouch() {
           case MONO:
             triggerNote(i, currOctave, OFF);
             break;
+          case QUANTIZE:
+            enableLoop = true;
+            break;
           case QUANTIZE_LOOP:
-            
             enableLoop = true;
             break;
           case MONO_LOOP:
-            
             triggerNote(i, currOctave, OFF);
             enableLoop = true;
             break;
         }
       }
     }
-    // reg.writeByte(touched); // toggle channel LEDs
     prevTouched = touched;
   }
 }
@@ -213,30 +203,38 @@ void TouchChannel::handleTouch() {
 /**
  * mode switch states determined by the last 2 bits of io's port B
 **/
-void TouchChannel::handleModeSwitch(int state) {
-  
-  switch (state) {
-    case 0b00000011:
+void TouchChannel::toggleMode() {
+  enableQuantizer = false;
+  modeCounter += 2; // to be changed to 1 when other modes implemented
+  if (modeCounter > 3) { modeCounter = 0; }
+
+  switch (modeCounter) {
+    case MONO:
       enableLoop = false;
       mode = MONO;
+      leds->setAllOutputsOff();
       triggerNote(currNoteIndex, currOctave, ON);
       triggerNote(currNoteIndex, currOctave, OFF);
       break;
-    case 0b00000010:
-      // enableLoop = false;
-      // mode = QUANTIZE;
-      // triggerNote(prevNoteIndex, currOctave, OFF);
-      
-      // delete previous loop objects for safety
-      this->clearEventList();
-      enableLoop = true;
-      mode = QUANTIZE_LOOP;
+    case QUANTIZE:
+      enableLoop = false;
+      enableQuantizer = true;
+      mode = QUANTIZE;
+      leds->setAllOutputsOff();
+      updateActiveDegreeLEDs();
       triggerNote(prevNoteIndex, currOctave, OFF);
       break;
-    case 0b00000001:
-      enableLoop = true;
-      mode = MONO_LOOP;
-      triggerNote(prevNoteIndex, currOctave, OFF);
+    case QUANTIZE_LOOP:
+      // delete previous loop objects for safety
+      // this->clearEventList();
+      // enableLoop = true;
+      // mode = QUANTIZE_LOOP;
+      // triggerNote(prevNoteIndex, currOctave, OFF);
+      break;
+    case MONO_LOOP:
+      // enableLoop = true;
+      // mode = MONO_LOOP;
+      // triggerNote(prevNoteIndex, currOctave, OFF);
       break;
   }
 }
@@ -274,11 +272,6 @@ void TouchChannel::handleDegreeChange() {
       break;
   }
   degrees->hasChanged[channel] = false;
-}
-
-int TouchChannel::readSwitchStates() {
-  // return io->digitalRead(MCP23017_PORTB) & 0xF;
-  return 0;
 }
 
 void TouchChannel::setLed(int index, int state) {
@@ -332,7 +325,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state) {
     case OFF:
       gateOut.write(LOW);
       midi->sendNoteOff(channel, calculateMIDINoteValue(index, octave), 100);
-      wait_us(5);
+      wait_us(1);
       break;
   }
   prevOctave = octave;
@@ -384,5 +377,15 @@ void TouchChannel::reset() {
       currPosition = 0;
       currStep = 0;
       break;
+  }
+}
+
+void TouchChannel::updateActiveDegreeLEDs() {
+  for (int i = 0; i < 8; i++) {
+    if (bitRead(activeDegrees, i)) {
+      leds->setLedOutput(redLedPins[i], TLC59116::ON);
+    } else {
+      leds->setLedOutput(redLedPins[i], TLC59116::OFF);
+    }
   }
 }

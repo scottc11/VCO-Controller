@@ -22,11 +22,12 @@
 
 #define DAC_CS               PC_8
 
-#define EXT_CLOCK_INPUT      PA_9
+#define EXT_CLOCK_INPUT      PB_10
 
-#define DISPLAY_CLK          PB_2
-#define DISPLAY_DATA         PB_10
-#define DISPLAY_LATCH        PB_1
+#define MODE_PIN_A           PA_9
+#define MODE_PIN_B           PA_10
+#define MODE_PIN_C           PA_11
+#define MODE_PIN_D           PA_12
 
 #define ADC_A                PA_6
 #define ADC_B                PA_7

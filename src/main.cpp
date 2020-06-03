@@ -49,10 +49,10 @@ CAP1208 touchOctCD(&i2c1, &i2cMux, TCA9548A::CH3);
 
 Degrees degrees(DEGREES_INT, &io);
 
-TouchChannel channelA(0, GATE_OUT_A, TOUCH_INT_A, CTRL_LED_A, ADC_A, &touchA, &ledsA, &octaveLeds, OCTAVE_LED_PINS_A, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_A);
-TouchChannel channelB(1, GATE_OUT_B, TOUCH_INT_B, CTRL_LED_B, ADC_B, &touchB, &ledsB, &octaveLeds, OCTAVE_LED_PINS_B, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_B);
-TouchChannel channelC(2, GATE_OUT_C, TOUCH_INT_C, CTRL_LED_C, ADC_C, &touchC, &ledsC, &octaveLeds, OCTAVE_LED_PINS_C, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_C);
-TouchChannel channelD(3, GATE_OUT_D, TOUCH_INT_D, CTRL_LED_D, ADC_D, &touchD, &ledsD, &octaveLeds, OCTAVE_LED_PINS_D, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_D);
+TouchChannel channelA(0, MODE_PIN_A, GATE_OUT_A, TOUCH_INT_A, CTRL_LED_A, ADC_A, &touchA, &ledsA, &octaveLeds, OCTAVE_LED_PINS_A, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_A);
+TouchChannel channelB(1, MODE_PIN_B, GATE_OUT_B, TOUCH_INT_B, CTRL_LED_B, ADC_B, &touchB, &ledsB, &octaveLeds, OCTAVE_LED_PINS_B, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_B);
+TouchChannel channelC(2, MODE_PIN_C, GATE_OUT_C, TOUCH_INT_C, CTRL_LED_C, ADC_C, &touchC, &ledsC, &octaveLeds, OCTAVE_LED_PINS_C, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_C);
+TouchChannel channelD(3, MODE_PIN_D, GATE_OUT_D, TOUCH_INT_D, CTRL_LED_D, ADC_D, &touchD, &ledsD, &octaveLeds, OCTAVE_LED_PINS_D, &degrees, &midi, &metronome, &dac, DAC8554::CHAN_D);
 
 GlobalControl globalCTRL(&touchCTRL, &touchOctAB, &touchOctCD, TOUCH_INT_CTRL, TOUCH_INT_OCT, &channelA, &channelB, &channelC, &channelD, &metronome);
 
