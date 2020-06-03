@@ -64,6 +64,8 @@ public:
   void handleRelease(int pad);
   void handleTouchEvent();
   void handleOctaveTouched();
+  void setChannelOctave(int pad);
+  void setChannelLoopMultiplier(int pad);
 
   void handleTouchInterupt() {
     touchDetected = true;

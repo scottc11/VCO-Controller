@@ -77,23 +77,13 @@ void GlobalControl::handleOctaveTouched() {
   if (currOctavesTouched != prevOctavesTouched) {
     for (int i=0; i<16; i++) {
       if (touchCtrl->padIsTouched(i, currOctavesTouched, prevOctavesTouched)) {
-        switch (i) {
-          case 0:  channels[2]->handleOctaveChange(0); break;
-          case 1:  channels[2]->handleOctaveChange(1); break;
-          case 2:  channels[2]->handleOctaveChange(2); break;
-          case 3:  channels[2]->handleOctaveChange(3); break;
-          case 4:  channels[3]->handleOctaveChange(0); break;
-          case 5:  channels[3]->handleOctaveChange(1); break;
-          case 6:  channels[3]->handleOctaveChange(2); break;
-          case 7:  channels[3]->handleOctaveChange(3); break;
-          case 8:  channels[0]->handleOctaveChange(0); break;
-          case 9:  channels[0]->handleOctaveChange(1); break;
-          case 10: channels[0]->handleOctaveChange(2); break;
-          case 11: channels[0]->handleOctaveChange(3); break;
-          case 12: channels[1]->handleOctaveChange(0); break;
-          case 13: channels[1]->handleOctaveChange(1); break;
-          case 14: channels[1]->handleOctaveChange(2); break;
-          case 15: channels[1]->handleOctaveChange(3); break;
+        switch (currTouched) {
+          case 0b00000001: // loop length is currenttly being touched
+            setChannelLoopMultiplier(i);
+            break;
+          case 0b00000000:
+            setChannelOctave(i);
+            break;
         }
       }
       if (touchCtrl->padWasTouched(i, currOctavesTouched, prevOctavesTouched)) {
@@ -104,6 +94,48 @@ void GlobalControl::handleOctaveTouched() {
   }
 }
 
+
+void GlobalControl::setChannelLoopMultiplier(int pad) {
+  switch (pad) {
+    case 0:  channels[2]->setLoopMultiplier(1); break;
+    case 1:  channels[2]->setLoopMultiplier(2); break;
+    case 2:  channels[2]->setLoopMultiplier(3); break;
+    case 3:  channels[2]->setLoopMultiplier(4); break;
+    case 4:  channels[3]->setLoopMultiplier(1); break;
+    case 5:  channels[3]->setLoopMultiplier(2); break;
+    case 6:  channels[3]->setLoopMultiplier(3); break;
+    case 7:  channels[3]->setLoopMultiplier(4); break;
+    case 8:  channels[0]->setLoopMultiplier(1); break;
+    case 9:  channels[0]->setLoopMultiplier(2); break;
+    case 10: channels[0]->setLoopMultiplier(3); break;
+    case 11: channels[0]->setLoopMultiplier(4); break;
+    case 12: channels[1]->setLoopMultiplier(1); break;
+    case 13: channels[1]->setLoopMultiplier(2); break;
+    case 14: channels[1]->setLoopMultiplier(3); break;
+    case 15: channels[1]->setLoopMultiplier(4); break;
+  }
+}
+
+void GlobalControl::setChannelOctave(int pad) {
+  switch (pad) {
+    case 0:  channels[2]->setOctave(0); break;
+    case 1:  channels[2]->setOctave(1); break;
+    case 2:  channels[2]->setOctave(2); break;
+    case 3:  channels[2]->setOctave(3); break;
+    case 4:  channels[3]->setOctave(0); break;
+    case 5:  channels[3]->setOctave(1); break;
+    case 6:  channels[3]->setOctave(2); break;
+    case 7:  channels[3]->setOctave(3); break;
+    case 8:  channels[0]->setOctave(0); break;
+    case 9:  channels[0]->setOctave(1); break;
+    case 10: channels[0]->setOctave(2); break;
+    case 11: channels[0]->setOctave(3); break;
+    case 12: channels[1]->setOctave(0); break;
+    case 13: channels[1]->setOctave(1); break;
+    case 14: channels[1]->setOctave(2); break;
+    case 15: channels[1]->setOctave(3); break;
+  }
+}
 
 /**
  * HANDLE TOUCH TOUCHED

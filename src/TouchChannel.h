@@ -126,32 +126,34 @@ class TouchChannel : public EventLoop {
     void poll();
     void handleTouchInterupt() { touchDetected = true; }
     
-    void flashNoteLed(int index);
     void setLed(int index, int state);
     void setAllLeds(int state);
-    void toggleLed(int index);
     void setOctaveLed(int octave);
-
-    void updateActiveDegreeLEDs();
+    void setLoopMultiplierLeds();
+    void updateActiveDegreeLeds();
     void updateLeds(uint8_t touched);  // could be obsolete
+
     void handleTouch();
     void handleDegreeChange();
     void toggleMode();
-    void handleOctaveChange(int value);
+    
     void tickClock();
     void stepClock();
     int quantizePosition(int position);
-    void calculateLoopLength();
     int calculateMIDINoteValue(int index, int octave);
     int calculateDACNoteValue(int index, int octave);
+    
+    void setOctave(int value);
     void triggerNote(int index, int octave, NoteState state);
     void freeze(bool enable);
     void reset();
 
+    void calculateLoopLength();
     void enableLoopLengthUI();
     void disableLoopLengthUI();
     void updateLoopLengthUI();
     void setLoopLength(int num);
+    void setLoopMultiplier(int value);
     
     void handleQueuedEvent(int position);
 

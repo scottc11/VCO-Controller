@@ -25,7 +25,7 @@ void TouchChannel::init() {
   enableQuantizer = false;
   mode = MONO;
 
-  this->handleOctaveChange(currOctave);
+  this->setOctave(currOctave);
   this->initQuantizer();
 }
 
@@ -33,9 +33,7 @@ void TouchChannel::init() {
 void TouchChannel::poll() {
   
   if (mode == LOOP_LENGTH_UI) {
-    // set all leds based on loop length * multiplier
-    // toggleLoopLengthUI()
-    // revertUI()
+    // take current clock step and flash the corrosponding channel LED and Octave LED
   }
 
   if (touchDetected) {
@@ -69,12 +67,6 @@ void TouchChannel::poll() {
   // }
 }
 
-void TouchChannel::flashNoteLed(int index) {
-  if (currPosition % 6 == 0) {
-    this->toggleLed(currNoteIndex);
-  }
-}
-
 void TouchChannel::handleQueuedEvent(int position) {
   // if (queuedEvent->triggered == false ) {
   //   if (position == queuedEvent->startPos) {
@@ -102,6 +94,9 @@ void TouchChannel::handleQueuedEvent(int position) {
   // }
 }
 
+/** ------------------------------------------------------------------------
+ *         LOOP UI METHODS
+---------------------------------------------------------------------------- */
 
 void TouchChannel::enableLoopLengthUI() {
   prevMode = mode;
@@ -112,20 +107,27 @@ void TouchChannel::enableLoopLengthUI() {
 void TouchChannel::disableLoopLengthUI() {
   this->mode = prevMode;
   setAllLeds(LOW);
+  setOctaveLed(currOctave);
   triggerNote(currNoteIndex, currOctave, PREV);
 }
 
 void TouchChannel::updateLoopLengthUI() {
   setAllLeds(LOW);
+  setLoopMultiplierLeds();
   for (int i = 0; i < numLoopSteps; i++) {
     setLed(i, HIGH);
   }
 }
 
-void TouchChannel::setLoopLength(int num) {
-  numLoopSteps = num;
+void TouchChannel::setLoopLength(int value) {
+  numLoopSteps = value;
   updateLoopLengthUI();
 };
+
+void TouchChannel::setLoopMultiplier(int value) {
+  loopMultiplier = value;
+  updateLoopLengthUI();
+}
 
 /**
  * CALCULATE LOOP LENGTH
@@ -133,6 +135,12 @@ void TouchChannel::setLoopLength(int num) {
 void TouchChannel::calculateLoopLength() {
   loopLength = numLoopSteps * PPQN;
 }
+
+
+
+/** ------------------------------------------------------------------------
+ *         CLOCK METHODS
+---------------------------------------------------------------------------- */
 
 /**
  * ADVANCE LOOP POSITION
@@ -257,7 +265,7 @@ void TouchChannel::toggleMode() {
       enableQuantizer = true;
       mode = QUANTIZE;
       setAllLeds(LOW);
-      updateActiveDegreeLEDs();
+      updateActiveDegreeLeds();
       triggerNote(prevNoteIndex, currOctave, OFF);
       break;
     case QUANTIZE_LOOP:
@@ -279,7 +287,7 @@ void TouchChannel::toggleMode() {
 /**
  * take a number between 0 - 3 and apply to currOctave
 **/
-void TouchChannel::handleOctaveChange(int value) {
+void TouchChannel::setOctave(int value) {
   
   currOctave = value;
   setOctaveLed(currOctave);
@@ -310,6 +318,12 @@ void TouchChannel::handleDegreeChange() {
   degrees->hasChanged[channel] = false;
 }
 
+
+
+/** ------------------------------------------------------------------------
+ *         LED METHODS
+---------------------------------------------------------------------------- */
+
 void TouchChannel::setAllLeds(int state) {
   switch (state) {
     case HIGH:
@@ -334,12 +348,6 @@ void TouchChannel::setLed(int index, int state) {
   
 }
 
-void TouchChannel::toggleLed(int index) {
-  int toggles = activeDegrees;
-  toggles ^= 1UL << index;
-  // io->digitalWrite(MCP23017_PORTA, toggles);
-}
-
 void TouchChannel::updateLeds(uint8_t touched) {
   leds->setLedOutput16(ledStates);
 }
@@ -354,6 +362,20 @@ void TouchChannel::setOctaveLed(int octave) {
   }
 }
 
+void TouchChannel::setLoopMultiplierLeds() {
+  for (int i = 0; i < 4; i++) {
+    if (i == loopMultiplier - 1) {  // loopMultiplier is not zro indexed
+      octLeds->setLedOutput(octLedPins[i], TLC59116::ON);
+    } else {
+      octLeds->setLedOutput(octLedPins[i], TLC59116::OFF);
+    }
+  }
+}
+
+/** ------------------------------------------------------------------------
+ *        TRIGGER NOTE
+---------------------------------------------------------------------------- */
+ 
 void TouchChannel::triggerNote(int index, int octave, NoteState state) {
   switch (state) {
     case ON:
@@ -429,7 +451,7 @@ void TouchChannel::reset() {
   }
 }
 
-void TouchChannel::updateActiveDegreeLEDs() {
+void TouchChannel::updateActiveDegreeLeds() {
   for (int i = 0; i < 8; i++) {
     if (bitRead(activeDegrees, i)) {
       leds->setLedOutput(redLedPins[i], TLC59116::ON);

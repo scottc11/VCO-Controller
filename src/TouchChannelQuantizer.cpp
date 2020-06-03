@@ -70,7 +70,7 @@ void TouchChannel::handleCVInput(int value) {
 void TouchChannel::setActiveDegrees(int index) {
   activeDegrees = bitFlip(activeDegrees, index);
   
-  this->updateActiveDegreeLEDs();
+  this->updateActiveDegreeLeds();
   
   // apply the number of active degrees to numActiveDegrees variable
   numActiveDegrees = 0;
