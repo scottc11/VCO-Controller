@@ -56,7 +56,7 @@ void TouchChannel::handleCVInput(int value) {
       if (prevNoteIndex != activeDegreeValues[i].noteIndex || prevOctave != octave) {
         this->triggerNote(prevNoteIndex, prevOctave, OFF);
         this->triggerNote(activeDegreeValues[i].noteIndex, octave, ON);
-        this->setOctaveLed(octave);
+        this->updateOctaveLeds(octave);
       }
       break;
     }

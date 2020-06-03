@@ -62,10 +62,10 @@ int clockPeriod;
 
 void tick() {
   metronome.tick();
-  // channelA.tickClock();
-  // channelB.tickClock();
-  // channelC.tickClock();
-  // channelD.tickClock();
+  channelA.tickClock();
+  channelB.tickClock();
+  channelC.tickClock();
+  channelD.tickClock();
 }
 
 void extTick() {
@@ -77,10 +77,10 @@ void extTick() {
   newClockTimeStamp = timer.read_us();
   clockPeriod = newClockTimeStamp - lastClockTimeStamp;
   metronome.step();
-  // channelA.stepClock();
-  // channelB.stepClock();
-  // channelC.stepClock();
-  // channelD.stepClock();
+  channelA.stepClock();
+  channelB.stepClock();
+  channelC.stepClock();
+  channelD.stepClock();
 
   ticker.attach_us(&tick, clockPeriod / PPQN);  // potentially write this as a flag and update in main loop
 }
@@ -101,12 +101,12 @@ int main() {
   globalCTRL.init();
 
 
-  // timer.start();
-  // newClockTimeStamp = timer.read_us();
-  // metronome.init();
+  timer.start();
+  newClockTimeStamp = timer.read_us();
+  metronome.init();
 
-  // ticker.attach_us(&tick, (1000000/2) / PPQN); //approx 120 bpm
-  // extClockInput.rise(&extTick);
+  ticker.attach_us(&tick, (1000000/2) / PPQN); //approx 120 bpm
+  extClockInput.rise(&extTick);
 
   while(1) {
 

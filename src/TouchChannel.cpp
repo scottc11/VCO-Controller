@@ -4,7 +4,7 @@ void TouchChannel::init() {
   touch->init();
   leds->initialize();
 
-  if (!touch->isConnected()) { this->setOctaveLed(3); return; }
+  if (!touch->isConnected()) { this->updateOctaveLeds(3); return; }
   touch->calibrate();
   touch->clearInterupt();
   dac->init();
@@ -35,6 +35,14 @@ void TouchChannel::poll() {
   
   if (mode == LOOP_LENGTH_UI) {
     // take current clock step and flash the corrosponding channel LED and Octave LED
+    if (currTick == 0) {
+      if (currStep != 0) {
+        setLed(currStep - 1, HIGH);
+      } else {
+        setLed(numLoopSteps - 1, HIGH);
+      }
+      setLed(currStep, BLINK);
+    }
   }
 
   if (touchDetected) {
@@ -108,7 +116,7 @@ void TouchChannel::enableLoopLengthUI() {
 void TouchChannel::disableLoopLengthUI() {
   this->mode = prevMode;
   setAllLeds(LOW);
-  setOctaveLed(currOctave);
+  updateOctaveLeds(currOctave);
   triggerNote(currNoteIndex, currOctave, PREV);
 }
 
@@ -116,7 +124,11 @@ void TouchChannel::updateLoopLengthUI() {
   setAllLeds(LOW);
   setLoopMultiplierLeds();
   for (int i = 0; i < numLoopSteps; i++) {
-    setLed(i, HIGH);
+    if (i == currStep) {
+      setLed(i, BLINK);
+    } else {
+      setLed(i, HIGH);
+    }
   }
 }
 
@@ -167,28 +179,29 @@ void TouchChannel::tickClock() {
 }
 
 void TouchChannel::stepClock() {
+  if (isSelected) { 
+    ctrlLed.write(LOW);
+  } else {
+    ctrlLed.write(HIGH);
+  }
+
   currTick = 0;
   currStep += 1;
   // when currStep eqauls number of steps in loop, reset currStep and currPosition to 0
   if (currStep >= numLoopSteps) {
     currStep = 0;
     currPosition = 0;
-    
-    // signal end of loop via control led
-    if (isSelected) { 
-      ctrlLed.write(LOW);
-    } else {
-      ctrlLed.write(HIGH);
-    }
   }
 }
 
 
-/**
- * 
- * NOTE: you need a way to trigger events after a series of touches have happened, and the channel is now not being touched
- * 
-*/ 
+
+/** ------------------------------------------------------------------------
+ *         TOUCH EVENT METHODS
+---------------------------------------------------------------------------- */
+
+// NOTE: you need a way to trigger events after a series of touches have happened, and the channel is now not being touched
+
 void TouchChannel::handleTouch() {
   touched = touch->touched();
   if (touched != prevTouched) {
@@ -291,7 +304,7 @@ void TouchChannel::toggleMode() {
 void TouchChannel::setOctave(int value) {
   
   currOctave = value;
-  setOctaveLed(currOctave);
+  updateOctaveLeds(currOctave);
 
   switch (mode) {
     case MONO:
@@ -350,19 +363,32 @@ void TouchChannel::setLed(int index, LedState state) {
       leds->setLedOutput(greenLedPins[index], TLC59116::PWM, 20);
       break;
   }
-  
+}
+
+void TouchChannel::setOctaveLed(int octave, LedState state) {
+  switch (state) {
+    case LOW:
+      octLeds->setLedOutput(octLedPins[octave], TLC59116::OFF);
+      break;
+    case HIGH:
+      octLeds->setLedOutput(octLedPins[octave], TLC59116::ON);
+      break;
+    case BLINK:
+      octLeds->setLedOutput(octLedPins[octave], TLC59116::PWM, 20);
+      break;
+  }
 }
 
 void TouchChannel::updateLeds(uint8_t touched) {
   leds->setLedOutput16(ledStates);
 }
 
-void TouchChannel::setOctaveLed(int octave) {
+void TouchChannel::updateOctaveLeds(int octave) {
   for (int i = 0; i < 4; i++) {
     if (i == octave) {
-      octLeds->setLedOutput(octLedPins[i], TLC59116::ON);
+      setOctaveLed(i, HIGH);
     } else {
-      octLeds->setLedOutput(octLedPins[i], TLC59116::OFF);
+      setOctaveLed(i, LOW);
     }
   }
 }
@@ -370,9 +396,9 @@ void TouchChannel::setOctaveLed(int octave) {
 void TouchChannel::setLoopMultiplierLeds() {
   for (int i = 0; i < 4; i++) {
     if (i == loopMultiplier - 1) {  // loopMultiplier is not zro indexed
-      octLeds->setLedOutput(octLedPins[i], TLC59116::ON);
+      setOctaveLed(i, HIGH);
     } else {
-      octLeds->setLedOutput(octLedPins[i], TLC59116::OFF);
+      setOctaveLed(i, LOW);
     }
   }
 }

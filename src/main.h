@@ -71,7 +71,7 @@ enum LedState: int {
 
 // DEFAULT INITIALIZATION VALUES
 #define DEGREE_COUNT                   8
-#define DEFAULT_CHANNEL_LOOP_STEPS     16
+#define DEFAULT_CHANNEL_LOOP_STEPS     8
 #define EVENT_END_BUFFER               4
 #define CV_QUANT_BUFFER                300
 #define MAX_LOOP_STEPS                 32
