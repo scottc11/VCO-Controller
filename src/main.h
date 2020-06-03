@@ -3,8 +3,12 @@
 
 #include <mbed.h>
 
-#define LOW                  0
-#define HIGH                 1
+enum LedState: int {
+  LOW = 0,
+  HIGH = 1,
+  BLINK = 2,
+};
+
 #define PPQN                 24
 
 #define MIDI_BAUD            31250

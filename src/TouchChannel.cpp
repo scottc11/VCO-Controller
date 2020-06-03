@@ -3,6 +3,7 @@
 void TouchChannel::init() {
   touch->init();
   leds->initialize();
+
   if (!touch->isConnected()) { this->setOctaveLed(3); return; }
   touch->calibrate();
   touch->clearInterupt();
@@ -334,15 +335,19 @@ void TouchChannel::setAllLeds(int state) {
   }
 }
 
-void TouchChannel::setLed(int index, int state) {
+void TouchChannel::setLed(int index, LedState state) {
   switch (state) {
+    case LOW:
+      ledStates &= ~(1 << index);
+      leds->setLedOutput(greenLedPins[index], TLC59116::OFF);
+      break;
     case HIGH:
       ledStates |= 1 << index;
       leds->setLedOutput(greenLedPins[index], TLC59116::ON);
       break;
-    case LOW:
-      ledStates &= ~(1 << index);
-      leds->setLedOutput(greenLedPins[index], TLC59116::OFF);
+    case BLINK:
+      ledStates |= 1 << index;
+      leds->setLedOutput(greenLedPins[index], TLC59116::PWM, 20);
       break;
   }
   
@@ -368,6 +373,16 @@ void TouchChannel::setLoopMultiplierLeds() {
       octLeds->setLedOutput(octLedPins[i], TLC59116::ON);
     } else {
       octLeds->setLedOutput(octLedPins[i], TLC59116::OFF);
+    }
+  }
+}
+
+void TouchChannel::updateActiveDegreeLeds() {
+  for (int i = 0; i < 8; i++) {
+    if (bitRead(activeDegrees, i)) {
+      leds->setLedOutput(redLedPins[i], TLC59116::ON);
+    } else {
+      leds->setLedOutput(redLedPins[i], TLC59116::OFF);
     }
   }
 }
@@ -448,15 +463,5 @@ void TouchChannel::reset() {
       currPosition = 0;
       currStep = 0;
       break;
-  }
-}
-
-void TouchChannel::updateActiveDegreeLeds() {
-  for (int i = 0; i < 8; i++) {
-    if (bitRead(activeDegrees, i)) {
-      leds->setLedOutput(redLedPins[i], TLC59116::ON);
-    } else {
-      leds->setLedOutput(redLedPins[i], TLC59116::OFF);
-    }
   }
 }

@@ -126,7 +126,7 @@ class TouchChannel : public EventLoop {
     void poll();
     void handleTouchInterupt() { touchDetected = true; }
     
-    void setLed(int index, int state);
+    void setLed(int index, LedState state);
     void setAllLeds(int state);
     void setOctaveLed(int octave);
     void setLoopMultiplierLeds();
