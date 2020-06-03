@@ -30,6 +30,7 @@ class TouchChannel : public EventLoop {
       ON,
       OFF,
       SUSTAIN,
+      PREV,
     };
 
     enum LedColor {
@@ -42,12 +43,14 @@ class TouchChannel : public EventLoop {
       MONO_LOOP = 1,
       QUANTIZE = 2,
       QUANTIZE_LOOP = 3,
+      LOOP_LENGTH_UI = 4,
     };
 
   public:
     int channel;                    // 0 based index to represent channel
     bool isSelected;
     Mode mode;                      // which mode channel is currently in
+    Mode prevMode;                  // used for reverting to previous mode when toggling between UI modes
     int modeCounter;
     DigitalOut gateOut;             // gate output pin
     DigitalOut ctrlLed;             // via global controls
@@ -122,12 +125,15 @@ class TouchChannel : public EventLoop {
     void init();
     void poll();
     void handleTouchInterupt() { touchDetected = true; }
+    
     void flashNoteLed(int index);
     void setLed(int index, int state);
-    void updateActiveDegreeLEDs();
-    void updateLeds(uint8_t touched);  // could be obsolete
+    void setAllLeds(int state);
     void toggleLed(int index);
     void setOctaveLed(int octave);
+
+    void updateActiveDegreeLEDs();
+    void updateLeds(uint8_t touched);  // could be obsolete
     void handleTouch();
     void handleDegreeChange();
     void toggleMode();
@@ -141,6 +147,11 @@ class TouchChannel : public EventLoop {
     void triggerNote(int index, int octave, NoteState state);
     void freeze(bool enable);
     void reset();
+
+    void enableLoopLengthUI();
+    void disableLoopLengthUI();
+    void updateLoopLengthUI();
+    void setLoopLength(int num);
     
     void handleQueuedEvent(int position);
 

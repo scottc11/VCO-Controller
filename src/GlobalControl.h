@@ -59,6 +59,7 @@ public:
   void handleClearAllEvents();
   void handleFreeze(bool enable);
   void handleReset();
+  void enableLoopLengthUI();
   void handleTouch(int pad);
   void handleRelease(int pad);
   void handleTouchEvent();
@@ -74,8 +75,10 @@ public:
 
 private:
   enum PadNames {
-    CTRL_FREEZE = 0,
-    CTRL_RESET = 1,
+    FREEZE = 6,
+    RESET = 7,
+    LOOP_LENGTH = 0,
+    RECORD = 1,
     CTRL_A = 5,
     CTRL_B = 4,
     CTRL_C = 3,

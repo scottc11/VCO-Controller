@@ -10,6 +10,7 @@ void TouchChannel::init() {
 
   // intialize inheritance variables
   numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
+  loopMultiplier = 1;
   timeQuantizationMode = QUANT_NONE;
   currStep = 0;
   currTick = 0;
@@ -30,10 +31,18 @@ void TouchChannel::init() {
 
 // HANDLE ALL INTERUPT FLAGS
 void TouchChannel::poll() {
+  
+  if (mode == LOOP_LENGTH_UI) {
+    // set all leds based on loop length * multiplier
+    // toggleLoopLengthUI()
+    // revertUI()
+  }
+
   if (touchDetected) {
     handleTouch();
     touchDetected = false;
   }
+
   currModeBtnState = modeBtn.read();
   if (currModeBtnState != prevModeBtnState) {
     if (currModeBtnState == LOW) {
@@ -93,6 +102,30 @@ void TouchChannel::handleQueuedEvent(int position) {
   // }
 }
 
+
+void TouchChannel::enableLoopLengthUI() {
+  prevMode = mode;
+  this->mode = LOOP_LENGTH_UI;
+  updateLoopLengthUI();
+}
+
+void TouchChannel::disableLoopLengthUI() {
+  this->mode = prevMode;
+  setAllLeds(LOW);
+  triggerNote(currNoteIndex, currOctave, PREV);
+}
+
+void TouchChannel::updateLoopLengthUI() {
+  setAllLeds(LOW);
+  for (int i = 0; i < numLoopSteps; i++) {
+    setLed(i, HIGH);
+  }
+}
+
+void TouchChannel::setLoopLength(int num) {
+  numLoopSteps = num;
+  updateLoopLengthUI();
+};
 
 /**
  * CALCULATE LOOP LENGTH
@@ -174,6 +207,9 @@ void TouchChannel::handleTouch() {
             addEventToList(currPosition);
             triggerNote(i, currOctave, ON);
             break;
+          case LOOP_LENGTH_UI:
+            setLoopLength(i + 1); // loop length is not zero indexed
+            break;
         }
       }
       // if it *was* touched and now *isnt*, alert!
@@ -212,7 +248,7 @@ void TouchChannel::toggleMode() {
     case MONO:
       enableLoop = false;
       mode = MONO;
-      leds->setAllOutputsOff();
+      setAllLeds(LOW);
       triggerNote(currNoteIndex, currOctave, ON);
       triggerNote(currNoteIndex, currOctave, OFF);
       break;
@@ -220,7 +256,7 @@ void TouchChannel::toggleMode() {
       enableLoop = false;
       enableQuantizer = true;
       mode = QUANTIZE;
-      leds->setAllOutputsOff();
+      setAllLeds(LOW);
       updateActiveDegreeLEDs();
       triggerNote(prevNoteIndex, currOctave, OFF);
       break;
@@ -272,6 +308,16 @@ void TouchChannel::handleDegreeChange() {
       break;
   }
   degrees->hasChanged[channel] = false;
+}
+
+void TouchChannel::setAllLeds(int state) {
+  switch (state) {
+    case HIGH:
+      break;
+    case LOW:
+      leds->setAllOutputsOff();
+      break;
+  }
 }
 
 void TouchChannel::setLed(int index, int state) {
@@ -326,6 +372,9 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state) {
       gateOut.write(LOW);
       midi->sendNoteOff(channel, calculateMIDINoteValue(index, octave), 100);
       wait_us(1);
+      break;
+    case PREV:
+      setLed(index, HIGH);
       break;
   }
   prevOctave = octave;

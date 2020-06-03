@@ -25,6 +25,7 @@ public:
   volatile int currPosition;          // the current position in the loop measured by PPQN (lowest value == 1)
   volatile int currTick;              // the current PPQN position of the step (0..PPQN) (lowest value == 1)
   volatile int loopLength;            // how many PPQN (in total) the loop contains
+  int loopMultiplier;                 // number between 1 and 4 based on Octave Leds of channel
 
   void clearEventList(){};
   void createEvent(int position, int noteIndex){};
@@ -33,7 +34,7 @@ public:
   void handleQueuedEvent(int position){};
 
   int getListLength(){return 1;};
-  void setNumLoopSteps(int num){};
+
 };
 
 

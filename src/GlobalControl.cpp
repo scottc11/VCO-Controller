@@ -78,16 +78,16 @@ void GlobalControl::handleOctaveTouched() {
     for (int i=0; i<16; i++) {
       if (touchCtrl->padIsTouched(i, currOctavesTouched, prevOctavesTouched)) {
         switch (i) {
-          case 0: channels[2]->handleOctaveChange(0); break;
-          case 1: channels[2]->handleOctaveChange(1); break;
-          case 2: channels[2]->handleOctaveChange(2); break;
-          case 3: channels[2]->handleOctaveChange(3); break;
-          case 4: channels[3]->handleOctaveChange(0); break;
-          case 5: channels[3]->handleOctaveChange(1); break;
-          case 6: channels[3]->handleOctaveChange(2); break;
-          case 7: channels[3]->handleOctaveChange(3); break;
-          case 8: channels[0]->handleOctaveChange(0); break;
-          case 9: channels[0]->handleOctaveChange(1); break;
+          case 0:  channels[2]->handleOctaveChange(0); break;
+          case 1:  channels[2]->handleOctaveChange(1); break;
+          case 2:  channels[2]->handleOctaveChange(2); break;
+          case 3:  channels[2]->handleOctaveChange(3); break;
+          case 4:  channels[3]->handleOctaveChange(0); break;
+          case 5:  channels[3]->handleOctaveChange(1); break;
+          case 6:  channels[3]->handleOctaveChange(2); break;
+          case 7:  channels[3]->handleOctaveChange(3); break;
+          case 8:  channels[0]->handleOctaveChange(0); break;
+          case 9:  channels[0]->handleOctaveChange(1); break;
           case 10: channels[0]->handleOctaveChange(2); break;
           case 11: channels[0]->handleOctaveChange(3); break;
           case 12: channels[1]->handleOctaveChange(0); break;
@@ -112,11 +112,17 @@ void GlobalControl::handleOctaveTouched() {
 void GlobalControl::handleTouch(int pad) {
   
   switch (pad) {
-    case CTRL_FREEZE:
+    case FREEZE:
       handleFreeze(true);
       break;
-    case CTRL_RESET:
+    case RESET:
       handleReset();
+      break;
+    case LOOP_LENGTH:
+      channels[0]->enableLoopLengthUI();
+      channels[1]->enableLoopLengthUI();
+      channels[2]->enableLoopLengthUI();
+      channels[3]->enableLoopLengthUI();
       break;
     case CTRL_A:
       selectChannel(0);
@@ -138,10 +144,16 @@ void GlobalControl::handleTouch(int pad) {
 */
 void GlobalControl::handleRelease(int pad) {
   switch (pad) {
-    case CTRL_FREEZE:
+    case FREEZE:
       handleFreeze(false);
       break;
-    case CTRL_RESET:
+    case RESET:
+      break;
+    case LOOP_LENGTH:
+      channels[0]->disableLoopLengthUI();
+      channels[1]->disableLoopLengthUI();
+      channels[2]->disableLoopLengthUI();
+      channels[3]->disableLoopLengthUI();
       break;
     case CTRL_A:
       break;
@@ -153,7 +165,6 @@ void GlobalControl::handleRelease(int pad) {
       break;
   }
 }
-
 
 /**
  * HANDLE FREEZE
