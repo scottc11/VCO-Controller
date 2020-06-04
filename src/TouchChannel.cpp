@@ -39,6 +39,7 @@ void TouchChannel::poll() {
     // take current clock step and flash the corrosponding channel LED and Octave LED
     if (currTick == 0) {
       int modulo = currStep % numLoopSteps;
+      
       if (modulo != 0) {           // setting the previous LED back to normal
         setLed(modulo - 1, HIGH);
       } else {                     // when modulo rolls past 7 and back to 0
@@ -46,8 +47,9 @@ void TouchChannel::poll() {
       }
 
       setLed(modulo, BLINK);
+      
       for (int i = 0; i < loopMultiplier; i++) {
-        if (currStep < (numLoopSteps * (i + 1)) && currStep > (numLoopSteps * i)) {
+        if (currStep < (numLoopSteps * (i + 1)) && currStep >= (numLoopSteps * i)) {
           setOctaveLed(i, BLINK);
         } else {
           setOctaveLed(i, HIGH);
@@ -392,7 +394,7 @@ void TouchChannel::setOctaveLed(int octave, LedState state) {
       octLeds->setLedOutput(octLedPins[octave], TLC59116::ON);
       break;
     case BLINK:
-      octLeds->setLedOutput(octLedPins[octave], TLC59116::PWM, 30);
+      octLeds->setLedOutput(octLedPins[octave], TLC59116::PWM, 20);
       break;
   }
 }
