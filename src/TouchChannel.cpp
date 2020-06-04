@@ -16,8 +16,8 @@ void TouchChannel::init() {
   currStep = 0;
   currTick = 0;
   currPosition = 0;
-  setLoopTotalPPQN();
   setLoopTotalSteps();
+  setLoopTotalPPQN();
 
   // initialize default variables
   currNoteIndex = 0;
@@ -55,8 +55,6 @@ void TouchChannel::poll() {
           setOctaveLed(i, HIGH);
         }
       }
-      
-      
     }
   }
 
@@ -86,36 +84,36 @@ void TouchChannel::poll() {
     }
   }
 
-  // if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && queuedEvent && enableLoop ) {
-  //   handleQueuedEvent(currPosition);
-  // }
+  if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && queuedEvent && enableLoop ) {
+    handleQueuedEvent(currPosition);
+  }
 }
 
 void TouchChannel::handleQueuedEvent(int position) {
-  // if (queuedEvent->triggered == false ) {
-  //   if (position == queuedEvent->startPos) {
-  //     switch (mode) {
-  //       case MONO_LOOP:
-  //         triggerNote(queuedEvent->noteIndex, currOctave, ON);
-  //         break;
-  //       case QUANTIZE_LOOP:
-  //         setActiveDegrees(queuedEvent->activeNotes);
-  //         break;
-  //     }
-  //     queuedEvent->triggered = true;
-  //   }
-  // }
-  // else {
-  //   if (position == queuedEvent->endPos) {
-  //     if (mode == MONO_LOOP) triggerNote(queuedEvent->noteIndex, currOctave, OFF);
-  //     queuedEvent->triggered = false;
-  //     if (queuedEvent->next != NULL) {
-  //       queuedEvent = queuedEvent->next;
-  //     } else {
-  //       queuedEvent = head;
-  //     }
-  //   }
-  // }
+  if (queuedEvent->triggered == false ) {
+    if (position == queuedEvent->startPos) {
+      switch (mode) {
+        case MONO_LOOP:
+          triggerNote(queuedEvent->noteIndex, currOctave, ON);
+          break;
+        case QUANTIZE_LOOP:
+          setActiveDegrees(queuedEvent->activeNotes);
+          break;
+      }
+      queuedEvent->triggered = true;
+    }
+  }
+  else {
+    if (position == queuedEvent->endPos) {
+      if (mode == MONO_LOOP) triggerNote(queuedEvent->noteIndex, currOctave, OFF);
+      queuedEvent->triggered = false;
+      if (queuedEvent->next != NULL) {
+        queuedEvent = queuedEvent->next;
+      } else {
+        queuedEvent = head;
+      }
+    }
+  }
 }
 
 /** ------------------------------------------------------------------------
@@ -279,12 +277,12 @@ void TouchChannel::handleTouch() {
 }
 
 /**
- * mode switch states determined by the last 2 bits of io's port B
+ * TOGGLE MODE
 **/
 void TouchChannel::toggleMode() {
   enableQuantizer = false;
-  modeCounter += 2; // to be changed to 1 when other modes implemented
-  if (modeCounter > 3) { modeCounter = 0; }
+  modeCounter += 1; // to be changed to 1 when other modes implemented
+  if (modeCounter > 2) { modeCounter = 0; }
 
   switch (modeCounter) {
     case MONO:
@@ -293,6 +291,13 @@ void TouchChannel::toggleMode() {
       setAllLeds(LOW);
       triggerNote(currNoteIndex, currOctave, ON);
       triggerNote(currNoteIndex, currOctave, OFF);
+      break;
+    case MONO_LOOP:
+      enableLoop = true;
+      mode = MONO_LOOP;
+      setAllLeds(LOW);
+      triggerNote(prevNoteIndex, currOctave, ON);
+      triggerNote(prevNoteIndex, currOctave, OFF);
       break;
     case QUANTIZE:
       enableLoop = false;
@@ -304,15 +309,10 @@ void TouchChannel::toggleMode() {
       break;
     case QUANTIZE_LOOP:
       // delete previous loop objects for safety
-      // this->clearEventList();
-      // enableLoop = true;
-      // mode = QUANTIZE_LOOP;
-      // triggerNote(prevNoteIndex, currOctave, OFF);
-      break;
-    case MONO_LOOP:
-      // enableLoop = true;
-      // mode = MONO_LOOP;
-      // triggerNote(prevNoteIndex, currOctave, OFF);
+      this->clearEventList();
+      enableLoop = true;
+      mode = QUANTIZE_LOOP;
+      triggerNote(prevNoteIndex, currOctave, OFF);
       break;
   }
 }
@@ -369,18 +369,22 @@ void TouchChannel::setAllLeds(int state) {
 }
 
 void TouchChannel::setLed(int index, LedState state) {
+  // switch between red and green leds based on mode
+  int (*pins_ptr)[8];
+  pins_ptr = mode == MONO_LOOP || mode == QUANTIZE_LOOP ? &redLedPins : &greenLedPins;
+
   switch (state) {
     case LOW:
       ledStates &= ~(1 << index);
-      leds->setLedOutput(greenLedPins[index], TLC59116::OFF);
+      leds->setLedOutput((*pins_ptr)[index], TLC59116::OFF);
       break;
     case HIGH:
       ledStates |= 1 << index;
-      leds->setLedOutput(greenLedPins[index], TLC59116::ON);
+      leds->setLedOutput((*pins_ptr)[index], TLC59116::ON);
       break;
     case BLINK:
       ledStates |= 1 << index;
-      leds->setLedOutput(greenLedPins[index], TLC59116::PWM, 20);
+      leds->setLedOutput((*pins_ptr)[index], TLC59116::PWM, 20);
       break;
   }
 }
@@ -426,9 +430,9 @@ void TouchChannel::updateLoopMultiplierLeds() {
 void TouchChannel::updateActiveDegreeLeds() {
   for (int i = 0; i < 8; i++) {
     if (bitRead(activeDegrees, i)) {
-      leds->setLedOutput(redLedPins[i], TLC59116::ON);
+      setLed(i, HIGH);
     } else {
-      leds->setLedOutput(redLedPins[i], TLC59116::OFF);
+      setLed(i, LOW);
     }
   }
 }
