@@ -30,6 +30,7 @@ void TouchChannel::initQuantizer() {
 
 
 void TouchChannel::handleCVInput(int value) {
+  // NOTE: CV input is now inverted, so everything needs to be flipped to make more sense
   // 65,536 / 4 == 16,384
   // 16,384 / 8 == 2,048
 
@@ -52,10 +53,12 @@ void TouchChannel::handleCVInput(int value) {
 
   // latch cv value to
   for (int i = 0; i < numActiveDegrees; i++) {
-    if (clippedValue < activeDegreeValues[i].threshold) {
-      if (prevNoteIndex != activeDegreeValues[i].noteIndex || prevOctave != octave) {
+    if (clippedValue < activeDegreeValues[i].threshold) {                              // break from loop as soon as we can
+      if (prevNoteIndex != activeDegreeValues[i].noteIndex || prevOctave != octave) {  // catch duplicate triggering of that same note.
         this->triggerNote(prevNoteIndex, prevOctave, OFF);
+        setLed(prevNoteIndex, HIGH);
         this->triggerNote(activeDegreeValues[i].noteIndex, octave, ON);
+        setLed(currNoteIndex, BLINK);
         this->updateOctaveLeds(octave);
       }
       break;

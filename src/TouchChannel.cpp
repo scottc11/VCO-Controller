@@ -76,9 +76,8 @@ void TouchChannel::poll() {
   // }
 
   if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer) {
-    // this->flashNoteLed(currNoteIndex);
     currCVInputValue = cvInput.read_u16();
-    if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER ) {
+    if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER ) {   
       handleCVInput(currCVInputValue);
       prevCVInputValue = currCVInputValue;
     }
@@ -441,14 +440,14 @@ void TouchChannel::updateActiveDegreeLeds() {
  *        TRIGGER NOTE
 ---------------------------------------------------------------------------- */
  
-void TouchChannel::triggerNote(int index, int octave, NoteState state) {
+void TouchChannel::triggerNote(int index, int octave, NoteState state, bool dimLed /* false */) {
   switch (state) {
     case ON:
-      // if midiNoteState == ON, midi->sendNoteOff(prevNoteIndex, prevOctave)
       if (mode == MONO || mode == MONO_LOOP) {
         setLed(prevNoteIndex, LOW);
         setLed(index, HIGH);
       }
+      if (dimLed) setLed(index, BLINK);
       currNoteIndex = index;
       currOctave = octave;
       gateOut.write(HIGH);

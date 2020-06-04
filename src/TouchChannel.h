@@ -73,7 +73,7 @@ class TouchChannel : public EventLinkedList {
     bool enableQuantizer;                 // by default set to true, only ever changes with a 'freeze' event
     int activeDegrees;                    // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
     int numActiveDegrees;                 // number of degrees which are active (to quantize voltage input)
-    QuantizerValue activeDegreeValues[8]; // array which holes noteIndex values and their associated DAC/1vo values
+    QuantizerValue activeDegreeValues[8]; // array which holds noteIndex values and their associated DAC/1vo values
 
     int redLedPins[8] = { 14, 12, 10, 8, 6, 4, 2, 0 };    // hardcoded values to be passed to the 16 chan LED driver
     int greenLedPins[8] = { 15, 13, 11, 9, 7, 5, 3, 1 };  // hardcoded values to be passed to the 16 chan LED driver
@@ -145,7 +145,7 @@ class TouchChannel : public EventLinkedList {
     int calculateDACNoteValue(int index, int octave);
     
     void setOctave(int value);
-    void triggerNote(int index, int octave, NoteState state);
+    void triggerNote(int index, int octave, NoteState state, bool dimLed=false);
     void freeze(bool enable);
     void reset();
 
