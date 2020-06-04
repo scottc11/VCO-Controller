@@ -130,7 +130,7 @@ class TouchChannel : public EventLoop {
     void setOctaveLed(int octave, LedState state);
     void setAllLeds(int state);
     void updateOctaveLeds(int octave);
-    void setLoopMultiplierLeds();
+    void updateLoopMultiplierLeds();
     void updateActiveDegreeLeds();
     void updateLeds(uint8_t touched);  // could be obsolete
 
@@ -149,12 +149,13 @@ class TouchChannel : public EventLoop {
     void freeze(bool enable);
     void reset();
 
-    void calculateLoopLength();
     void enableLoopLengthUI();
     void disableLoopLengthUI();
     void updateLoopLengthUI();
     void setLoopLength(int num);
     void setLoopMultiplier(int value);
+    void setLoopTotalPPQN();  // refractor into metronom class
+    void setLoopTotalSteps(); // refractor into metronom class
     
     void handleQueuedEvent(int position);
 

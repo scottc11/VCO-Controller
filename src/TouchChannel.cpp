@@ -16,6 +16,8 @@ void TouchChannel::init() {
   currStep = 0;
   currTick = 0;
   currPosition = 0;
+  setLoopTotalPPQN();
+  setLoopTotalSteps();
 
   // initialize default variables
   currNoteIndex = 0;
@@ -36,12 +38,23 @@ void TouchChannel::poll() {
   if (mode == LOOP_LENGTH_UI) {
     // take current clock step and flash the corrosponding channel LED and Octave LED
     if (currTick == 0) {
-      if (currStep != 0) {
-        setLed(currStep - 1, HIGH);
-      } else {
+      int modulo = currStep % numLoopSteps;
+      if (modulo != 0) {           // setting the previous LED back to normal
+        setLed(modulo - 1, HIGH);
+      } else {                     // when modulo rolls past 7 and back to 0
         setLed(numLoopSteps - 1, HIGH);
       }
-      setLed(currStep, BLINK);
+
+      setLed(modulo, BLINK);
+      for (int i = 0; i < loopMultiplier; i++) {
+        if (currStep < (numLoopSteps * (i + 1)) && currStep > (numLoopSteps * i)) {
+          setOctaveLed(i, BLINK);
+        } else {
+          setOctaveLed(i, HIGH);
+        }
+      }
+      
+      
     }
   }
 
@@ -122,7 +135,7 @@ void TouchChannel::disableLoopLengthUI() {
 
 void TouchChannel::updateLoopLengthUI() {
   setAllLeds(LOW);
-  setLoopMultiplierLeds();
+  updateLoopMultiplierLeds();
   for (int i = 0; i < numLoopSteps; i++) {
     if (i == currStep) {
       setLed(i, BLINK);
@@ -134,22 +147,25 @@ void TouchChannel::updateLoopLengthUI() {
 
 void TouchChannel::setLoopLength(int value) {
   numLoopSteps = value;
+  setLoopTotalSteps();
+  setLoopTotalPPQN();
   updateLoopLengthUI();
 };
 
 void TouchChannel::setLoopMultiplier(int value) {
   loopMultiplier = value;
+  setLoopTotalSteps();
+  setLoopTotalPPQN();
   updateLoopLengthUI();
 }
 
-/**
- * CALCULATE LOOP LENGTH
-*/
-void TouchChannel::calculateLoopLength() {
-  loopLength = numLoopSteps * PPQN;
+void TouchChannel::setLoopTotalSteps() {
+  totalSteps = numLoopSteps * loopMultiplier;
 }
 
-
+void TouchChannel::setLoopTotalPPQN() {
+  totalPPQN = totalSteps * PPQN;
+}
 
 /** ------------------------------------------------------------------------
  *         CLOCK METHODS
@@ -176,10 +192,13 @@ void TouchChannel::tickClock() {
   if (currTick >= PPQN) {
     currTick = 0;
   }
+  if (currPosition >= totalPPQN) {
+    currPosition = 0;
+  }
 }
 
 void TouchChannel::stepClock() {
-  if (isSelected) { 
+  if (isSelected) {
     ctrlLed.write(LOW);
   } else {
     ctrlLed.write(HIGH);
@@ -188,9 +207,8 @@ void TouchChannel::stepClock() {
   currTick = 0;
   currStep += 1;
   // when currStep eqauls number of steps in loop, reset currStep and currPosition to 0
-  if (currStep >= numLoopSteps) {
+  if (currStep >= totalSteps) {
     currStep = 0;
-    currPosition = 0;
   }
 }
 
@@ -374,7 +392,7 @@ void TouchChannel::setOctaveLed(int octave, LedState state) {
       octLeds->setLedOutput(octLedPins[octave], TLC59116::ON);
       break;
     case BLINK:
-      octLeds->setLedOutput(octLedPins[octave], TLC59116::PWM, 20);
+      octLeds->setLedOutput(octLedPins[octave], TLC59116::PWM, 30);
       break;
   }
 }
@@ -393,9 +411,9 @@ void TouchChannel::updateOctaveLeds(int octave) {
   }
 }
 
-void TouchChannel::setLoopMultiplierLeds() {
+void TouchChannel::updateLoopMultiplierLeds() {
   for (int i = 0; i < 4; i++) {
-    if (i == loopMultiplier - 1) {  // loopMultiplier is not zro indexed
+    if (i < loopMultiplier) {  // loopMultiplier is not zro indexed
       setOctaveLed(i, HIGH);
     } else {
       setOctaveLed(i, LOW);
