@@ -77,7 +77,7 @@ void TouchChannel::poll() {
 
   if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer) {
     currCVInputValue = cvInput.read_u16();
-    if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER ) {   
+    if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER ) {
       handleCVInput(currCVInputValue);
       prevCVInputValue = currCVInputValue;
     }
@@ -128,8 +128,12 @@ void TouchChannel::enableLoopLengthUI() {
 void TouchChannel::disableLoopLengthUI() {
   this->mode = prevMode;
   setAllLeds(LOW);
-  updateOctaveLeds(currOctave);
-  triggerNote(currNoteIndex, currOctave, PREV);
+  if (mode == MONO || mode == MONO_LOOP) {
+    updateOctaveLeds(currOctave);
+    triggerNote(currNoteIndex, currOctave, PREV);
+  } else {
+    updateActiveDegreeLeds();
+  }
 }
 
 void TouchChannel::updateLoopLengthUI() {
@@ -231,12 +235,12 @@ void TouchChannel::handleTouch() {
             triggerNote(i, currOctave, ON);
             break;
           case QUANTIZE:
-            setActiveDegrees(i);
+            setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
             break;
           case QUANTIZE_LOOP:
             // every touch detected, take a snapshot of all active degree values and apply them to a EventNode
             enableLoop = false;
-            setActiveDegrees(i);
+            setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
             createChordEvent(currPosition, activeDegrees);
             addEventToList(currPosition);
             break;
@@ -281,7 +285,7 @@ void TouchChannel::handleTouch() {
 void TouchChannel::toggleMode() {
   enableQuantizer = false;
   modeCounter += 1; // to be changed to 1 when other modes implemented
-  if (modeCounter > 2) { modeCounter = 0; }
+  if (modeCounter > 3) { modeCounter = 0; }
 
   switch (modeCounter) {
     case MONO:
@@ -310,7 +314,9 @@ void TouchChannel::toggleMode() {
       // delete previous loop objects for safety
       this->clearEventList();
       enableLoop = true;
+      enableQuantizer = true;
       mode = QUANTIZE_LOOP;
+      setAllLeds(LOW);
       triggerNote(prevNoteIndex, currOctave, OFF);
       break;
   }
