@@ -187,7 +187,11 @@ void TouchChannel::setLoopTotalPPQN() {
 }
 
 void TouchChannel::enableLoopMode() {
-  setMode(MONO_LOOP);
+  if (mode == MONO) {
+    setMode(MONO_LOOP);
+  } else if (mode == QUANTIZE) {
+    setMode(QUANTIZE_LOOP);
+  }
 }
 
 void TouchChannel::disableLoopMode() {
@@ -319,7 +323,7 @@ void TouchChannel::handleTouch() {
  * TOGGLE MODE
 **/
 void TouchChannel::toggleMode() {
-  if (mode == MONO) {
+  if (mode == MONO || mode == MONO_LOOP) {
     setMode(QUANTIZE);
   } else {
     setMode(MONO);
@@ -327,6 +331,7 @@ void TouchChannel::toggleMode() {
 }
 
 void TouchChannel::setMode(Mode targetMode) {
+  prevMode = mode;
   switch (targetMode) {
     case MONO:
       enableLoop = false;
@@ -353,12 +358,11 @@ void TouchChannel::setMode(Mode targetMode) {
       triggerNote(prevNoteIndex, currOctave, OFF);
       break;
     case QUANTIZE_LOOP:
-      // delete previous loop objects for safety
-      this->clearEventList();
       enableLoop = true;
       enableQuantizer = true;
       mode = QUANTIZE_LOOP;
       setAllLeds(LOW);
+      updateActiveDegreeLeds();
       triggerNote(prevNoteIndex, currOctave, OFF);
       break;
   }
