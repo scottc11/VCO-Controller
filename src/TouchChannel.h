@@ -51,7 +51,6 @@ class TouchChannel : public EventLinkedList {
     bool isSelected;
     Mode mode;                      // which mode channel is currently in
     Mode prevMode;                  // used for reverting to previous mode when toggling between UI modes
-    int modeCounter;
     DigitalOut gateOut;             // gate output pin
     DigitalOut ctrlLed;             // via global controls
     DigitalIn modeBtn;              // tactile button for toggleing between channel modes
@@ -137,6 +136,7 @@ class TouchChannel : public EventLinkedList {
     void handleTouch();
     void handleDegreeChange();
     void toggleMode();
+    void setMode(Mode targetMode);
     
     void tickClock();
     void stepClock();
@@ -152,12 +152,17 @@ class TouchChannel : public EventLinkedList {
     void enableLoopLengthUI();
     void disableLoopLengthUI();
     void updateLoopLengthUI();
+
+    void clearLoop();
+    void enableLoopMode();
+    void disableLoopMode();
     void setLoopLength(int num);
     void setLoopMultiplier(int value);
     void setLoopTotalPPQN();  // refractor into metronom class
     void setLoopTotalSteps(); // refractor into metronom class
     
     void handleQueuedEvent(int position);
+    void disableQueuedEvent();
 
     // QUANTIZE FUNCTIONS
     void initQuantizer();

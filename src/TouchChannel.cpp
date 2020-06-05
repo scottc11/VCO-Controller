@@ -104,13 +104,22 @@ void TouchChannel::handleQueuedEvent(int position) {
   }
   else {
     if (position == queuedEvent->endPos) {
-      if (mode == MONO_LOOP) triggerNote(queuedEvent->noteIndex, currOctave, OFF);
-      queuedEvent->triggered = false;
-      if (queuedEvent->next != NULL) {
-        queuedEvent = queuedEvent->next;
-      } else {
-        queuedEvent = head;
-      }
+      disableQueuedEvent();
+    }
+  }
+}
+
+void TouchChannel::disableQueuedEvent() {
+  if (queuedEvent->triggered == true) {  // check required as this fn gets called for safety sometimes
+
+    queuedEvent->triggered = false;
+
+    if (mode == MONO_LOOP) triggerNote(queuedEvent->noteIndex, currOctave, OFF);
+    
+    if (queuedEvent->next != NULL) {
+      queuedEvent = queuedEvent->next;
+    } else {
+      queuedEvent = head;
     }
   }
 }
@@ -148,7 +157,14 @@ void TouchChannel::updateLoopLengthUI() {
   }
 }
 
+
+void TouchChannel::clearLoop() {
+  disableQueuedEvent();
+  clearEventList();
+}
+
 void TouchChannel::setLoopLength(int value) {
+  disableQueuedEvent();  // incase an event occurs AFTER the new loop length value
   numLoopSteps = value;
   setLoopTotalSteps();
   setLoopTotalPPQN();
@@ -170,6 +186,26 @@ void TouchChannel::setLoopTotalPPQN() {
   totalPPQN = totalSteps * PPQN;
 }
 
+void TouchChannel::enableLoopMode() {
+  setMode(MONO_LOOP);
+}
+
+void TouchChannel::disableLoopMode() {
+
+  // a nice feature here would be to only have the LEDs be red when REC is held down, and flash the green LEDs 
+  // when a channel contains loop events, but REC is NOT held down. You would only be able to add new events to 
+  // the loop when REC is held down (ie. when channel leds are RED)
+
+  // ADDITIONALLY, this would be a good place to count the amount of steps which have passed while the REC button has
+  // been held down, and if this value is greater than the current loop length, update the loop length to accomodate.
+
+  if (queuedEvent) {   // if an touch event was recorded, remain in looper mode
+    return;
+  } else {             // if no touch event recorded, revert to previous mode
+    setMode(prevMode);
+  }
+}
+
 /** ------------------------------------------------------------------------
  *         CLOCK METHODS
 ---------------------------------------------------------------------------- */
@@ -183,13 +219,13 @@ void TouchChannel::tickClock() {
   currTick += 1;
   currPosition += 1;
   
-  if (currTick > 2) {
-    if (isSelected) {
-      ctrlLed.write(HIGH);
-    } else {
-      ctrlLed.write(LOW);
-    }
-  }
+  // if (currTick > 2) {
+  //   if (isSelected) {
+  //     ctrlLed.write(HIGH);
+  //   } else {
+  //     ctrlLed.write(LOW);
+  //   }
+  // }
 
   // when currTick exceeds PPQN, reset to 0
   if (currTick >= PPQN) {
@@ -201,11 +237,11 @@ void TouchChannel::tickClock() {
 }
 
 void TouchChannel::stepClock() {
-  if (isSelected) {
-    ctrlLed.write(LOW);
-  } else {
-    ctrlLed.write(HIGH);
-  }
+  // if (isSelected) {
+  //   ctrlLed.write(LOW);
+  // } else {
+  //   ctrlLed.write(HIGH);
+  // }
 
   currTick = 0;
   currStep += 1;
@@ -283,13 +319,18 @@ void TouchChannel::handleTouch() {
  * TOGGLE MODE
 **/
 void TouchChannel::toggleMode() {
-  enableQuantizer = false;
-  modeCounter += 1; // to be changed to 1 when other modes implemented
-  if (modeCounter > 3) { modeCounter = 0; }
+  if (mode == MONO) {
+    setMode(QUANTIZE);
+  } else {
+    setMode(MONO);
+  }
+}
 
-  switch (modeCounter) {
+void TouchChannel::setMode(Mode targetMode) {
+  switch (targetMode) {
     case MONO:
       enableLoop = false;
+      enableQuantizer = false;
       mode = MONO;
       setAllLeds(LOW);
       triggerNote(currNoteIndex, currOctave, ON);
@@ -297,6 +338,7 @@ void TouchChannel::toggleMode() {
       break;
     case MONO_LOOP:
       enableLoop = true;
+      enableQuantizer = false;
       mode = MONO_LOOP;
       setAllLeds(LOW);
       triggerNote(prevNoteIndex, currOctave, ON);
@@ -321,7 +363,6 @@ void TouchChannel::toggleMode() {
       break;
   }
 }
-
 
 /**
  * take a number between 0 - 3 and apply to currOctave
@@ -506,6 +547,7 @@ void TouchChannel::freeze(bool freeze) {
 }
 
 void TouchChannel::reset() {
+  disableQueuedEvent(); // you should probably get the currently queued event, see if it has been triggered yet, and disable it if it has been triggered
   switch (mode) {
     case MONO:
       break;

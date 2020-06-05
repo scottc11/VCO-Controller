@@ -149,12 +149,21 @@ void GlobalControl::handleTouch(int pad) {
       break;
     case RESET:
       handleReset();
+      if (currTouched == CLEAR_LOOP) {
+        clearAllChannelEvents();
+      }
       break;
     case LOOP_LENGTH:
       channels[0]->enableLoopLengthUI();
       channels[1]->enableLoopLengthUI();
       channels[2]->enableLoopLengthUI();
       channels[3]->enableLoopLengthUI();
+      break;
+    case RECORD:
+      channels[0]->enableLoopMode();
+      channels[1]->enableLoopMode();
+      channels[2]->enableLoopMode();
+      channels[3]->enableLoopMode();
       break;
     case CTRL_A:
       selectChannel(0);
@@ -186,6 +195,12 @@ void GlobalControl::handleRelease(int pad) {
       channels[1]->disableLoopLengthUI();
       channels[2]->disableLoopLengthUI();
       channels[3]->disableLoopLengthUI();
+      break;
+    case RECORD:
+      channels[0]->disableLoopMode();
+      channels[1]->disableLoopMode();
+      channels[2]->disableLoopMode();
+      channels[3]->disableLoopMode();
       break;
     case CTRL_A:
       break;
@@ -221,3 +236,13 @@ void GlobalControl::handleReset() {
   channels[3]->reset();
 }
 
+/**
+ * HANDLE RESET
+*/
+void GlobalControl::clearAllChannelEvents() {
+  // reset all channels
+  channels[0]->clearLoop();
+  channels[1]->clearLoop();
+  channels[2]->clearLoop();
+  channels[3]->clearLoop();
+}

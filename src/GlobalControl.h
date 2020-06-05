@@ -56,7 +56,7 @@ public:
   void init();
   void poll();
   void selectChannel(int channel);
-  void handleClearAllEvents();
+  void clearAllChannelEvents();
   void handleFreeze(bool enable);
   void handleReset();
   void enableLoopLengthUI();
@@ -85,6 +85,10 @@ private:
     CTRL_B = 4,
     CTRL_C = 3,
     CTRL_D = 2,
+  };
+
+  enum Gestures {
+    CLEAR_LOOP = 0b10000010 // LOOP_LENGTH + RESET
   };
 };
 
