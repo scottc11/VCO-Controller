@@ -51,6 +51,7 @@ class TouchChannel : public EventLinkedList {
     bool isSelected;
     Mode mode;                      // which mode channel is currently in
     Mode prevMode;                  // used for reverting to previous mode when toggling between UI modes
+    bool loopLengthUIEnabled;       
     DigitalOut gateOut;             // gate output pin
     DigitalOut ctrlLed;             // via global controls
     DigitalIn modeBtn;              // tactile button for toggleing between channel modes
@@ -152,6 +153,7 @@ class TouchChannel : public EventLinkedList {
     void enableLoopLengthUI();
     void disableLoopLengthUI();
     void updateLoopLengthUI();
+    void handleLoopLengthUI();
 
     void clearLoop();
     void enableLoopMode();

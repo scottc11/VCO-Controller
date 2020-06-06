@@ -36,26 +36,7 @@ void TouchChannel::init() {
 void TouchChannel::poll() {
   
   if (mode == LOOP_LENGTH_UI) {
-    // take current clock step and flash the corrosponding channel LED and Octave LED
-    if (currTick == 0) {
-      int modulo = currStep % numLoopSteps;
-      
-      if (modulo != 0) {           // setting the previous LED back to normal
-        setLed(modulo - 1, HIGH);
-      } else {                     // when modulo rolls past 7 and back to 0
-        setLed(numLoopSteps - 1, HIGH);
-      }
-
-      setLed(modulo, BLINK);
-      
-      for (int i = 0; i < loopMultiplier; i++) {
-        if (currStep < (numLoopSteps * (i + 1)) && currStep >= (numLoopSteps * i)) {
-          setOctaveLed(i, BLINK);
-        } else {
-          setOctaveLed(i, HIGH);
-        }
-      }
-    }
+    handleLoopLengthUI();
   }
 
   if (touchDetected) {
@@ -71,9 +52,9 @@ void TouchChannel::poll() {
     prevModeBtnState = currModeBtnState;
   }
 
-  // if (degrees->hasChanged[channel]) {
-  //   handleDegreeChange();
-  // }
+  if (degrees->hasChanged[channel]) {
+    handleDegreeChange();
+  }
 
   if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer) {
     currCVInputValue = cvInput.read_u16();
@@ -164,6 +145,29 @@ void TouchChannel::updateLoopLengthUI() {
       setLed(i, BLINK);
     } else {
       setLed(i, HIGH);
+    }
+  }
+}
+
+void TouchChannel::handleLoopLengthUI() {
+  // take current clock step and flash the corrosponding channel LED and Octave LED
+  if (currTick == 0) {
+    int modulo = currStep % numLoopSteps;
+    
+    if (modulo != 0) {           // setting the previous LED back to normal
+      setLed(modulo - 1, HIGH);
+    } else {                     // when modulo rolls past 7 and back to 0
+      setLed(numLoopSteps - 1, HIGH);
+    }
+
+    setLed(modulo, BLINK);
+    
+    for (int i = 0; i < loopMultiplier; i++) {
+      if (currStep < (numLoopSteps * (i + 1)) && currStep >= (numLoopSteps * i)) {
+        setOctaveLed(i, BLINK);
+      } else {
+        setOctaveLed(i, HIGH);
+      }
     }
   }
 }
@@ -541,6 +545,7 @@ int TouchChannel::calculateMIDINoteValue(int index, int octave) {
 /**
  * FREEZE
  * takes boolean to either freeze or unfreeze
+ * NOTE: a good way to freeze everything would be to just change the current mode to FREEZE, and then everything in the POLL fn would not execute.
 */ 
 void TouchChannel::freeze(bool freeze) {
   // hold all gates in their current state
