@@ -163,6 +163,7 @@ class TouchChannel : public EventLinkedList {
     
     void handleQueuedEvent(int position);
     void disableQueuedEvent();
+    void resetLoopToHead();
 
     // QUANTIZE FUNCTIONS
     void initQuantizer();

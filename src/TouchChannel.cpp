@@ -110,17 +110,28 @@ void TouchChannel::handleQueuedEvent(int position) {
 }
 
 void TouchChannel::disableQueuedEvent() {
-  if (queuedEvent->triggered == true) {  // check required as this fn gets called for safety sometimes
 
-    queuedEvent->triggered = false;
+  queuedEvent->triggered = false;
 
-    if (mode == MONO_LOOP) triggerNote(queuedEvent->noteIndex, currOctave, OFF);
-    
-    if (queuedEvent->next != NULL) {
-      queuedEvent = queuedEvent->next;
-    } else {
+  if (mode == MONO_LOOP) triggerNote(queuedEvent->noteIndex, currOctave, OFF);
+  
+  if (queuedEvent->next != NULL) {
+    if (queuedEvent->next->startPos >= totalPPQN) { // if queuedEvent->next exists, but its startPos it outside the bounds of the totalPPQN, then just set queued event to HEAD
       queuedEvent = head;
+    } else {
+      queuedEvent = queuedEvent->next;
     }
+    
+  } else {
+    queuedEvent = head;
+  }
+}
+
+void TouchChannel::resetLoopToHead() {
+  if (queuedEvent->triggered == true) {  // check required as this fn gets called for safety sometimes
+    disableQueuedEvent();
+  } else {
+    queuedEvent = head; // may not need this line
   }
 }
 
@@ -164,10 +175,10 @@ void TouchChannel::clearLoop() {
 }
 
 void TouchChannel::setLoopLength(int value) {
-  disableQueuedEvent();  // incase an event occurs AFTER the new loop length value
   numLoopSteps = value;
   setLoopTotalSteps();
   setLoopTotalPPQN();
+  resetLoopToHead();  // incase an event occurs AFTER the new loop length value
   updateLoopLengthUI();
 };
 
