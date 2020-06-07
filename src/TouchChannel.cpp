@@ -31,7 +31,9 @@ void TouchChannel::init() {
   this->setOctave(currOctave);
   this->initQuantizer();
 }
-
+/** ------------------------------------------------------------------------
+ *         POLL    POLL    POLL    POLL    POLL    POLL    POLL    POLL    
+---------------------------------------------------------------------------- */
 // HANDLE ALL INTERUPT FLAGS
 void TouchChannel::poll() {
   
@@ -68,6 +70,8 @@ void TouchChannel::poll() {
     handleQueuedEvent(currPosition);
   }
 }
+// ------------------------------------------------------------------------
+
 
 void TouchChannel::handleQueuedEvent(int position) {
   if (queuedEvent->triggered == false ) {
@@ -514,7 +518,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool dimL
         setLed(index, HIGH);         // new active note HIGH
       }
       if (dimLed) setLed(index, BLINK);
-      prevOctave = currOctave;
+      prevOctave = currOctave;       // the following two lines of code used to be outside the switch block
       prevNoteIndex = currNoteIndex;
       currNoteIndex = index;
       currOctave = octave;
