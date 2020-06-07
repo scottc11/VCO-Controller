@@ -27,6 +27,7 @@ void TouchChannel::init() {
   prevTouched = 0;
   enableQuantizer = false;
   mode = MONO;
+  uiMode = DEFAULT_UI;
 
   this->setOctave(currOctave);
   this->initQuantizer();
@@ -37,7 +38,7 @@ void TouchChannel::init() {
 // HANDLE ALL INTERUPT FLAGS
 void TouchChannel::poll() {
   
-  if (mode == LOOP_LENGTH_UI) {
+  if (uiMode == LOOP_LENGTH_UI) {
     handleLoopLengthUI();
   }
 
@@ -125,19 +126,18 @@ void TouchChannel::resetLoopToHead() {
 ---------------------------------------------------------------------------- */
 
 void TouchChannel::enableLoopLengthUI() {
-  prevMode = mode;
-  this->mode = LOOP_LENGTH_UI;
+  uiMode = LOOP_LENGTH_UI;
   updateLoopLengthUI();
 }
 
 void TouchChannel::disableLoopLengthUI() {
-  this->mode = prevMode;
+  uiMode = DEFAULT_UI;
   setAllLeds(LOW);
   if (mode == MONO || mode == MONO_LOOP) {
     updateOctaveLeds(currOctave);
     triggerNote(currNoteIndex, currOctave, PREV);
   } else {
-    updateActiveDegreeLeds();
+    updateActiveDegreeLeds(); // TODO: additionally set active note to BLINK
   }
 }
 
@@ -146,9 +146,9 @@ void TouchChannel::updateLoopLengthUI() {
   updateLoopMultiplierLeds();
   for (int i = 0; i < numLoopSteps; i++) {
     if (i == currStep) {
-      setLed(i, BLINK);
+      setUILed(i, BLINK);
     } else {
-      setLed(i, HIGH);
+      setUILed(i, HIGH);
     }
   }
 }
@@ -159,18 +159,18 @@ void TouchChannel::handleLoopLengthUI() {
     int modulo = currStep % numLoopSteps;
     
     if (modulo != 0) {           // setting the previous LED back to normal
-      setLed(modulo - 1, HIGH);
+      setUILed(modulo - 1, HIGH);
     } else {                     // when modulo rolls past 7 and back to 0
-      setLed(numLoopSteps - 1, HIGH);
+      setUILed(numLoopSteps - 1, HIGH);
     }
 
-    setLed(modulo, BLINK);
+    setUILed(modulo, BLINK);
     
     for (int i = 0; i < loopMultiplier; i++) {
       if (currStep < (numLoopSteps * (i + 1)) && currStep >= (numLoopSteps * i)) {
-        setOctaveLed(i, BLINK);
+        setUIOctaveLed(i, BLINK);
       } else {
-        setOctaveLed(i, HIGH);
+        setUIOctaveLed(i, HIGH);
       }
     }
   }
@@ -288,49 +288,52 @@ void TouchChannel::handleTouch() {
     for (int i=0; i<8; i++) {
       // if it *is* touched and *wasnt* touched before, alert!
       if (touch->getBitStatus(touched, i) && !touch->getBitStatus(prevTouched, i)) {
-
-        switch (mode) {
-          case MONO:
-            triggerNote(i, currOctave, ON);
-            break;
-          case QUANTIZE:
-            setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
-            break;
-          case QUANTIZE_LOOP:
-            // every touch detected, take a snapshot of all active degree values and apply them to a EventNode
-            enableLoop = false;
-            setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
-            createChordEvent(currPosition, activeDegrees);
-            addEventToList(currPosition);
-            break;
-          case MONO_LOOP:
-            enableLoop = false;
-            createEvent(currPosition, i);
-            addEventToList(currPosition);
-            triggerNote(i, currOctave, ON);
-            break;
-          case LOOP_LENGTH_UI:
-            setLoopLength(i + 1); // loop length is not zero indexed
-            break;
+        if (uiMode == DEFAULT_UI) {
+          switch (mode) {
+            case MONO:
+              triggerNote(i, currOctave, ON);
+              break;
+            case QUANTIZE:
+              setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
+              break;
+            case QUANTIZE_LOOP:
+              // every touch detected, take a snapshot of all active degree values and apply them to a EventNode
+              enableLoop = false;
+              setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
+              createChordEvent(currPosition, activeDegrees);
+              addEventToList(currPosition);
+              break;
+            case MONO_LOOP:
+              enableLoop = false;
+              createEvent(currPosition, i);
+              addEventToList(currPosition);
+              triggerNote(i, currOctave, ON);
+              break;
+          }
+        }
+        else { // LOOP_LENGTH_UI mode
+          setLoopLength(i + 1); // loop length is not zero indexed
         }
       }
       // if it *was* touched and now *isnt*, alert!
       if (!touch->getBitStatus(touched, i) && touch->getBitStatus(prevTouched, i)) {
         
-        switch (mode) {
-          case MONO:
-            triggerNote(i, currOctave, OFF);
-            break;
-          case QUANTIZE:
-            enableLoop = true;
-            break;
-          case QUANTIZE_LOOP:
-            enableLoop = true;
-            break;
-          case MONO_LOOP:
-            triggerNote(i, currOctave, OFF);
-            enableLoop = true;
-            break;
+        if (uiMode == DEFAULT_UI) {
+          switch (mode) {
+            case MONO:
+              triggerNote(i, currOctave, OFF);
+              break;
+            case QUANTIZE:
+              enableLoop = true;
+              break;
+            case QUANTIZE_LOOP:
+              enableLoop = true;
+              break;
+            case MONO_LOOP:
+              triggerNote(i, currOctave, OFF);
+              enableLoop = true;
+              break;
+          }
         }
       }
     }
@@ -437,38 +440,55 @@ void TouchChannel::setAllLeds(int state) {
   }
 }
 
-void TouchChannel::setLed(int index, LedState state) {
-  // switch between red and green leds based on mode
-  int (*pins_ptr)[8];
-  pins_ptr = mode == MONO_LOOP || mode == QUANTIZE_LOOP ? &redLedPins : &greenLedPins;
+void TouchChannel::setLed(int index, LedState state, bool settingUILed /*false*/) {
+  if (uiMode == DEFAULT_UI || settingUILed) {
+    
+    int (*pins_ptr)[8];
+    if (settingUILed) {
+      pins_ptr = &greenLedPins;  // UI modes will always use green leds
+    } else {
+      pins_ptr = mode == MONO_LOOP || mode == QUANTIZE_LOOP ? &redLedPins : &greenLedPins;  // switch between red and green leds based on mode
+    }
+    
 
-  switch (state) {
-    case LOW:
-      ledStates &= ~(1 << index);
-      leds->setLedOutput((*pins_ptr)[index], TLC59116::OFF);
-      break;
-    case HIGH:
-      ledStates |= 1 << index;
-      leds->setLedOutput((*pins_ptr)[index], TLC59116::ON);
-      break;
-    case BLINK:
-      ledStates |= 1 << index;
-      leds->setLedOutput((*pins_ptr)[index], TLC59116::PWM, 20);
-      break;
+    switch (state) {
+      case LOW:
+        ledStates &= ~(1 << index);
+        leds->setLedOutput((*pins_ptr)[index], TLC59116::OFF);
+        break;
+      case HIGH:
+        ledStates |= 1 << index;
+        leds->setLedOutput((*pins_ptr)[index], TLC59116::ON);
+        break;
+      case BLINK:
+        ledStates |= 1 << index;
+        leds->setLedOutput((*pins_ptr)[index], TLC59116::PWM, 20);
+        break;
+    }
   }
 }
 
-void TouchChannel::setOctaveLed(int octave, LedState state) {
-  switch (state) {
-    case LOW:
-      octLeds->setLedOutput(octLedPins[octave], TLC59116::OFF);
-      break;
-    case HIGH:
-      octLeds->setLedOutput(octLedPins[octave], TLC59116::ON);
-      break;
-    case BLINK:
-      octLeds->setLedOutput(octLedPins[octave], TLC59116::PWM, 20);
-      break;
+void TouchChannel::setUILed(int index, LedState state) {
+  setLed(index, state, true);
+}
+
+void TouchChannel::setUIOctaveLed(int index, LedState state) {
+  setOctaveLed(index, state, true);
+}
+
+void TouchChannel::setOctaveLed(int octave, LedState state, bool settingUILed /*false*/) {
+  if (uiMode == DEFAULT_UI || settingUILed) {
+    switch (state) {
+      case LOW:
+        octLeds->setLedOutput(octLedPins[octave], TLC59116::OFF);
+        break;
+      case HIGH:
+        octLeds->setLedOutput(octLedPins[octave], TLC59116::ON);
+        break;
+      case BLINK:
+        octLeds->setLedOutput(octLedPins[octave], TLC59116::PWM, 20);
+        break;
+    }
   }
 }
 
@@ -489,9 +509,9 @@ void TouchChannel::updateOctaveLeds(int octave) {
 void TouchChannel::updateLoopMultiplierLeds() {
   for (int i = 0; i < 4; i++) {
     if (i < loopMultiplier) {  // loopMultiplier is not zro indexed
-      setOctaveLed(i, HIGH);
+      setUIOctaveLed(i, HIGH);
     } else {
-      setOctaveLed(i, LOW);
+      setUIOctaveLed(i, LOW);
     }
   }
 }

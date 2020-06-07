@@ -43,7 +43,11 @@ class TouchChannel : public EventLinkedList {
       MONO_LOOP = 1,
       QUANTIZE = 2,
       QUANTIZE_LOOP = 3,
-      LOOP_LENGTH_UI = 4,
+    };
+
+    enum UIMode { // not yet implemented
+      DEFAULT_UI,
+      LOOP_LENGTH_UI,
     };
 
   public:
@@ -51,6 +55,7 @@ class TouchChannel : public EventLinkedList {
     bool isSelected;
     Mode mode;                      // which mode channel is currently in
     Mode prevMode;                  // used for reverting to previous mode when toggling between UI modes
+    UIMode uiMode;                  // for settings and alt LED uis
     bool loopLengthUIEnabled;       
     DigitalOut gateOut;             // gate output pin
     DigitalOut ctrlLed;             // via global controls
@@ -126,8 +131,10 @@ class TouchChannel : public EventLinkedList {
     void poll();
     void handleTouchInterupt() { touchDetected = true; }
     
-    void setLed(int index, LedState state);
-    void setOctaveLed(int octave, LedState state);
+    void setLed(int index, LedState state, bool settingUILed=false);
+    void setOctaveLed(int octave, LedState state, bool settingUILed=false);
+    void setUILed(int index, LedState state);
+    void setUIOctaveLed(int index, LedState state);
     void setAllLeds(int state);
     void updateOctaveLeds(int octave);
     void updateLoopMultiplierLeds();
