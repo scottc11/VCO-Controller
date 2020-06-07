@@ -1,9 +1,9 @@
 /**
  * https://www.geeksforgeeks.org/bitwise-operators-in-c-cpp/
  * 
- * The & (bitwise AND) in C or C++ takes two numbers as operands and does AND on every bit of two numbers. The result of AND is 1 only if both bits are 1.
- * The | (bitwise OR) in C or C++ takes two numbers as operands and does OR on every bit of two numbers. The result of OR is 1 if any of the two bits is 1.
- * The ^ (bitwise XOR) in C or C++ takes two numbers as operands and does XOR on every bit of two numbers. The result of XOR is 1 if the two bits are different.
+ * The & (bitwise AND) The result of AND is 1 only if both bits are 1.
+ * The | (bitwise OR) The result of OR is 1 if any of the two bits is 1.
+ * The ^ (bitwise XOR) The result of XOR is 1 if the two bits are different.
  * The << (left shift) in C or C++ takes two numbers, left shifts the bits of the first operand, the second operand decides the number of places to shift.
  * The >> (right shift) in C or C++ takes two numbers, right shifts the bits of the first operand, the second operand decides the number of places to shift.
  * The ~ (bitwise NOT) in C or C++ takes one number and inverts all bits of it 
@@ -20,24 +20,32 @@
 
 // using namespace std;
 
-const char16_t DIGITS[100] = { 0b1011111001111110, 0b1011100001001110, 0b0111111001011110, 0b0111111001110110, 0b1111101001100110, 0b1111110001110110, 0b1111110001111110, 0b0011111001100110, 0b1111111001111110, 0b1111111001100110, 0b1000111001111000, 0b1000100001001000, 0b0100111001011000, 0b0100111001110000, 0b1100101001100000, 0b1100110001110000, 0b1100110001111000, 0b0000111001100000, 0b1100111001111000, 0b1100111001100000, 0b1001111010111110, 0b1001100010001110, 0b0101111010011110, 0b0101111010110110, 0b1101101010100110, 0b1101110010110110, 0b1101110010111110, 0b0001111010100110, 0b1101111010111110, 0b1101111010100110, 0b1011011010111110, 0b1011000010001110, 0b0111011010011110, 0b0111011010110110, 0b1111001010100110, 0b1111010010110110, 0b1111010010111110, 0b0011011010100110, 0b1111011010111110, 0b1111011010100110, 0b1010011011111010, 0b1010000011001010, 0b0110011011011010, 0b0110011011110010, 0b1110001011100010, 0b1110010011110010, 0b1110010011111010, 0b0010011011100010, 0b1110011011111010, 0b1110011011100010, 0b1011011011111100, 0b1011000011001100, 0b0111011011011100, 0b0111011011110100, 0b1111001011100100, 0b1111010011110100, 0b1111010011111100, 0b0011011011100100, 0b1111011011111100, 0b1111011011100100, 0b1011111011111100, 0b1011100011001100, 0b0111111011011100, 0b0111111011110100, 0b1111101011100100, 0b1111110011110100, 0b1111110011111100, 0b0011111011100100, 0b1111111011111100, 0b1111111011100100, 0b1010011000111110, 0b1010000000001110, 0b0110011000011110, 0b0110011000110110, 0b1110001000100110, 0b1110010000110110, 0b1110010000111110, 0b0010011000100110, 0b1110011000111110, 0b1110011000100110, 0b1011111011111110, 0b1011100011001110, 0b0111111011011110, 0b0111111011110110, 0b1111101011100110, 0b1111110011110110, 0b1111110011111110, 0b0011111011100110, 0b1111111011111110, 0b1111111011100110, 0b1010011011111110, 0b1010000011001110, 0b0110011011011110, 0b0110011011110110, 0b1110001011100110, 0b1110010011110110, 0b1110010011111110, 0b0010011011100110, 0b1110011011111110, 0b1110011011100110 };
-
 // compile -->  g++ -o bitwise bitwise.cpp
 // run     -->  ./bitwise
 
 int main()
 {
-  unsigned char a = 0b00000011;
-  unsigned char b = 0b00000011;
-  int chanA = 0b00001100;
-  int chanB = 0b00000010;
+  uint16_t num = 14507;
+  int chanA = 0;
+  int chanB = 1;
+  int chanC = 2;
+  int chanD = 3;
 
+  int controlBits = 0xFF;
   
+  std::bitset<16> integerOutput = num;
 
-  std::bitset<16> output(DIGITS[0]);
-  int integerOutput = DIGITS[0];
+  std::bitset<8> byte1( controlBits << 2);
   
-  std::cout << output << std::endl;
+  std::bitset<8> byte2((num >> 8) & 0xFF);
+  
+  std::bitset<8> byte3(num & 0xFF);
+  
+  std::cout << byte1 << std::endl;
+  std::cout << byte2 << std::endl;
+  std::cout << byte3 << std::endl;
+  
+  
   std::cout << integerOutput << std::endl;
   return 0;
 }

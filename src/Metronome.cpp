@@ -14,23 +14,16 @@ void Metronome::init() {
 void Metronome::tick() {
   currTick += 1;
   position += 1;
-
-  if (currTick > 2) {
-    stepLed->write(LOW);
-    startLed->write(LOW);
-  }
 }
 
 void Metronome::step() {
   currTick = 1;
   currStep += 1;
-  stepLed->write(HIGH);
   
   // reset step count / reset loop
   if (currStep > numSteps) {
     currStep = 1;
     position = 1;
-    startLed->write(HIGH);
   }
 }
 

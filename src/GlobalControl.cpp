@@ -8,10 +8,15 @@
 */
 
 void GlobalControl::init() {
-  cap->init();
-  display.init(channels[selectedChannel]->numLoopSteps);
-  encoder.init(0, 99);
-  encoder.attachBtnCallback(callback(this, &GlobalControl::handleEncoderPressed));
+  touchCtrl->init();
+  touchOctAB->init();
+  touchOctCD->init();
+
+  if (!touchOctAB->isConnected()) {
+    channels[2]->ctrlLed.write(HIGH);
+  }
+
+  channels[0]->ctrlLed.write(HIGH);
   selectChannel(0);
 }
 
@@ -21,15 +26,14 @@ void GlobalControl::poll() {
     handleTouchEvent();
     touchDetected = false;
   }
-  if (encoder.getValue() != channels[selectedChannel]->numLoopSteps) {
-    handleEncoderRotation();
-  }
+  handleOctaveTouched();
+  // if (octaveTouchDetected) {
+    
+  //   octaveTouchDetected = false;
+  // }
 }
 
 
-void GlobalControl::handleEncoderPressed() {
-  channels[selectedChannel]->clearEventList();
-}
 
 /**
  * CHANNEL SELECT
@@ -45,35 +49,91 @@ void GlobalControl::selectChannel(int channel) {
   selectedChannel = channel;
   channels[selectedChannel]->isSelected = true;
   channels[selectedChannel]->ctrlLed.write(HIGH);
-  encoder.setValue(channels[selectedChannel]->numLoopSteps);
-  display.write(encoder.value);
-}
-
-
-/**
- * HANDLE ENCODER ROTATION
-*/
-void GlobalControl::handleEncoderRotation() {
-  int value = encoder.getValue();
-  channels[selectedChannel]->setNumLoopSteps(value);
-  display.write(channels[selectedChannel]->numLoopSteps);
 }
 
 /**
  * HANDLE TOUCH EVENT
 */
 void GlobalControl::handleTouchEvent() {
-  currTouched = cap->touched();
+  currTouched = touchCtrl->touched();
   if (currTouched != prevTouched) {
     for (int i=0; i<8; i++) {
-      if (cap->padIsTouched(i, currTouched, prevTouched)) {
+      if (touchCtrl->padIsTouched(i, currTouched, prevTouched)) {
         handleTouch(i);
       }
-      if (cap->padWasTouched(i, currTouched, prevTouched)) {
+      if (touchCtrl->padWasTouched(i, currTouched, prevTouched)) {
         handleRelease(i);
       }
     }
     prevTouched = currTouched;
+  }
+}
+
+void GlobalControl::handleOctaveTouched() {
+  // put both touch ICs data into a 16 bit int
+  uint8_t touchedAB = touchOctAB->touched();
+  uint8_t touchedCD = touchOctCD->touched();
+  currOctavesTouched = two8sTo16(touchedCD, touchedAB);
+  if (currOctavesTouched != prevOctavesTouched) {
+    for (int i=0; i<16; i++) {
+      if (touchCtrl->padIsTouched(i, currOctavesTouched, prevOctavesTouched)) {
+        switch (currTouched) {
+          case 0b00000001: // loop length is currenttly being touched
+            setChannelLoopMultiplier(i);
+            break;
+          case 0b00000000:
+            setChannelOctave(i);
+            break;
+        }
+      }
+      if (touchCtrl->padWasTouched(i, currOctavesTouched, prevOctavesTouched)) {
+        
+      }
+    }
+    prevOctavesTouched = currOctavesTouched;
+  }
+}
+
+
+void GlobalControl::setChannelLoopMultiplier(int pad) {
+  switch (pad) {
+    case 0:  channels[2]->setLoopMultiplier(1); break;
+    case 1:  channels[2]->setLoopMultiplier(2); break;
+    case 2:  channels[2]->setLoopMultiplier(3); break;
+    case 3:  channels[2]->setLoopMultiplier(4); break;
+    case 4:  channels[3]->setLoopMultiplier(1); break;
+    case 5:  channels[3]->setLoopMultiplier(2); break;
+    case 6:  channels[3]->setLoopMultiplier(3); break;
+    case 7:  channels[3]->setLoopMultiplier(4); break;
+    case 8:  channels[0]->setLoopMultiplier(1); break;
+    case 9:  channels[0]->setLoopMultiplier(2); break;
+    case 10: channels[0]->setLoopMultiplier(3); break;
+    case 11: channels[0]->setLoopMultiplier(4); break;
+    case 12: channels[1]->setLoopMultiplier(1); break;
+    case 13: channels[1]->setLoopMultiplier(2); break;
+    case 14: channels[1]->setLoopMultiplier(3); break;
+    case 15: channels[1]->setLoopMultiplier(4); break;
+  }
+}
+
+void GlobalControl::setChannelOctave(int pad) {
+  switch (pad) {
+    case 0:  channels[2]->setOctave(0); break;
+    case 1:  channels[2]->setOctave(1); break;
+    case 2:  channels[2]->setOctave(2); break;
+    case 3:  channels[2]->setOctave(3); break;
+    case 4:  channels[3]->setOctave(0); break;
+    case 5:  channels[3]->setOctave(1); break;
+    case 6:  channels[3]->setOctave(2); break;
+    case 7:  channels[3]->setOctave(3); break;
+    case 8:  channels[0]->setOctave(0); break;
+    case 9:  channels[0]->setOctave(1); break;
+    case 10: channels[0]->setOctave(2); break;
+    case 11: channels[0]->setOctave(3); break;
+    case 12: channels[1]->setOctave(0); break;
+    case 13: channels[1]->setOctave(1); break;
+    case 14: channels[1]->setOctave(2); break;
+    case 15: channels[1]->setOctave(3); break;
   }
 }
 
@@ -84,11 +144,26 @@ void GlobalControl::handleTouchEvent() {
 void GlobalControl::handleTouch(int pad) {
   
   switch (pad) {
-    case CTRL_FREEZE:
+    case FREEZE:
       handleFreeze(true);
       break;
-    case CTRL_RESET:
+    case RESET:
       handleReset();
+      if (currTouched == CLEAR_LOOP) {
+        clearAllChannelEvents();
+      }
+      break;
+    case LOOP_LENGTH:
+      channels[0]->enableLoopLengthUI();
+      channels[1]->enableLoopLengthUI();
+      channels[2]->enableLoopLengthUI();
+      channels[3]->enableLoopLengthUI();
+      break;
+    case RECORD:
+      channels[0]->enableLoopMode();
+      channels[1]->enableLoopMode();
+      channels[2]->enableLoopMode();
+      channels[3]->enableLoopMode();
       break;
     case CTRL_A:
       selectChannel(0);
@@ -110,10 +185,22 @@ void GlobalControl::handleTouch(int pad) {
 */
 void GlobalControl::handleRelease(int pad) {
   switch (pad) {
-    case CTRL_FREEZE:
+    case FREEZE:
       handleFreeze(false);
       break;
-    case CTRL_RESET:
+    case RESET:
+      break;
+    case LOOP_LENGTH:
+      channels[0]->disableLoopLengthUI();
+      channels[1]->disableLoopLengthUI();
+      channels[2]->disableLoopLengthUI();
+      channels[3]->disableLoopLengthUI();
+      break;
+    case RECORD:
+      channels[0]->disableLoopMode();
+      channels[1]->disableLoopMode();
+      channels[2]->disableLoopMode();
+      channels[3]->disableLoopMode();
       break;
     case CTRL_A:
       break;
@@ -125,7 +212,6 @@ void GlobalControl::handleRelease(int pad) {
       break;
   }
 }
-
 
 /**
  * HANDLE FREEZE
@@ -150,3 +236,13 @@ void GlobalControl::handleReset() {
   channels[3]->reset();
 }
 
+/**
+ * HANDLE RESET
+*/
+void GlobalControl::clearAllChannelEvents() {
+  // reset all channels
+  channels[0]->clearLoop();
+  channels[1]->clearLoop();
+  channels[2]->clearLoop();
+  channels[3]->clearLoop();
+}

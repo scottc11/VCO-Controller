@@ -1,0 +1,3 @@
+[submodule "lib/mbed-lib"]
+	path = lib/mbed-lib
+	url = https://github.com/scottc11/mbed-lib.git
