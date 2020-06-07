@@ -514,6 +514,8 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool dimL
         setLed(index, HIGH);         // new active note HIGH
       }
       if (dimLed) setLed(index, BLINK);
+      prevOctave = currOctave;
+      prevNoteIndex = currNoteIndex;
       currNoteIndex = index;
       currOctave = octave;
       gateOut.write(HIGH);
@@ -529,8 +531,6 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool dimL
       setLed(index, HIGH);
       break;
   }
-  prevOctave = octave;
-  prevNoteIndex = index;  // you might need to move this into the ON case. It has already caused one bug being here.
 }
 
 int TouchChannel::calculateDACNoteValue(int index, int octave) {
