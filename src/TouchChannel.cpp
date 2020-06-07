@@ -510,8 +510,8 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool dimL
   switch (state) {
     case ON:
       if (mode == MONO || mode == MONO_LOOP) {
-        setLed(prevNoteIndex, LOW);
-        setLed(index, HIGH);
+        setLed(currNoteIndex, LOW);  // set the 'previous' active note led LOW
+        setLed(index, HIGH);         // new active note HIGH
       }
       if (dimLed) setLed(index, BLINK);
       currNoteIndex = index;
@@ -530,7 +530,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool dimL
       break;
   }
   prevOctave = octave;
-  prevNoteIndex = index;
+  prevNoteIndex = index;  // you might need to move this into the ON case. It has already caused one bug being here.
 }
 
 int TouchChannel::calculateDACNoteValue(int index, int octave) {
