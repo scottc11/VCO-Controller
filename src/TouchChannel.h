@@ -11,7 +11,7 @@
 #include "MIDI.h"
 #include "QuantizeMethods.h"
 #include "BitwiseMethods.h"
-#include "EventLinkedList.h"
+#include "EventLoop.h"
 
 typedef struct QuantizerValue {
   int threshold;
@@ -19,7 +19,7 @@ typedef struct QuantizerValue {
 } QuantizerValue;
 
 
-class TouchChannel : public EventLinkedList {
+class TouchChannel : public EventLoop {
   private:
     enum SWITCH_STATES {
       OCTAVE_UP = 0b00001000,
@@ -171,8 +171,6 @@ class TouchChannel : public EventLinkedList {
     void setLoopTotalSteps(); // refractor into metronom class
     
     void handleQueuedEvent(int position);
-    void disableQueuedEvent();
-    void resetLoopToHead();
 
     // QUANTIZE FUNCTIONS
     void initQuantizer();

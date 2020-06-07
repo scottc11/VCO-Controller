@@ -8,6 +8,7 @@ typedef struct LoopNode {
   uint8_t activeNotes;       // byte for holding active/inactive notes for a chord
   uint8_t noteIndex;         // note index between 0 and 7
   bool triggered;            // has the LoopNode been triggered
+  bool active;               // this will tell the loop whether to trigger an event or not
 } LoopNode;
 
 class EventLoop {
@@ -17,8 +18,10 @@ public:
     // initialize;
   }
 
-  volatile LoopNode events[768];
+  LoopNode events[768];
   QuantizeMode timeQuantizationMode;
+  int prevEventIndex;                 // index for disabling the last "triggered" event in the loop
+  bool loopContainsEvents;
   bool enableLoop = false;            // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
   volatile int numLoopSteps;
   volatile int currStep;              // the current 'step' of the loop (lowest value == 0)
@@ -29,9 +32,34 @@ public:
   int loopMultiplier;                 // number between 1 and 4 based on Octave Leds of channel
   
 
-  void clearEventList(){};
-  void createEvent(int position, int noteIndex){};
-  void createChordEvent(int position, uint8_t notes){};
+  void clearEventList() {
+    // deactive all events in list
+    loopContainsEvents = false; // after deactivating all events in list, set this flag to false
+  };
+
+  void createEvent(int position, int noteIndex) {
+
+    if (loopContainsEvents == false) {
+      loopContainsEvents = true;
+    }
+
+    events[position].noteIndex = noteIndex;
+    events[position].active = true;
+    events[position].triggered = false;
+  };
+  
+  void createChordEvent(int position, uint8_t notes) {
+    
+    if (loopContainsEvents == false) {
+      loopContainsEvents = true;
+    }
+
+    events[position].activeNotes = notes;
+    events[position].active = true;
+    events[position].triggered = false;
+
+  };
+
   void addEventToList(int endPosition){};
   void handleQueuedEvent(int position){};
 
