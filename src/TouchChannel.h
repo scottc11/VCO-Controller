@@ -43,6 +43,7 @@ class TouchChannel : public EventLoop {
       MONO_LOOP = 1,
       QUANTIZE = 2,
       QUANTIZE_LOOP = 3,
+      FREEZE = 4,
     };
 
     enum UIMode { // not yet implemented
@@ -56,11 +57,9 @@ class TouchChannel : public EventLoop {
     Mode mode;                      // which mode channel is currently in
     Mode prevMode;                  // used for reverting to previous mode when toggling between UI modes
     UIMode uiMode;                  // for settings and alt LED uis
-    bool loopLengthUIEnabled;       
     DigitalOut gateOut;             // gate output pin
     DigitalOut ctrlLed;             // via global controls
     DigitalIn modeBtn;              // tactile button for toggleing between channel modes
-    Metronome *metronome;
     MIDI *midi;                     // pointer to mbed midi instance
     CAP1208 *touch;                 // i2c touch IC
     DAC8554 *dac;                   // pointer to dual channel digital-analog-converter
@@ -109,7 +108,6 @@ class TouchChannel : public EventLoop {
         int *_octLedPins,
         Degrees *degrees_ptr,
         MIDI *midi_p,
-        Metronome *_clock,
         DAC8554 *dac_ptr,
         DAC8554::Channels _dacChannel
       ) : modeBtn(modePin), gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), ctrlLed(ctrlLedPin), cvInput(cvInputPin) {
@@ -119,7 +117,6 @@ class TouchChannel : public EventLoop {
       octLeds = octLeds_ptr;
       octLedPins = _octLedPins;
       degrees = degrees_ptr;
-      metronome = _clock;
       dac = dac_ptr;
       dacChannel = _dacChannel;
       midi = midi_p;
@@ -148,6 +145,8 @@ class TouchChannel : public EventLoop {
     
     void tickClock();
     void stepClock();
+    void resetClock();
+    
     int quantizePosition(int position);
     int calculateMIDINoteValue(int index, int octave);
     int calculateDACNoteValue(int index, int octave);

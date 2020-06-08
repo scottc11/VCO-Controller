@@ -148,9 +148,10 @@ void GlobalControl::handleTouch(int pad) {
       handleFreeze(true);
       break;
     case RESET:
-      handleReset();
       if (currTouched == CLEAR_LOOP) {
         clearAllChannelEvents();
+      } else {
+        handleReset();
       }
       break;
     case LOOP_LENGTH:
@@ -241,8 +242,8 @@ void GlobalControl::handleReset() {
 */
 void GlobalControl::clearAllChannelEvents() {
   // reset all channels
-  channels[0]->clearLoop();
-  channels[1]->clearLoop();
-  channels[2]->clearLoop();
-  channels[3]->clearLoop();
+  channels[0]->clearEventLoop();
+  channels[1]->clearEventLoop();
+  channels[2]->clearEventLoop();
+  channels[3]->clearEventLoop();
 }

@@ -18,10 +18,11 @@ public:
     // initialize;
   }
 
-  LoopNode events[768];
+  LoopNode events[PPQN * MAX_LOOP_STEPS];
   QuantizeMode timeQuantizationMode;
   int prevEventIndex;                 // index for disabling the last "triggered" event in the loop
   bool loopContainsEvents;
+  bool deleteEvents;
   bool enableLoop = false;            // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
   volatile int numLoopSteps;
   volatile int currStep;              // the current 'step' of the loop (lowest value == 0)
@@ -32,8 +33,11 @@ public:
   int loopMultiplier;                 // number between 1 and 4 based on Octave Leds of channel
   
 
-  void clearEventList() {
-    // deactive all events in list
+  void clearEventLoop() {
+    // deactivate all events in list
+    for (int i = 0; i < PPQN * MAX_LOOP_STEPS; i++) {
+      events[i].active = false;
+    }
     loopContainsEvents = false; // after deactivating all events in list, set this flag to false
   };
 

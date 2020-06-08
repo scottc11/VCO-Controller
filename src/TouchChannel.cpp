@@ -99,6 +99,7 @@ void TouchChannel::handleQueuedEvent(int position) {
 }
 
 
+
 /** ------------------------------------------------------------------------
  *         LOOP UI METHODS
 ---------------------------------------------------------------------------- */
@@ -156,7 +157,7 @@ void TouchChannel::handleLoopLengthUI() {
 
 
 void TouchChannel::clearLoop() {
-  clearEventList();
+  
 }
 
 void TouchChannel::setLoopLength(int value) {
@@ -217,31 +218,19 @@ void TouchChannel::disableLoopMode() {
 void TouchChannel::tickClock() {
   currTick += 1;
   currPosition += 1;
-  
-  // if (currTick > 2) {
-  //   if (isSelected) {
-  //     ctrlLed.write(HIGH);
-  //   } else {
-  //     ctrlLed.write(LOW);
-  //   }
-  // }
 
   // when currTick exceeds PPQN, reset to 0
   if (currTick >= PPQN) {
     currTick = 0;
+    currStep += 1;
   }
   if (currPosition >= totalPPQN) {
     currPosition = 0;
+    currStep = 0;
   }
 }
 
 void TouchChannel::stepClock() {
-  // if (isSelected) {
-  //   ctrlLed.write(LOW);
-  // } else {
-  //   ctrlLed.write(HIGH);
-  // }
-
   currTick = 0;
   currStep += 1;
   // when currStep eqauls number of steps in loop, reset currStep and currPosition to 0
@@ -250,7 +239,12 @@ void TouchChannel::stepClock() {
   }
 }
 
-
+// NOTE: you probably don't want to reset the 'tick' value, as it would make it very dificult to line up with the global clock;
+void TouchChannel::resetClock() {
+  currTick = 0;
+  currPosition = 0;
+  currStep = 0;
+}
 
 /** ------------------------------------------------------------------------
  *         TOUCH EVENT METHODS
@@ -356,6 +350,9 @@ void TouchChannel::setMode(Mode targetMode) {
       setAllLeds(LOW);
       updateActiveDegreeLeds();
       triggerNote(prevNoteIndex, currOctave, OFF);
+      break;
+    case FREEZE:
+      mode = FREEZE;
       break;
   }
 }
@@ -542,37 +539,20 @@ int TouchChannel::calculateMIDINoteValue(int index, int octave) {
  * NOTE: a good way to freeze everything would be to just change the current mode to FREEZE, and then everything in the POLL fn would not execute.
 */ 
 void TouchChannel::freeze(bool freeze) {
-  // hold all gates in their current state
-  switch (mode) {
-    case MONO:
-      break;
-    case QUANTIZE:
-      enableQuantizer = freeze ? false : true;
-      break;
-    case QUANTIZE_LOOP:
-      // turn quantizer off
-      enableLoop = freeze ? false : true;
-      enableQuantizer = freeze ? false : true;
-      break;
-    case MONO_LOOP:
-      enableLoop = freeze ? false : true;
-      break;
-  }
+
 }
 
 void TouchChannel::reset() {
   // you should probably get the currently queued event, see if it has been triggered yet, and disable it if it has been triggered
   switch (mode) {
     case MONO:
+      resetClock();
       break;
     case QUANTIZE_LOOP:
-      currPosition = 0;
-      currStep = 0;
+      resetClock();
       break;
     case MONO_LOOP:
-      // NOTE: you probably don't want to reset the 'tick' value, as it would make it very dificult to line up with the global clock;
-      currPosition = 0;
-      currStep = 0;
+      resetClock();
       break;
   }
 }
