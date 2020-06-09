@@ -332,8 +332,8 @@ void TouchChannel::setMode(Mode targetMode) {
       enableQuantizer = false;
       mode = MONO_LOOP;
       setAllLeds(LOW);
-      triggerNote(prevNoteIndex, currOctave, ON);
-      triggerNote(prevNoteIndex, currOctave, OFF);
+      triggerNote(currNoteIndex, currOctave, ON);
+      triggerNote(currNoteIndex, currOctave, OFF);
       break;
     case QUANTIZE:
       enableLoop = false;
@@ -341,7 +341,7 @@ void TouchChannel::setMode(Mode targetMode) {
       mode = QUANTIZE;
       setAllLeds(LOW);
       updateActiveDegreeLeds();
-      triggerNote(prevNoteIndex, currOctave, OFF);
+      triggerNote(currNoteIndex, currOctave, OFF);
       break;
     case QUANTIZE_LOOP:
       enableLoop = true;
@@ -349,7 +349,7 @@ void TouchChannel::setMode(Mode targetMode) {
       mode = QUANTIZE_LOOP;
       setAllLeds(LOW);
       updateActiveDegreeLeds();
-      triggerNote(prevNoteIndex, currOctave, OFF);
+      triggerNote(currNoteIndex, currOctave, OFF);
       break;
     case FREEZE:
       mode = FREEZE;
