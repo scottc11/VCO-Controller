@@ -56,9 +56,10 @@ void TouchChannel::handleCVInput(int value) {
     if (clippedValue < activeDegreeValues[i].threshold) {                              // break from loop as soon as we can
       if (prevNoteIndex != activeDegreeValues[i].noteIndex || prevOctave != octave) {  // catch duplicate triggering of that same note.
         this->triggerNote(prevNoteIndex, prevOctave, OFF);
-        setLed(prevNoteIndex, HIGH);
-        this->triggerNote(activeDegreeValues[i].noteIndex, octave, ON);
-        setLed(currNoteIndex, BLINK);
+        if (bitRead(activeDegrees, prevNoteIndex)) { // if prevNote still active, its led needs to be set from blinking back fully on
+          setLed(prevNoteIndex, HIGH);
+        }
+        this->triggerNote(activeDegreeValues[i].noteIndex, octave, ON, true);
         this->updateOctaveLeds(octave);
       }
       break;
