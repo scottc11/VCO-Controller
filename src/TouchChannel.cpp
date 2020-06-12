@@ -372,6 +372,7 @@ void TouchChannel::setOctave(int value) {
     case QUANTIZE:
       break;
     case MONO_LOOP:
+      triggerNote(currNoteIndex, currOctave, SUSTAIN);
       break;
   }
 
@@ -510,6 +511,14 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool dimL
       currNoteIndex = index;
       currOctave = octave;
       gateOut.write(HIGH);
+      dac->write(dacChannel, calculateDACNoteValue(index, octave));
+      midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
+      break;
+    case SUSTAIN:
+      prevOctave = currOctave;       // the following two lines of code used to be outside the switch block
+      prevNoteIndex = currNoteIndex;
+      currNoteIndex = index;
+      currOctave = octave;
       dac->write(dacChannel, calculateDACNoteValue(index, octave));
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
