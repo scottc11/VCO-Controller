@@ -31,6 +31,9 @@ void TouchChannel::initQuantizer() {
   }
 }
 
+void TouchChannel::setActiveDegreeLimit(int value) {
+  activeDegreeLimit = value;
+}
 
 void TouchChannel::handleCVInput(int value) {
   

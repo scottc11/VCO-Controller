@@ -60,6 +60,7 @@ class TouchChannel : public EventLoop {
     DigitalOut gateOut;             // gate output pin
     DigitalOut ctrlLed;             // via global controls
     DigitalIn modeBtn;              // tactile button for toggleing between channel modes
+    Timer *gestureTimer;            // timer for handling duration based touch events
     MIDI *midi;                     // pointer to mbed midi instance
     CAP1208 *touch;                 // i2c touch IC
     DAC8554 *dac;                   // pointer to dual channel digital-analog-converter
@@ -77,6 +78,7 @@ class TouchChannel : public EventLoop {
     bool enableQuantizer;                 // by default set to true, only ever changes with a 'freeze' event
     int activeDegrees;                    // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
     int numActiveDegrees;                 // number of degrees which are active (to quantize voltage input)
+    int activeDegreeLimit;                // the max number of degrees allowed to be enabled at one time.
     QuantizerValue activeDegreeValues[8]; // array which holds noteIndex values and their associated DAC/1vo values
 
     int redLedPins[8] = { 14, 12, 10, 8, 6, 4, 2, 0 };    // hardcoded values to be passed to the 16 chan LED driver
@@ -97,6 +99,7 @@ class TouchChannel : public EventLoop {
     
     TouchChannel(
         int _channel,
+        Timer *timer_ptr,
         PinName modePin,
         PinName gateOutPin,
         PinName tchIntPin,
@@ -112,6 +115,7 @@ class TouchChannel : public EventLoop {
         DAC8554::Channels _dacChannel
       ) : modeBtn(modePin), gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), ctrlLed(ctrlLedPin), cvInput(cvInputPin) {
       
+      gestureTimer = timer_ptr;
       touch = touch_ptr;
       leds = leds_ptr;
       octLeds = octLeds_ptr;
@@ -175,6 +179,7 @@ class TouchChannel : public EventLoop {
     void initQuantizer();
     void handleCVInput(int value);
     void setActiveDegrees(int degrees);
+    void setActiveDegreeLimit(int value);
 };
 
 #endif

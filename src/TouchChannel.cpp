@@ -38,6 +38,10 @@ void TouchChannel::init() {
 // HANDLE ALL INTERUPT FLAGS
 void TouchChannel::poll() {
   
+  // Timer polling --> flag if timer is active, and if it is start counting to 3 seconds
+  // after 3 seconds, call a function which takes the currTouched variable and applies it to the activeDegreeLimit.
+  // then disable timer poll flag.
+
   if (uiMode == LOOP_LENGTH_UI) {
     handleLoopLengthUI();
   }
@@ -246,9 +250,9 @@ void TouchChannel::resetClock() {
   currStep = 0;
 }
 
-/** ------------------------------------------------------------------------
- *         TOUCH EVENT METHODS
----------------------------------------------------------------------------- */
+/** -------------------------------------------------------------------------------------------
+ *         TOUCH EVENT METHODS           TOUCH EVENT METHODS            TOUCH EVENT METHODS
+----------------------------------------------------------------------------------------------- */
 
 // NOTE: you need a way to trigger events after a series of touches have happened, and the channel is now not being touched
 
@@ -264,6 +268,7 @@ void TouchChannel::handleTouch() {
               triggerNote(i, currOctave, ON);
               break;
             case QUANTIZE:
+              // set start time
               setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
               break;
             case QUANTIZE_LOOP:
@@ -290,6 +295,9 @@ void TouchChannel::handleTouch() {
               triggerNote(i, currOctave, OFF);
               break;
             case QUANTIZE:
+              // set end time
+              // if (endTime - startTime > gestureThreshold) do something fancy
+              // 
               break;
             case QUANTIZE_LOOP:
               break;
@@ -304,6 +312,9 @@ void TouchChannel::handleTouch() {
     prevTouched = touched;
   }
 }
+
+// -------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------
 
 /**
  * TOGGLE MODE
@@ -515,8 +526,8 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool dimL
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
     case SUSTAIN:
-      prevOctave = currOctave;       // the following two lines of code used to be outside the switch block
-      prevNoteIndex = currNoteIndex;
+      prevOctave = currOctave;       // you might need to remove all this setter.
+      prevNoteIndex = currNoteIndex; // you might need to remove all this setter.
       currNoteIndex = index;
       currOctave = octave;
       dac->write(dacChannel, calculateDACNoteValue(index, octave));
