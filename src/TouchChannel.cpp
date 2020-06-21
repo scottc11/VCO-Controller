@@ -8,6 +8,7 @@ void TouchChannel::init() {
   touch->calibrate();
   touch->clearInterupt();
   dac->init();
+  setSlewAmount(0);
 
   // intialize inheritance variables
   numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
@@ -70,6 +71,12 @@ void TouchChannel::poll() {
       prevCVInputValue = currCVInputValue;
     }
   }
+
+  // currSlewCV = slewCvInput.read();
+  // if (currSlewCV >= prevSlewCV + 0.1 || currSlewCV <= prevSlewCV - 0.1) {
+  //   setSlewAmount(currSlewCV);
+  //   prevSlewCV = currSlewCV;
+  // }
 
   if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && enableLoop ) {
     handleQueuedEvent(currPosition);
@@ -550,6 +557,12 @@ int TouchChannel::calculateDACNoteValue(int index, int octave) {
 
 int TouchChannel::calculateMIDINoteValue(int index, int octave) {
   return MIDI_NOTE_MAP[index][degrees->switchStates[index]] + MIDI_OCTAVE_MAP[octave];
+}
+
+
+void TouchChannel::setSlewAmount(float val) {
+  // need to convert float ADC value to a 8-bit value
+  digiPot->writeWiper(wiperChannel, 255 * val);
 }
 
 

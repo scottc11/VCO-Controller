@@ -38,6 +38,11 @@ enum LedState: int {
 #define ADC_C                PC_4
 #define ADC_D                PC_5
 
+#define SLEW_ADC_A           PA_4
+#define SLEW_ADC_B           PA_5
+#define SLEW_ADC_C           PB_0
+#define SLEW_ADC_D           PB_1
+
 #define GATE_OUT_A           PC_2
 #define GATE_OUT_B           PC_3
 #define GATE_OUT_C           PA_0
@@ -57,6 +62,7 @@ enum LedState: int {
 
 #define DEGREES_INT          PB_2
 
+#define MCP4461_ADDR             0x58 // 8-bit
 #define TCA9548A_ADDR            0x70 // 1110000
 #define CAP1208_ADDR             0x50 // 0010100  via mux
 #define CAP1208_CTRL_ADDR        0x50 // 0010100
@@ -73,7 +79,8 @@ enum LedState: int {
 #define DEGREE_COUNT                   8
 #define DEFAULT_CHANNEL_LOOP_STEPS     8
 #define EVENT_END_BUFFER               4
-#define CV_QUANT_BUFFER                300
+#define CV_QUANT_BUFFER                1000
+#define SLEW_CV_BUFFER                 1000
 #define MAX_LOOP_STEPS                 32
 
 // 83.333, 166.666, 249.999, 333.332, 416.66499999999996, 499.99799999999993, 583.3309999999999, 666.6639999999999, 749.9969999999998, 833.3299999999998, 916.6629999999998, 999.9959999999998

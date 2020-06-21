@@ -8,6 +8,7 @@
 #include "CAP1208.h"
 #include "TCA9544A.h"
 #include "TLC59116.h"
+#include "MCP4461.h"
 #include "MIDI.h"
 #include "QuantizeMethods.h"
 #include "BitwiseMethods.h"
@@ -67,10 +68,14 @@ class TouchChannel : public EventLoop {
     DAC8554::Channels dacChannel;   // which dac to address
     TLC59116 *leds;                 // led driver
     TLC59116 *octLeds;              // led driver
-    int *octLedPins;              // pin list for led Driver
+    MCP4461 *digiPot;               // digitial potentiometer
+    MCP4461::Wiper wiperChannel;    // wiper channel to use
+    int *octLedPins;                // pin list for led Driver
     Degrees *degrees;
     InterruptIn touchInterupt;
-    AnalogIn cvInput;                // CV Input Pin
+    AnalogIn cvInput;                // CV input pin for quantizer mode
+    AnalogIn slewCvInput;            // CV input pin for slew control
+
     volatile bool switchHasChanged;  // toggle switches interupt flag
     volatile bool touchDetected;
     
@@ -86,10 +91,12 @@ class TouchChannel : public EventLoop {
     uint16_t ledStates;            // 16 bits to represent each bi-color led  | 0-Red | 0-Green | 1-Red | 1-Green | 2-Red | 2-Green | etc...
     unsigned int currCVInputValue; // 16 bit value (0..65,536)
     unsigned int prevCVInputValue; // 16 bit value (0..65,536)
-    int touched;                 // variable for holding the currently touched degrees
-    int prevTouched;             // variable for holding the previously touched degrees
-    int currOctave;              // current octave value between 0..3
-    int prevOctave;              // previous octave value
+    float currSlewCV;              // represented as a float in the range [0.0, 1.0]
+    float prevSlewCV;              // represented as a float in the range [0.0, 1.0]
+    int touched;                   // variable for holding the currently touched degrees
+    int prevTouched;               // variable for holding the previously touched degrees
+    int currOctave;                // current octave value between 0..3
+    int prevOctave;                // previous octave value
     int counter;
     int currNoteIndex;
     int prevNoteIndex;
@@ -105,6 +112,7 @@ class TouchChannel : public EventLoop {
         PinName tchIntPin,
         PinName ctrlLedPin,
         PinName cvInputPin,
+        PinName slewInputPin,
         CAP1208 *touch_ptr,
         TLC59116 *leds_ptr,
         TLC59116 *octLeds_ptr,
@@ -112,8 +120,10 @@ class TouchChannel : public EventLoop {
         Degrees *degrees_ptr,
         MIDI *midi_p,
         DAC8554 *dac_ptr,
-        DAC8554::Channels _dacChannel
-      ) : modeBtn(modePin), gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), ctrlLed(ctrlLedPin), cvInput(cvInputPin) {
+        DAC8554::Channels _dacChannel,
+        MCP4461 *digiPot_ptr,
+        MCP4461::Wiper _wiperCh
+      ) : modeBtn(modePin), gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), ctrlLed(ctrlLedPin), cvInput(cvInputPin), slewCvInput(slewInputPin) {
       
       gestureTimer = timer_ptr;
       touch = touch_ptr;
@@ -126,6 +136,8 @@ class TouchChannel : public EventLoop {
       midi = midi_p;
       touchInterupt.fall(callback(this, &TouchChannel::handleTouchInterupt));
       channel = _channel;
+      digiPot = digiPot_ptr;
+      wiperChannel = _wiperCh;
     };
 
     void init();
@@ -155,6 +167,8 @@ class TouchChannel : public EventLoop {
     int calculateMIDINoteValue(int index, int octave);
     int calculateDACNoteValue(int index, int octave);
     
+    void setSlewAmount(float val);
+
     void setOctave(int value);
     void triggerNote(int index, int octave, NoteState state, bool dimLed=false);
     void freeze(bool enable);
