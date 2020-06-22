@@ -42,19 +42,21 @@ void TouchChannel::calibrateVCO() {
 
   // if avgFreq is close enough to desired freq, break and move on to next pitch value
   if (avgFreq < PITCH_FREQ[calibrationIndex] + threshold && avgFreq > PITCH_FREQ[calibrationIndex] - threshold) {
-    // increase note index by 1
-    // reset sample counter to zero
-    if (calibrationIndex > 10) {
+    
+    if (calibrationIndex > 10) {  // finished calibrating
       calibrationIndex = 0;
       calibrationFinished = true;
+      // set dac map to use new calibrated values
+      // deactivate calibration mode
     } else {
-      calibrationIndex += 1;
+      calibrationIndex += 1;       // increase note index by 1
     }
     readyToCalibrate = false;
     freqSampleIndex = 0;
   }
 }
 
+// Since once frequency detection is not always accurate, take a running average of MAX_FREQ_SAMPLES
 float TouchChannel::calculateAverageFreq() {
   float sum = 0;
   for (int i = 0; i < MAX_FREQ_SAMPLES; i++) {
@@ -63,6 +65,10 @@ float TouchChannel::calculateAverageFreq() {
   return sum / MAX_FREQ_SAMPLES;
 }
 
+
+/**
+ * CALLBACK executing at desired VCO_SAMPLE_RATE_US
+*/ 
 void TouchChannel::sampleVCOFrequency() {
   currVCOInputVal = slewCvInput.read_u16();
 
