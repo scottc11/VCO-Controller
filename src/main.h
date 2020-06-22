@@ -83,6 +83,11 @@ enum LedState: int {
 #define SLEW_CV_BUFFER                 1000
 #define MAX_LOOP_STEPS                 32
 
+#define MAX_FREQ_SAMPLES            25    // how many frequency calculations we want to use to obtain our average frequency prediction of the input. The higher the number, the more accurate the result
+#define VCO_SAMPLE_RATE_US          125     // 8000hz is equal to 125us (microseconds)
+#define VCO_ZERO_CROSSING           32767   // ADC range is 0v - 3.3v, so the midpoint of the sine wave should be 1.65v (ie. 65535 / 2 32767)
+#define VCO_ZERO_CROSS_THRESHOLD    500     // for handling hysterisis at zero crossing point
+
 // 83.333, 166.666, 249.999, 333.332, 416.66499999999996, 499.99799999999993, 583.3309999999999, 666.6639999999999, 749.9969999999998, 833.3299999999998, 916.6629999999998, 999.9959999999998
 // 12-bit values => 83, 167, 250, 333, 417, 500, 583, 667, 750, 833, 917, 1000
 
@@ -117,13 +122,15 @@ enum LedState: int {
 const int DAC_NOTE_MAP[8][3] = {
   { 0, 1097, 2193 },
   { 2193, 3290, 4387 },
-  { 4369, 5461, 6553 },
+  { 4387, 5461, 6553 },
   { 5461, 6553, 7646 },
   { 7646, 8738, 9830 },
   { 9830, 10922, 12015 },
   { 12015, 13160, 14256 },
   { 13160, 14256, 15291 }
 };
+
+const int DAC_VOLTAGES[13] = { 1097, 2193, 3290, 4387, 5461, 6553, 7646, 8738, 9830, 10922, 12015, 13160, 14256 };
 
 const int MIDI_NOTE_MAP[8][3] = {
   { 11, 12, 13 },

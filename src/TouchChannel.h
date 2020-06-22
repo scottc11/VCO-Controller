@@ -86,6 +86,9 @@ class TouchChannel : public EventLoop {
     int activeDegreeLimit;                // the max number of degrees allowed to be enabled at one time.
     QuantizerValue activeDegreeValues[8]; // array which holds noteIndex values and their associated DAC/1vo values
 
+    int dacVoltageMap[8][3];
+    int dacVoltageValues[13];
+
     int redLedPins[8] = { 14, 12, 10, 8, 6, 4, 2, 0 };    // hardcoded values to be passed to the 16 chan LED driver
     int greenLedPins[8] = { 15, 13, 11, 9, 7, 5, 3, 1 };  // hardcoded values to be passed to the 16 chan LED driver
     uint16_t ledStates;            // 16 bits to represent each bi-color led  | 0-Red | 0-Green | 1-Red | 1-Green | 2-Red | 2-Green | etc...
@@ -104,6 +107,21 @@ class TouchChannel : public EventLoop {
     int currModeBtnState;        // ** to be refractored into MomentaryButton class
     int prevModeBtnState;        // ** to be refractored into MomentaryButton class
     
+    int currVCOInputVal;                 // the current sampled value of sinewave input
+    int prevVCOInputVal;                 // the previous sampled value of sinewave input
+    bool slopeIsPositive;                // whether the sine wave is rising or falling
+    volatile float vcoFrequency;                  // 
+    volatile float vcoFreqAvrg;                   // the running average of frequency calculations
+    volatile int vcoPeriod;
+    volatile int numSamplesTaken;                 // How many times we have sampled the zero crossing (used in frequency calculation formula)
+    int calibrationIndex;                 // when calibrating, increment this value to step each voltage representation of a semi-tone via dacVoltageValues[]
+    bool calibrationFinished;            // flag to tell program when calibration process is finished
+    
+    volatile bool readyToCalibrate;      // flag telling polling loop when enough freq average samples have been taken to accurately calibrate
+    volatile int freqSampleIndex = 0;        // incrementing value to place current frequency sample into array
+    volatile float freqSamples[MAX_FREQ_SAMPLES]; // array of frequency samples for obtaining the running average of the VCO
+
+
     TouchChannel(
         int _channel,
         Timer *timer_ptr,
@@ -194,6 +212,10 @@ class TouchChannel : public EventLoop {
     void handleCVInput(int value);
     void setActiveDegrees(int degrees);
     void setActiveDegreeLimit(int value);
+
+    void calibrateVCO();
+    void sampleVCOFrequency();
+    float calculateAverageFreq();
 };
 
 #endif

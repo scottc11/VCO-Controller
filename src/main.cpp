@@ -21,7 +21,8 @@ int OCTAVE_LED_PINS_D[4] = { 12, 13, 14, 15 }; // via TLC59116
 I2C i2c1(I2C1_SDA, I2C1_SCL);
 I2C i2c3(I2C3_SDA, I2C3_SCL);
 
-Ticker ticker;
+// Ticker ticker;
+Ticker sampler;
 Timer timer;
 MIDI midi(MIDI_TX, MIDI_RX);
 Metronome metronome;
@@ -112,15 +113,24 @@ int main() {
 
   extClockInput.rise(&extTick);
 
+  sampler.attach_us(callback(&channelA, &TouchChannel::sampleVCOFrequency), VCO_SAMPLE_RATE_US);
+
   while(1) {
 
-    degrees.poll();
-    channelA.poll();
-    channelB.poll();
-    channelC.poll();
-    channelD.poll();
+    // degrees.poll();
+    // channelA.poll();
+    // channelB.poll();
+    // channelC.poll();
+    // channelD.poll();
 
-    globalCTRL.poll();
+    // globalCTRL.poll();
+
+    // if globalCTRL.mode == calibrate
+    // channel.calibrate()
+    // else
+    // channel.poll()
+
+    channelA.calibrateVCO();
     
   }
 }
