@@ -8,7 +8,7 @@ class Degrees {
   public:
 
     MCP23017 * io;
-    InterruptIn ioInterupt;
+    DigitalIn ioInterupt;
     bool interuptDetected;
     bool hasChanged[4];
     uint16_t currState;
@@ -19,7 +19,7 @@ class Degrees {
     Degrees(PinName ioIntPin, MCP23017 *io_ptr) : ioInterupt(ioIntPin, PullUp) {
       io = io_ptr;
       interuptDetected = false;
-      ioInterupt.fall(callback(this, &Degrees::handleInterupt));
+      // ioInterupt.fall(callback(this, &Degrees::handleInterupt));
     };
 
     void init() {
@@ -42,7 +42,7 @@ class Degrees {
     };
 
     void poll() {
-      if (interuptDetected) {     // update switch states
+      if (!ioInterupt.read()) {     // update switch states
         wait_us(5);
         updateDegreeStates();
         interuptDetected = false;
