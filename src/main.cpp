@@ -8,7 +8,6 @@
 #include "DAC8554.h"
 #include "TCA9548A.h"
 #include "MCP23017.h"
-#include "MCP4922.h"
 #include "TLC59116.h"
 #include "MCP4461.h"
 
@@ -38,7 +37,6 @@ TLC59116 ledsD(&i2c3, TLC59116_CHAN_D_ADDR);
 TLC59116 octaveLeds(&i2c3, TLC59116_OCT_LEDS_ADDR);
 
 TCA9548A i2cMux(&i2c1, TCA9548A_ADDR);
-
 
 CAP1208 touchA(&i2c1, &i2cMux, TCA9548A::CH6);
 CAP1208 touchB(&i2c1, &i2cMux, TCA9548A::CH7);

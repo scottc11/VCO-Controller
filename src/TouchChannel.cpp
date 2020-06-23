@@ -572,7 +572,8 @@ void TouchChannel::setSlewAmount(float val) {
  * NOTE: a good way to freeze everything would be to just change the current mode to FREEZE, and then everything in the POLL fn would not execute.
 */ 
 void TouchChannel::freeze(bool freeze) {
-
+  if (freeze) setMode(FREEZE);
+  else setMode(prevMode);
 }
 
 void TouchChannel::reset() {
