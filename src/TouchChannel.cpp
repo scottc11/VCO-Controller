@@ -46,47 +46,50 @@ void TouchChannel::init() {
 // HANDLE ALL INTERUPT FLAGS
 void TouchChannel::poll() {
   
-  // Timer polling --> flag if timer is active, and if it is start counting to 3 seconds
-  // after 3 seconds, call a function which takes the currTouched variable and applies it to the activeDegreeLimit.
-  // then disable timer poll flag.
+  if (!freezeChannel) { // don't do anything if freeze enabled
+    
+    // Timer polling --> flag if timer is active, and if it is start counting to 3 seconds
+    // after 3 seconds, call a function which takes the currTouched variable and applies it to the activeDegreeLimit.
+    // then disable timer poll flag.
 
-  if (uiMode == LOOP_LENGTH_UI) {
-    handleLoopLengthUI();
-  }
-
-  if (touchDetected) {
-    handleTouch();
-    touchDetected = false;
-  }
-
-  currModeBtnState = modeBtn.read();
-  if (currModeBtnState != prevModeBtnState) {
-    if (currModeBtnState == LOW) {
-      this->toggleMode();
+    if (uiMode == LOOP_LENGTH_UI) {
+      handleLoopLengthUI();
     }
-    prevModeBtnState = currModeBtnState;
-  }
 
-  if (degrees->hasChanged[channel]) {
-    handleDegreeChange();
-  }
-
-  if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer) {
-    currCVInputValue = cvInput.read_u16();
-    if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER ) {
-      handleCVInput(currCVInputValue);
-      prevCVInputValue = currCVInputValue;
+    if (touchDetected) {
+      handleTouch();
+      touchDetected = false;
     }
-  }
 
-  // currSlewCV = slewCvInput.read();
-  // if (currSlewCV >= prevSlewCV + 0.1 || currSlewCV <= prevSlewCV - 0.1) {
-  //   setSlewAmount(currSlewCV);
-  //   prevSlewCV = currSlewCV;
-  // }
+    currModeBtnState = modeBtn.read();
+    if (currModeBtnState != prevModeBtnState) {
+      if (currModeBtnState == LOW) {
+        this->toggleMode();
+      }
+      prevModeBtnState = currModeBtnState;
+    }
 
-  if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && enableLoop ) {
-    handleQueuedEvent(currPosition);
+    if (degrees->hasChanged[channel]) {
+      handleDegreeChange();
+    }
+
+    if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer) {
+      currCVInputValue = cvInput.read_u16();
+      if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER ) {
+        handleCVInput(currCVInputValue);
+        prevCVInputValue = currCVInputValue;
+      }
+    }
+
+    // currSlewCV = slewCvInput.read();
+    // if (currSlewCV >= prevSlewCV + 0.1 || currSlewCV <= prevSlewCV - 0.1) {
+    //   setSlewAmount(currSlewCV);
+    //   prevSlewCV = currSlewCV;
+    // }
+
+    if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && enableLoop ) {
+      handleQueuedEvent(currPosition);
+    }
   }
 }
 // ------------------------------------------------------------------------
@@ -376,13 +379,6 @@ void TouchChannel::setMode(Mode targetMode) {
       updateActiveDegreeLeds();
       triggerNote(currNoteIndex, currOctave, OFF);
       break;
-    case FREEZE:
-      mode = FREEZE;
-      break;
-    case CALIBRATE:
-      setAllLeds(LOW);
-      mode = CALIBRATE;
-      break;
   }
 }
 
@@ -584,8 +580,7 @@ void TouchChannel::setSlewAmount(float val) {
  * NOTE: a good way to freeze everything would be to just change the current mode to FREEZE, and then everything in the POLL fn would not execute.
 */ 
 void TouchChannel::freeze(bool freeze) {
-  if (freeze) setMode(FREEZE);
-  else setMode(prevMode);
+  this->freezeChannel = freeze;
 }
 
 void TouchChannel::reset() {

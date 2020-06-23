@@ -2,13 +2,13 @@
 #include "PitchFrequencies.h"
 
 void TouchChannel::enableCalibrationMode() {
-  this->setMode(CALIBRATE);
+  
 }
 
 void TouchChannel::disableCalibrationMode() {
   calibrationIndex = 0;           // deactivate calibration mode
   calibrationFinished = true;
-  this->setMode(prevMode); 
+  this->setMode(MONO);
 }
 
 void TouchChannel::calibrateVCO() {

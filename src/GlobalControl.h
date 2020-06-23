@@ -79,9 +79,9 @@ public:
 
 private:
   enum PadNames {
-    FREEZE = 6,
     RESET = 7,         // 0b10000000
-    LOOP_LENGTH = 0,   // 0b00000000
+    FREEZE = 6,        // 0b01000000
+    LOOP_LENGTH = 0,   // 0b00000001
     RECORD = 1,        // 0b00000010
     CTRL_A = 5,        // 0b00100000
     CTRL_B = 4,        // 0b00010000
@@ -90,12 +90,18 @@ private:
   };
 
   enum Gestures {
+    _FREEZE = 0b01000000,
     CLEAR_LOOP = 0b10000010,      // REC + RESET
     CALIBRATE  = 0b00000000,      // REC + FREEZE + 3 seconds
     CLEAR_CH_A_LOOP = 0b10100010,
     CLEAR_CH_B_LOOP = 0b10010010,
     CLEAR_CH_C_LOOP = 0b10001010,
     CLEAR_CH_D_LOOP = 0b10000110,
+  };
+
+  enum Modes {
+    DEFAULT,
+    CALIBRATING
   };
 };
 

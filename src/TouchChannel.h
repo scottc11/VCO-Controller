@@ -44,8 +44,6 @@ class TouchChannel : public EventLoop {
       MONO_LOOP = 1,
       QUANTIZE = 2,
       QUANTIZE_LOOP = 3,
-      FREEZE = 4,
-      CALIBRATE = 5
     };
 
     enum UIMode { // not yet implemented
@@ -108,6 +106,9 @@ class TouchChannel : public EventLoop {
     int currModeBtnState;        // ** to be refractored into MomentaryButton class
     int prevModeBtnState;        // ** to be refractored into MomentaryButton class
     
+    bool freezeChannel;          //
+
+    // calibration
     int currVCOInputVal;                 // the current sampled value of sinewave input
     int prevVCOInputVal;                 // the previous sampled value of sinewave input
     bool slopeIsPositive;                // whether the sine wave is rising or falling
@@ -118,7 +119,6 @@ class TouchChannel : public EventLoop {
     int calibrationSubIndex;              // 0..2
     int calibrationIndex;                 // 0..31 --> when calibrating, increment this value to step each voltage representation of a semi-tone via dacVoltageValues[]
     bool calibrationFinished;            // flag to tell program when calibration process is finished
-    
     volatile bool readyToCalibrate;      // flag telling polling loop when enough freq average samples have been taken to accurately calibrate
     volatile int freqSampleIndex = 0;        // incrementing value to place current frequency sample into array
     volatile float freqSamples[MAX_FREQ_SAMPLES]; // array of frequency samples for obtaining the running average of the VCO

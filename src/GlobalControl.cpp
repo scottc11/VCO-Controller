@@ -145,9 +145,8 @@ void GlobalControl::handleTouch(int pad) {
   
   switch (pad) {
     case FREEZE:
-      handleFreeze(true);
-      if (currTouched == CALIBRATE) {
-
+      if (currTouched == _FREEZE) {
+        handleFreeze(true);
       }
       break;
     case RESET:
@@ -190,7 +189,9 @@ void GlobalControl::handleTouch(int pad) {
 void GlobalControl::handleRelease(int pad) {
   switch (pad) {
     case FREEZE:
-      handleFreeze(false);
+      if (currTouched == 0x00) {
+        handleFreeze(false);
+      }
       break;
     case RESET:
       break;
