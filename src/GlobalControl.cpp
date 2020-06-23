@@ -146,6 +146,9 @@ void GlobalControl::handleTouch(int pad) {
   switch (pad) {
     case FREEZE:
       handleFreeze(true);
+      if (currTouched == CALIBRATE) {
+
+      }
       break;
     case RESET:
       if (currTouched == CLEAR_LOOP) {
@@ -242,4 +245,9 @@ void GlobalControl::handleClockReset() {
 */
 void GlobalControl::handleClearLoop() {
   channels[selectedChannel]->clearEventLoop();
+}
+
+
+void GlobalControl::setCalibration() {
+  channels[selectedChannel]->enableCalibrationMode();
 }

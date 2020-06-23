@@ -45,6 +45,7 @@ class TouchChannel : public EventLoop {
       QUANTIZE = 2,
       QUANTIZE_LOOP = 3,
       FREEZE = 4,
+      CALIBRATE = 5
     };
 
     enum UIMode { // not yet implemented
@@ -214,6 +215,8 @@ class TouchChannel : public EventLoop {
     void setActiveDegrees(int degrees);
     void setActiveDegreeLimit(int value);
 
+    void enableCalibrationMode();
+    void disableCalibrationMode();
     void calibrateVCO();
     void sampleVCOFrequency();
     float calculateAverageFreq();

@@ -379,6 +379,10 @@ void TouchChannel::setMode(Mode targetMode) {
     case FREEZE:
       mode = FREEZE;
       break;
+    case CALIBRATE:
+      setAllLeds(LOW);
+      mode = CALIBRATE;
+      break;
   }
 }
 
@@ -559,7 +563,8 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool dimL
 }
 
 int TouchChannel::calculateDACNoteValue(int index, int octave) {
-  return DAC_NOTE_MAP[index][degrees->switchStates[index]] + DAC_OCTAVE_MAP[octave];
+  //                  [ note index + octave (0..31) ]     [ switch state (0..2) ]
+  return dacVoltageMap[ index + DAC_OCTAVE_MAP[octave] ][ degrees->switchStates[index] ];
 }
 
 int TouchChannel::calculateMIDINoteValue(int index, int octave) {

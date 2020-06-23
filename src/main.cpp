@@ -117,20 +117,20 @@ int main() {
 
   while(1) {
 
-    // degrees.poll();
-    // channelA.poll();
-    // channelB.poll();
-    // channelC.poll();
-    // channelD.poll();
+    degrees.poll();
+    channelA.poll();
+    channelB.poll();
+    channelC.poll();
+    channelD.poll();
 
-    // globalCTRL.poll();
+    globalCTRL.poll();
 
     // if globalCTRL.mode == calibrate
     // channel.calibrate()
     // else
     // channel.poll()
 
-    channelA.calibrateVCO();
+    // channelA.calibrateVCO();
     
   }
 }

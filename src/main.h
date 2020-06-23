@@ -151,7 +151,7 @@ const int MIDI_NOTE_MAP[8][3] = {
 };
 
 // const int DAC_OCTAVE_MAP[4] = {0, 13107, 26214, 39321 };
-const int DAC_OCTAVE_MAP[4] = { 0, 13160, 26320, 39480 };   // change these values to index "adders" ie. { add 0, add 8, add 16, add 24 }
+const int DAC_OCTAVE_MAP[4] = { 0, 8, 16, 24 };
 const int MIDI_OCTAVE_MAP[4] = { 36, 48, 60, 72 };
 
 #endif

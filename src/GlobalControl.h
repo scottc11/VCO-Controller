@@ -56,6 +56,7 @@ public:
   void init();
   void poll();
   void selectChannel(int channel);
+  void setCalibration();
   void clearAllChannelEvents();
   void handleFreeze(bool enable);
   void handleClockReset();
@@ -89,7 +90,8 @@ private:
   };
 
   enum Gestures {
-    CLEAR_LOOP = 0b10000010, // LOOP_LENGTH + RESET
+    CLEAR_LOOP = 0b10000010,      // REC + RESET
+    CALIBRATE  = 0b00000000,      // REC + FREEZE + 3 seconds
     CLEAR_CH_A_LOOP = 0b10100010,
     CLEAR_CH_B_LOOP = 0b10010010,
     CLEAR_CH_C_LOOP = 0b10001010,

@@ -1,13 +1,23 @@
 #include "TouchChannel.h"
 #include "PitchFrequencies.h"
 
+void TouchChannel::enableCalibrationMode() {
+  this->setMode(CALIBRATE);
+}
+
+void TouchChannel::disableCalibrationMode() {
+  calibrationIndex = 0;           // deactivate calibration mode
+  calibrationFinished = true;
+  this->setMode(prevMode); 
+}
+
 void TouchChannel::calibrateVCO() {
   
   float avgFreq = this->calculateAverageFreq();
   float threshold = 0.1;
   
   
-  // wait till MAX_FREQ_SAMPLES samples has been obtained
+  // wait till MAX_FREQ_SAMPLES has been obtained
   if (readyToCalibrate) {
 
     avgFreq = this->calculateAverageFreq();                       // determine the new average frequency
@@ -40,8 +50,7 @@ void TouchChannel::calibrateVCO() {
     }
     else {                            // finished calibrating
       this->generateDacVoltageMap();  // set dac map to use new calibrated values
-      calibrationIndex = 0;           // deactivate calibration mode
-      calibrationFinished = true; 
+      this->disableCalibrationMode();
     }
   }
 }
