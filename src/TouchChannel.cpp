@@ -2,18 +2,11 @@
 
 void TouchChannel::init() {
 
-  
-  for (int i = 0; i < 8; i++) {                  // copy default note values from **EEPROM**
-    dacVoltageMap[i][0] = DAC_NOTE_MAP[i][0];
-    dacVoltageMap[i][1] = DAC_NOTE_MAP[i][1];
-    dacVoltageMap[i][2] = DAC_NOTE_MAP[i][2];
+  for (int i = 0; i < 59; i++) {                 // copy default pre-calibrated dac voltage values into class object member
+    dacVoltageValues[i] = DAC_VOLTAGE_VALUES[i];
   }
-  
-  for (int i = 0; i < 13; i++) {                 // copy default pre-calibrated dac voltage values
-    dacVoltageValues[i] = DAC_VOLTAGES[i];
-  }
-  
 
+  this->generateDacVoltageMap();
 
   touch->init();
   leds->initialize();

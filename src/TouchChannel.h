@@ -86,8 +86,8 @@ class TouchChannel : public EventLoop {
     int activeDegreeLimit;                // the max number of degrees allowed to be enabled at one time.
     QuantizerValue activeDegreeValues[8]; // array which holds noteIndex values and their associated DAC/1vo values
 
-    int dacVoltageMap[8][3];
-    int dacVoltageValues[13];
+    int dacVoltageMap[32][3];
+    int dacVoltageValues[59];             // pre/post calibrated 16-bit DAC values
 
     int redLedPins[8] = { 14, 12, 10, 8, 6, 4, 2, 0 };    // hardcoded values to be passed to the 16 chan LED driver
     int greenLedPins[8] = { 15, 13, 11, 9, 7, 5, 3, 1 };  // hardcoded values to be passed to the 16 chan LED driver
@@ -114,7 +114,8 @@ class TouchChannel : public EventLoop {
     volatile float vcoFreqAvrg;                   // the running average of frequency calculations
     volatile int vcoPeriod;
     volatile int numSamplesTaken;                 // How many times we have sampled the zero crossing (used in frequency calculation formula)
-    int calibrationIndex;                 // when calibrating, increment this value to step each voltage representation of a semi-tone via dacVoltageValues[]
+    int calibrationSubIndex;              // 0..2
+    int calibrationIndex;                 // 0..31 --> when calibrating, increment this value to step each voltage representation of a semi-tone via dacVoltageValues[]
     bool calibrationFinished;            // flag to tell program when calibration process is finished
     
     volatile bool readyToCalibrate;      // flag telling polling loop when enough freq average samples have been taken to accurately calibrate
@@ -216,6 +217,7 @@ class TouchChannel : public EventLoop {
     void calibrateVCO();
     void sampleVCOFrequency();
     float calculateAverageFreq();
+    void generateDacVoltageMap();
 };
 
 #endif
