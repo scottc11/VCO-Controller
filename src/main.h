@@ -83,6 +83,13 @@ enum LedState: int {
 #define SLEW_CV_BUFFER                 1000
 #define MAX_LOOP_STEPS                 32
 
+#define DEFAULT_VOLTAGE_ADJMNT      200
+#define MAX_CALIB_ATTEMPTS          20
+#define MAX_FREQ_SAMPLES            25    // how many frequency calculations we want to use to obtain our average frequency prediction of the input. The higher the number, the more accurate the result
+#define VCO_SAMPLE_RATE_US          125     // 8000hz is equal to 125us (microseconds)
+#define VCO_ZERO_CROSSING           32767   // ADC range is 0v - 3.3v, so the midpoint of the sine wave should be 1.65v (ie. 65535 / 2 32767)
+#define VCO_ZERO_CROSS_THRESHOLD    500     // for handling hysterisis at zero crossing point
+
 // 83.333, 166.666, 249.999, 333.332, 416.66499999999996, 499.99799999999993, 583.3309999999999, 666.6639999999999, 749.9969999999998, 833.3299999999998, 916.6629999999998, 999.9959999999998
 // 12-bit values => 83, 167, 250, 333, 417, 500, 583, 667, 750, 833, 917, 1000
 
@@ -117,12 +124,22 @@ enum LedState: int {
 const int DAC_NOTE_MAP[8][3] = {
   { 0, 1097, 2193 },
   { 2193, 3290, 4387 },
-  { 4369, 5461, 6553 },
+  { 4387, 5461, 6553 },
   { 5461, 6553, 7646 },
   { 7646, 8738, 9830 },
   { 9830, 10922, 12015 },
   { 12015, 13160, 14256 },
   { 13160, 14256, 15291 }
+};
+
+const int DAC_VOLTAGE_VALUES[59] = {
+// A     A#     B      C      C#     D      D#     E      F      F#     G      G#
+  1097,  2193,  3290,  4387,  5461,  6553,  7646,  8738,  9830,  10922, 12015, 13160,
+  14256, 15353, 16450, 17546, 18643, 19739, 20836, 21933, 23029, 24126, 25223, 26319,
+  27416, 28513, 29609, 30706, 31802, 32899, 33996, 35092, 36189, 37286, 38382, 39479, 
+  40576, 41672, 42769, 43865, 44962, 46059, 47155, 48252, 49349, 50445, 51542, 52639, 
+  53735, 54832, 55928, 57025, 58122, 59218, 60315, 61412, 62508, 63605, 64702
+//                             END
 };
 
 const int MIDI_NOTE_MAP[8][3] = {
@@ -137,7 +154,16 @@ const int MIDI_NOTE_MAP[8][3] = {
 };
 
 // const int DAC_OCTAVE_MAP[4] = {0, 13107, 26214, 39321 };
-const int DAC_OCTAVE_MAP[4] = { 0, 13160, 26320, 39480 };
+const int DAC_OCTAVE_MAP[4] = { 0, 8, 16, 24 };
 const int MIDI_OCTAVE_MAP[4] = { 36, 48, 60, 72 };
+
+const int CALIBRATION_LED_MAP[60] = {
+  0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7,
+  0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7,
+  0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7,
+  0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7,
+  0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7,
+};
+
 
 #endif
