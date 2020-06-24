@@ -60,7 +60,8 @@ class TouchChannel : public EventLoop {
     DigitalOut gateOut;             // gate output pin
     DigitalOut ctrlLed;             // via global controls
     DigitalIn modeBtn;              // tactile button for toggleing between channel modes
-    Timer *gestureTimer;            // timer for handling duration based touch events
+    Timer *timer;            // timer for handling duration based touch events
+    Ticker *ticker;                 // for handling time based callbacks
     MIDI *midi;                     // pointer to mbed midi instance
     CAP1208 *touch;                 // i2c touch IC
     DAC8554 *dac;                   // pointer to dual channel digital-analog-converter
@@ -112,21 +113,26 @@ class TouchChannel : public EventLoop {
     int currVCOInputVal;                 // the current sampled value of sinewave input
     int prevVCOInputVal;                 // the previous sampled value of sinewave input
     bool slopeIsPositive;                // whether the sine wave is rising or falling
+    float prevAvgFreq;
+    float avgFreq;
+    int adjustment = 100;
     volatile float vcoFrequency;                  // 
     volatile float vcoFreqAvrg;                   // the running average of frequency calculations
-    volatile int vcoPeriod;
+    volatile float vcoPeriod;
     volatile int numSamplesTaken;                 // How many times we have sampled the zero crossing (used in frequency calculation formula)
-    int calibrationSubIndex;              // 0..2
-    int calibrationIndex;                 // 0..31 --> when calibrating, increment this value to step each voltage representation of a semi-tone via dacVoltageValues[]
+    int calNoteIndex;                    // 0..31 --> when calibrating, increment this value to step each voltage representation of a semi-tone via dacVoltageValues[]
+    int calLedIndex;                     //
+    bool overshoot;                      // a flag to determine if the new voltage adjustment overshot/uncershot the target frequency
     bool calibrationFinished;            // flag to tell program when calibration process is finished
     volatile bool readyToCalibrate;      // flag telling polling loop when enough freq average samples have been taken to accurately calibrate
     volatile int freqSampleIndex = 0;        // incrementing value to place current frequency sample into array
     volatile float freqSamples[MAX_FREQ_SAMPLES]; // array of frequency samples for obtaining the running average of the VCO
-
+    
 
     TouchChannel(
         int _channel,
         Timer *timer_ptr,
+        Ticker *ticker_ptr,
         PinName modePin,
         PinName gateOutPin,
         PinName tchIntPin,
@@ -145,7 +151,8 @@ class TouchChannel : public EventLoop {
         MCP4461::Wiper _wiperCh
       ) : modeBtn(modePin), gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), ctrlLed(ctrlLedPin), cvInput(cvInputPin), slewCvInput(slewInputPin) {
       
-      gestureTimer = timer_ptr;
+      timer = timer_ptr;
+      ticker = ticker_ptr;
       touch = touch_ptr;
       leds = leds_ptr;
       octLeds = octLeds_ptr;

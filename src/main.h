@@ -83,7 +83,7 @@ enum LedState: int {
 #define SLEW_CV_BUFFER                 1000
 #define MAX_LOOP_STEPS                 32
 
-#define MAX_FREQ_SAMPLES            25    // how many frequency calculations we want to use to obtain our average frequency prediction of the input. The higher the number, the more accurate the result
+#define MAX_FREQ_SAMPLES            100    // how many frequency calculations we want to use to obtain our average frequency prediction of the input. The higher the number, the more accurate the result
 #define VCO_SAMPLE_RATE_US          125     // 8000hz is equal to 125us (microseconds)
 #define VCO_ZERO_CROSSING           32767   // ADC range is 0v - 3.3v, so the midpoint of the sine wave should be 1.65v (ie. 65535 / 2 32767)
 #define VCO_ZERO_CROSS_THRESHOLD    500     // for handling hysterisis at zero crossing point

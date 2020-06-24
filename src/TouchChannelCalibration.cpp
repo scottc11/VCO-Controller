@@ -2,56 +2,95 @@
 #include "PitchFrequencies.h"
 
 void TouchChannel::enableCalibrationMode() {
-  
+  this->setAllLeds(HIGH);
+  wait_ms(500);
+  this->setAllLeds(LOW);
+  wait_ms(500);
+  this->setAllLeds(HIGH);
+  wait_ms(500);
+  this->setAllLeds(LOW);
+  wait_ms(500);
+  this->setLed(0, HIGH);
+
+  dac->write(dacChannel, dacVoltageValues[0]);  // start at bottom most note.
+
+  ticker->attach_us(callback(this, &TouchChannel::sampleVCOFrequency), VCO_SAMPLE_RATE_US);
+
 }
 
 void TouchChannel::disableCalibrationMode() {
-  calibrationIndex = 0;           // deactivate calibration mode
+  ticker->detach();
+  this->setAllLeds(HIGH);
+  wait_ms(500);
+  this->setAllLeds(LOW);
+  wait_ms(500);
+  this->setAllLeds(HIGH);
+  wait_ms(500);
+  this->setAllLeds(LOW);
+  wait_ms(500);
+  calNoteIndex = 0;           // deactivate calibration mode
   calibrationFinished = true;
   this->setMode(MONO);
 }
 
 void TouchChannel::calibrateVCO() {
-  
-  float avgFreq = this->calculateAverageFreq();
-  float threshold = 0.1;
-  
-  
+
   // wait till MAX_FREQ_SAMPLES has been obtained
   if (readyToCalibrate) {
-
-    avgFreq = this->calculateAverageFreq();                       // determine the new average frequency
-    int currVal = dacVoltageValues[calibrationIndex];             // pre-calibrated value to be adjusted
     
-    if (avgFreq > PITCH_FREQ[calibrationIndex] + threshold) {     // if overshoot
-      currVal -= 10;
-      dacVoltageValues[calibrationIndex] = currVal;
-    }
+    prevAvgFreq = avgFreq;
+    float threshold = 0.05;
+    avgFreq = this->calculateAverageFreq();     // determine the new average frequency
     
-    else if (avgFreq < PITCH_FREQ[calibrationIndex] - threshold) { // if undershoot
-      currVal += 10;
-      dacVoltageValues[calibrationIndex] = currVal;
-    }
+    // if avgFreq is close enough to desired freq
+    if (avgFreq <= PITCH_FREQ[calNoteIndex] + threshold && avgFreq >= PITCH_FREQ[calNoteIndex] - threshold) {
+      
+      setLed(1, HIGH);
+      wait_ms(100);
+      setLed(1, LOW);
+      
+      // if (calNoteIndex == 1) {
+      //   setLed(1, HIGH);wait_ms(50);setLed(1, LOW);wait_ms(50);setLed(1, HIGH);wait_ms(50);setLed(1, LOW);
+      // }
 
+      // move to next pitch to be calibrated
+      if (calNoteIndex < 12) {
+        adjustment = 100;     // reset to default
+        calNoteIndex += 1;    // increase note index by 1
+      }
+      // finished calibrating
+      else {
+        this->generateDacVoltageMap();  // set dac map to use new calibrated values
+        this->disableCalibrationMode();
+      }
+
+    } else {
+      // every time avgFreq over/undershoots the desired frequency, decrement the 'adjustment' value by half.
+      int currVal = dacVoltageValues[calNoteIndex];             // pre-calibrated value to be adjusted
+      
+      if (avgFreq > PITCH_FREQ[calNoteIndex] + threshold) {     // if overshoot
+        if (prevAvgFreq < PITCH_FREQ[calNoteIndex] - threshold) {
+          overshoot = true;
+          adjustment = adjustment / 2;
+        }
+        currVal -= adjustment;
+        dacVoltageValues[calNoteIndex] = currVal;
+      }
+      
+      else if (avgFreq < PITCH_FREQ[calNoteIndex] - threshold) { // if undershoot
+        if (prevAvgFreq > PITCH_FREQ[calNoteIndex] + threshold) {
+          overshoot = false;
+          adjustment = adjustment / 2;
+        }
+        currVal += adjustment;
+        dacVoltageValues[calNoteIndex] = currVal;
+      }
+    }
     // output new voltage and reset calibration process
-    dac->write(dacChannel, currVal);
-    readyToCalibrate = false;
+    dac->write(dacChannel, dacVoltageValues[calNoteIndex]);
+    wait_ms(50); // give time for new voltage to 'settle'
     freqSampleIndex = 0;
-  }
-
-  // if avgFreq is close enough to desired freq, break and move on to next pitch value
-  if (avgFreq < PITCH_FREQ[calibrationIndex] + threshold && avgFreq > PITCH_FREQ[calibrationIndex] - threshold) {
-    
     readyToCalibrate = false;
-    freqSampleIndex = 0;
-
-    if (calibrationIndex < 12) {
-      calibrationIndex += 1;          // increase note index by 1
-    }
-    else {                            // finished calibrating
-      this->generateDacVoltageMap();  // set dac map to use new calibrated values
-      this->disableCalibrationMode();
-    }
   }
 }
 
@@ -79,12 +118,14 @@ void TouchChannel::generateDacVoltageMap() {
 
 
 // Since once frequency detection is not always accurate, take a running average of MAX_FREQ_SAMPLES
+// NOTE: the first sample in freqSamples[] will always be scewed since the numSamplesTaken (since the first positive zero crossing)
+// could be any value between 1 and the average sample time (between positive zero crossings)
 float TouchChannel::calculateAverageFreq() {
   float sum = 0;
-  for (int i = 0; i < MAX_FREQ_SAMPLES; i++) {
+  for (int i = 1; i < MAX_FREQ_SAMPLES; i++) {
     sum += this->freqSamples[i];
   }
-  return sum / MAX_FREQ_SAMPLES;
+  return sum / (MAX_FREQ_SAMPLES - 1);
 }
 
 
@@ -92,30 +133,30 @@ float TouchChannel::calculateAverageFreq() {
  * CALLBACK executing at desired VCO_SAMPLE_RATE_US
 */ 
 void TouchChannel::sampleVCOFrequency() {
-  currVCOInputVal = slewCvInput.read_u16();
+  if (!readyToCalibrate) {
+    currVCOInputVal = slewCvInput.read_u16();
 
-  // NEGATIVE
-  if (currVCOInputVal >= (VCO_ZERO_CROSSING + VCO_ZERO_CROSS_THRESHOLD) && prevVCOInputVal < (VCO_ZERO_CROSSING + VCO_ZERO_CROSS_THRESHOLD) && slopeIsPositive) {   // maybe plus threshold zero crossing
-    // pulse.write(0);
-    slopeIsPositive = false;
-  }
-    // POSITIVE
-  else if (currVCOInputVal <= (VCO_ZERO_CROSSING - VCO_ZERO_CROSS_THRESHOLD) && prevVCOInputVal > (VCO_ZERO_CROSSING - VCO_ZERO_CROSS_THRESHOLD) && !slopeIsPositive) {  // maybe negative threshold zero crossing
-    // pulse.write(1);
-    vcoPeriod = numSamplesTaken;     // how many samples have occurred between positive zero crossings
-    vcoFrequency = 8000 / vcoPeriod; // sample rate divided by period of input signal
-    freqSamples[freqSampleIndex] = vcoFrequency;
-    numSamplesTaken = 0;
-    
-    if ( freqSampleIndex > MAX_FREQ_SAMPLES - 1 ) {
-      readyToCalibrate = true;
-      freqSampleIndex = 0;
-    } else {
-      freqSampleIndex += 1;
+    // NEGATIVE
+    if (currVCOInputVal >= (VCO_ZERO_CROSSING + VCO_ZERO_CROSS_THRESHOLD) && prevVCOInputVal < (VCO_ZERO_CROSSING + VCO_ZERO_CROSS_THRESHOLD) && slopeIsPositive) {   // maybe plus threshold zero crossing
+      slopeIsPositive = false;
     }
-    slopeIsPositive = true;
+    // POSITIVE
+    else if (currVCOInputVal <= (VCO_ZERO_CROSSING - VCO_ZERO_CROSS_THRESHOLD) && prevVCOInputVal > (VCO_ZERO_CROSSING - VCO_ZERO_CROSS_THRESHOLD) && !slopeIsPositive) {  // maybe negative threshold zero crossing
+      vcoPeriod = numSamplesTaken;     // how many samples have occurred between positive zero crossings
+      vcoFrequency = 8000.00 / vcoPeriod; // sample rate divided by period of input signal
+      freqSamples[freqSampleIndex] = vcoFrequency;
+      numSamplesTaken = 0;
+      
+      if ( freqSampleIndex < MAX_FREQ_SAMPLES ) {
+        freqSampleIndex += 1;
+      } else {
+        readyToCalibrate = true;
+        freqSampleIndex = 0;
+      }
+      slopeIsPositive = true;
+    }
+    
+    prevVCOInputVal = currVCOInputVal;
+    numSamplesTaken++;
   }
-  
-  prevVCOInputVal = currVCOInputVal;
-  numSamplesTaken++;
 }

@@ -11,15 +11,20 @@
 
 class GlobalControl {
 public:
+  enum Mode {
+    DEFAULT,
+    CALIBRATING
+  };
 
   CAP1208 *touchCtrl;
   CAP1208 *touchOctAB;
   CAP1208 *touchOctCD;
   TouchChannel *channels[4];
-  Metronome *metronome;
+  Timer timer;
   InterruptIn ctrlInterupt;
   InterruptIn octaveInterupt;
 
+  Mode mode;
   int selectedChannel;
   int currTouchedChannel;       // ???
   int currTouched;              // variable for holding the currently touched buttons
@@ -38,9 +43,9 @@ public:
     TouchChannel *chanA_ptr,
     TouchChannel *chanB_ptr,
     TouchChannel *chanC_ptr,
-    TouchChannel *chanD_ptr,
-    Metronome *metronome_ptr ) : ctrlInterupt(ctrl_int, PullUp), octaveInterupt(oct_int) {
+    TouchChannel *chanD_ptr ) : ctrlInterupt(ctrl_int, PullUp), octaveInterupt(oct_int) {
     
+    mode = Mode::DEFAULT;
     touchCtrl = ctrl_ptr;
     touchOctAB = tchAB_ptr;
     touchOctCD = tchCD_ptr;
@@ -48,7 +53,6 @@ public:
     channels[1] = chanB_ptr;
     channels[2] = chanC_ptr;
     channels[3] = chanD_ptr;
-    metronome = metronome_ptr;
     ctrlInterupt.fall(callback(this, &GlobalControl::handleTouchInterupt));
     octaveInterupt.fall(callback(this, &GlobalControl::handleOctaveInterupt));
   }
@@ -56,14 +60,14 @@ public:
   void init();
   void poll();
   void selectChannel(int channel);
-  void setCalibration();
   void clearAllChannelEvents();
+  void calibrateChannel(int chan);
   void handleFreeze(bool enable);
   void handleClockReset();
-  void handleClearLoop();
   void enableLoopLengthUI();
   void handleTouch(int pad);
   void handleRelease(int pad);
+  void handleGesture();
   void handleTouchEvent();
   void handleOctaveTouched();
   void setChannelOctave(int pad);
@@ -92,16 +96,11 @@ private:
   enum Gestures {
     _FREEZE = 0b01000000,
     CLEAR_LOOP = 0b10000010,      // REC + RESET
-    CALIBRATE  = 0b00000000,      // REC + FREEZE + 3 seconds
+    CALIBRATE  = 0b11000010,      // REC + RESET + FREEZE
     CLEAR_CH_A_LOOP = 0b10100010,
     CLEAR_CH_B_LOOP = 0b10010010,
     CLEAR_CH_C_LOOP = 0b10001010,
     CLEAR_CH_D_LOOP = 0b10000110,
-  };
-
-  enum Modes {
-    DEFAULT,
-    CALIBRATING
   };
 };
 

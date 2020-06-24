@@ -426,9 +426,10 @@ void TouchChannel::handleDegreeChange() {
 void TouchChannel::setAllLeds(int state) {
   switch (state) {
     case HIGH:
+      leds->setAllOutputsHigh();
       break;
     case LOW:
-      leds->setAllOutputsOff();
+      leds->setAllOutputsLow();
       break;
   }
 }
