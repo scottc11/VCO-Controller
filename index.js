@@ -41,7 +41,7 @@ for (let index = 0; index < dacMap.length; index++) {
 
 
 
-const octaveIndexes = [0, 12, 24, 32];
+const octaveIndexes = [0, 12, 24, 36];
 let multiplier = 1;
 
 for (let oct = 0; oct < 4; oct++) {

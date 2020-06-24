@@ -46,7 +46,7 @@ void TouchChannel::calibrateVCO() {
     if ((avgFreq <= PITCH_FREQ[calNoteIndex] + threshold && avgFreq >= PITCH_FREQ[calNoteIndex] - threshold) || calibrationAttemps > MAX_CALIB_ATTEMPTS) {
       
       // move to next pitch to be calibrated
-      if (calNoteIndex < 24) {
+      if (calNoteIndex < 59) {
         setLed(CALIBRATION_LED_MAP[calNoteIndex], LOW);
         adjustment = DEFAULT_VOLTAGE_ADJMNT;     // reset to default
         calibrationAttemps = 0;
@@ -96,7 +96,7 @@ void TouchChannel::calibrateVCO() {
 */ 
 void TouchChannel::generateDacVoltageMap() {
   int index = 0;
-  int octaveIndexes[4] = { 0, 12, 24, 32 };
+  int octaveIndexes[4] = { 0, 12, 24, 36 };
   int multiplier = 1;
 
   for (int oct = 0; oct < 4; oct++) {
