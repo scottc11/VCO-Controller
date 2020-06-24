@@ -58,7 +58,8 @@ public:
   void selectChannel(int channel);
   void clearAllChannelEvents();
   void handleFreeze(bool enable);
-  void handleReset();
+  void handleClockReset();
+  void handleClearLoop();
   void enableLoopLengthUI();
   void handleTouch(int pad);
   void handleRelease(int pad);
@@ -78,17 +79,21 @@ public:
 private:
   enum PadNames {
     FREEZE = 6,
-    RESET = 7,
-    LOOP_LENGTH = 0,
-    RECORD = 1,
-    CTRL_A = 5,
-    CTRL_B = 4,
-    CTRL_C = 3,
-    CTRL_D = 2,
+    RESET = 7,         // 0b10000000
+    LOOP_LENGTH = 0,   // 0b00000000
+    RECORD = 1,        // 0b00000010
+    CTRL_A = 5,        // 0b00100000
+    CTRL_B = 4,        // 0b00010000
+    CTRL_C = 3,        // 0b00001000
+    CTRL_D = 2,        // 0b00000100
   };
 
   enum Gestures {
-    CLEAR_LOOP = 0b10000010 // LOOP_LENGTH + RESET
+    CLEAR_LOOP = 0b10000010, // LOOP_LENGTH + RESET
+    CLEAR_CH_A_LOOP = 0b10100010,
+    CLEAR_CH_B_LOOP = 0b10010010,
+    CLEAR_CH_C_LOOP = 0b10001010,
+    CLEAR_CH_D_LOOP = 0b10000110,
   };
 };
 

@@ -12,8 +12,11 @@
 
 #include "TouchChannel.h"
 
+#define CV_MAX     65535
+#define CV_OCTAVE  16383
+
 const int CV_INPUT_MAP[8] = { 2048, 4096, 6144, 8192, 10240, 12288, 14366, 16384 };  // ADC values for each degree in one octave
-const int CV_OCTAVES[4] = { 16384, 32768, 49152, 65536 };  // max ADC divided into 4 octaves
+const int CV_OCTAVES[4] = { 16384, 32768, 49152, 65535 };  // max ADC divided into 4 octaves
 
 void TouchChannel::initQuantizer() {
   activeDegrees = 0xFF;
@@ -28,25 +31,29 @@ void TouchChannel::initQuantizer() {
   }
 }
 
+void TouchChannel::setActiveDegreeLimit(int value) {
+  activeDegreeLimit = value;
+}
 
 void TouchChannel::handleCVInput(int value) {
-  // NOTE: CV input is now inverted, so everything needs to be flipped to make more sense
+  
   // 65,536 / 4 == 16,384
   // 16,384 / 8 == 2,048
 
+  int inverse = CV_MAX - value; // NOTE: CV input is now inverted, so everything needs to be flipped to make more sense
   int clippedValue = 0; // we want a number between 0 and 16384 for mapping to degrees. The octave is added afterwords via CV_OCTAVES
   int octave = 0;
 
   // determin which octave the CV value will get mapped to
   for (int i=0; i < 4; i++) {
-    if (value < 16384) {
-      clippedValue = value;
+    if (inverse < 16384) {
+      clippedValue = inverse;
       octave = 0;
       break;
     }
-    if (value > CV_OCTAVES[i] && value < CV_OCTAVES[i] + 16384) {
+    if (inverse > CV_OCTAVES[i] && inverse < CV_OCTAVES[i] + 16384) {
       octave = i + 1;
-      clippedValue = value - CV_OCTAVES[i];
+      clippedValue = inverse - CV_OCTAVES[i];
       break;
     }
   }
@@ -56,9 +63,10 @@ void TouchChannel::handleCVInput(int value) {
     if (clippedValue < activeDegreeValues[i].threshold) {                              // break from loop as soon as we can
       if (prevNoteIndex != activeDegreeValues[i].noteIndex || prevOctave != octave) {  // catch duplicate triggering of that same note.
         this->triggerNote(prevNoteIndex, prevOctave, OFF);
-        setLed(prevNoteIndex, HIGH);
-        this->triggerNote(activeDegreeValues[i].noteIndex, octave, ON);
-        setLed(currNoteIndex, BLINK);
+        if (bitRead(activeDegrees, prevNoteIndex)) { // if prevNote still active, its led needs to be set from blinking back fully on
+          setLed(prevNoteIndex, HIGH);
+        }
+        this->triggerNote(activeDegreeValues[i].noteIndex, octave, ON, true);
         this->updateOctaveLeds(octave);
       }
       break;

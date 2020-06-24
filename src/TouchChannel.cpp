@@ -8,6 +8,7 @@ void TouchChannel::init() {
   touch->calibrate();
   touch->clearInterupt();
   dac->init();
+  setSlewAmount(0);
 
   // intialize inheritance variables
   numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
@@ -38,6 +39,10 @@ void TouchChannel::init() {
 // HANDLE ALL INTERUPT FLAGS
 void TouchChannel::poll() {
   
+  // Timer polling --> flag if timer is active, and if it is start counting to 3 seconds
+  // after 3 seconds, call a function which takes the currTouched variable and applies it to the activeDegreeLimit.
+  // then disable timer poll flag.
+
   if (uiMode == LOOP_LENGTH_UI) {
     handleLoopLengthUI();
   }
@@ -67,7 +72,13 @@ void TouchChannel::poll() {
     }
   }
 
-  if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && queuedEvent && enableLoop ) {
+  // currSlewCV = slewCvInput.read();
+  // if (currSlewCV >= prevSlewCV + 0.1 || currSlewCV <= prevSlewCV - 0.1) {
+  //   setSlewAmount(currSlewCV);
+  //   prevSlewCV = currSlewCV;
+  // }
+
+  if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && enableLoop ) {
     handleQueuedEvent(currPosition);
   }
 }
@@ -75,51 +86,30 @@ void TouchChannel::poll() {
 
 
 void TouchChannel::handleQueuedEvent(int position) {
-  if (queuedEvent->triggered == false ) {
-    if (position == queuedEvent->startPos) {
+  if (events[position].active) {
+    if (events[position].triggered == false) {
+      events[prevEventIndex].triggered = false;
+      events[position].triggered = true;
+      prevEventIndex = position;
       switch (mode) {
         case MONO_LOOP:
-          triggerNote(queuedEvent->noteIndex, currOctave, ON);
+          triggerNote(prevNoteIndex, currOctave, OFF);
+          triggerNote(events[position].noteIndex, currOctave, ON);
           break;
         case QUANTIZE_LOOP:
-          setActiveDegrees(queuedEvent->activeNotes);
+          setActiveDegrees(events[position].activeNotes);
           break;
       }
-      queuedEvent->triggered = true;
     }
-  }
-  else {
-    if (position == queuedEvent->endPos) {
-      disableQueuedEvent();
-    }
-  }
-}
-
-void TouchChannel::disableQueuedEvent() {
-
-  queuedEvent->triggered = false;
-
-  if (mode == MONO_LOOP) triggerNote(queuedEvent->noteIndex, currOctave, OFF);
-  
-  if (queuedEvent->next != NULL) {
-    if (queuedEvent->next->startPos >= totalPPQN) { // if queuedEvent->next exists, but its startPos it outside the bounds of the totalPPQN, then just set queued event to HEAD
-      queuedEvent = head;
-    } else {
-      queuedEvent = queuedEvent->next;
-    }
-    
   } else {
-    queuedEvent = head;
+    if (events[prevEventIndex].triggered) {
+      events[prevEventIndex].triggered = false;
+      triggerNote(prevNoteIndex, currOctave, OFF);
+    }
   }
 }
 
-void TouchChannel::resetLoopToHead() {
-  if (queuedEvent->triggered == true) {  // check required as this fn gets called for safety sometimes
-    disableQueuedEvent();
-  } else {
-    queuedEvent = head; // may not need this line
-  }
-}
+
 
 /** ------------------------------------------------------------------------
  *         LOOP UI METHODS
@@ -178,15 +168,13 @@ void TouchChannel::handleLoopLengthUI() {
 
 
 void TouchChannel::clearLoop() {
-  disableQueuedEvent();
-  clearEventList();
+  
 }
 
 void TouchChannel::setLoopLength(int value) {
   numLoopSteps = value;
   setLoopTotalSteps();
   setLoopTotalPPQN();
-  resetLoopToHead();  // incase an event occurs AFTER the new loop length value
   updateLoopLengthUI();
 };
 
@@ -222,7 +210,7 @@ void TouchChannel::disableLoopMode() {
   // ADDITIONALLY, this would be a good place to count the amount of steps which have passed while the REC button has
   // been held down, and if this value is greater than the current loop length, update the loop length to accomodate.
 
-  if (queuedEvent) {   // if an touch event was recorded, remain in looper mode
+  if (loopContainsEvents) {   // if a touch event was recorded, remain in loop mode
     return;
   } else {             // if no touch event recorded, revert to previous mode
     setMode(prevMode);
@@ -241,31 +229,19 @@ void TouchChannel::disableLoopMode() {
 void TouchChannel::tickClock() {
   currTick += 1;
   currPosition += 1;
-  
-  // if (currTick > 2) {
-  //   if (isSelected) {
-  //     ctrlLed.write(HIGH);
-  //   } else {
-  //     ctrlLed.write(LOW);
-  //   }
-  // }
 
   // when currTick exceeds PPQN, reset to 0
   if (currTick >= PPQN) {
     currTick = 0;
+    currStep += 1;
   }
   if (currPosition >= totalPPQN) {
     currPosition = 0;
+    currStep = 0;
   }
 }
 
 void TouchChannel::stepClock() {
-  // if (isSelected) {
-  //   ctrlLed.write(LOW);
-  // } else {
-  //   ctrlLed.write(HIGH);
-  // }
-
   currTick = 0;
   currStep += 1;
   // when currStep eqauls number of steps in loop, reset currStep and currPosition to 0
@@ -274,11 +250,16 @@ void TouchChannel::stepClock() {
   }
 }
 
+// NOTE: you probably don't want to reset the 'tick' value, as it would make it very dificult to line up with the global clock;
+void TouchChannel::resetClock() {
+  currTick = 0;
+  currPosition = 0;
+  currStep = 0;
+}
 
-
-/** ------------------------------------------------------------------------
- *         TOUCH EVENT METHODS
----------------------------------------------------------------------------- */
+/** -------------------------------------------------------------------------------------------
+ *         TOUCH EVENT METHODS           TOUCH EVENT METHODS            TOUCH EVENT METHODS
+----------------------------------------------------------------------------------------------- */
 
 // NOTE: you need a way to trigger events after a series of touches have happened, and the channel is now not being touched
 
@@ -294,19 +275,16 @@ void TouchChannel::handleTouch() {
               triggerNote(i, currOctave, ON);
               break;
             case QUANTIZE:
+              // set start time
               setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
               break;
             case QUANTIZE_LOOP:
               // every touch detected, take a snapshot of all active degree values and apply them to a EventNode
-              enableLoop = false;
               setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
               createChordEvent(currPosition, activeDegrees);
-              addEventToList(currPosition);
               break;
             case MONO_LOOP:
-              enableLoop = false;
               createEvent(currPosition, i);
-              addEventToList(currPosition);
               triggerNote(i, currOctave, ON);
               break;
           }
@@ -324,14 +302,15 @@ void TouchChannel::handleTouch() {
               triggerNote(i, currOctave, OFF);
               break;
             case QUANTIZE:
-              enableLoop = true;
+              // set end time
+              // if (endTime - startTime > gestureThreshold) do something fancy
+              // 
               break;
             case QUANTIZE_LOOP:
-              enableLoop = true;
               break;
             case MONO_LOOP:
-              triggerNote(i, currOctave, OFF);
-              enableLoop = true;
+              // triggerNote(i, currOctave, OFF);
+              // enableLoop = true;
               break;
           }
         }
@@ -340,6 +319,9 @@ void TouchChannel::handleTouch() {
     prevTouched = touched;
   }
 }
+
+// -------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------
 
 /**
  * TOGGLE MODE
@@ -368,8 +350,8 @@ void TouchChannel::setMode(Mode targetMode) {
       enableQuantizer = false;
       mode = MONO_LOOP;
       setAllLeds(LOW);
-      triggerNote(prevNoteIndex, currOctave, ON);
-      triggerNote(prevNoteIndex, currOctave, OFF);
+      triggerNote(currNoteIndex, currOctave, ON);
+      triggerNote(currNoteIndex, currOctave, OFF);
       break;
     case QUANTIZE:
       enableLoop = false;
@@ -377,7 +359,7 @@ void TouchChannel::setMode(Mode targetMode) {
       mode = QUANTIZE;
       setAllLeds(LOW);
       updateActiveDegreeLeds();
-      triggerNote(prevNoteIndex, currOctave, OFF);
+      triggerNote(currNoteIndex, currOctave, OFF);
       break;
     case QUANTIZE_LOOP:
       enableLoop = true;
@@ -385,7 +367,10 @@ void TouchChannel::setMode(Mode targetMode) {
       mode = QUANTIZE_LOOP;
       setAllLeds(LOW);
       updateActiveDegreeLeds();
-      triggerNote(prevNoteIndex, currOctave, OFF);
+      triggerNote(currNoteIndex, currOctave, OFF);
+      break;
+    case FREEZE:
+      mode = FREEZE;
       break;
   }
 }
@@ -405,6 +390,7 @@ void TouchChannel::setOctave(int value) {
     case QUANTIZE:
       break;
     case MONO_LOOP:
+      triggerNote(currNoteIndex, currOctave, SUSTAIN);
       break;
   }
 
@@ -546,6 +532,14 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool dimL
       dac->write(dacChannel, calculateDACNoteValue(index, octave));
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
+    case SUSTAIN:
+      prevOctave = currOctave;       // you might need to remove all this setter.
+      prevNoteIndex = currNoteIndex; // you might need to remove all this setter.
+      currNoteIndex = index;
+      currOctave = octave;
+      dac->write(dacChannel, calculateDACNoteValue(index, octave));
+      midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
+      break;
     case OFF:
       gateOut.write(LOW);
       midi->sendNoteOff(channel, calculateMIDINoteValue(index, octave), 100);
@@ -566,43 +560,33 @@ int TouchChannel::calculateMIDINoteValue(int index, int octave) {
 }
 
 
+void TouchChannel::setSlewAmount(float val) {
+  // need to convert float ADC value to a 8-bit value
+  digiPot->writeWiper(wiperChannel, 255 * val);
+}
+
+
 /**
  * FREEZE
  * takes boolean to either freeze or unfreeze
  * NOTE: a good way to freeze everything would be to just change the current mode to FREEZE, and then everything in the POLL fn would not execute.
 */ 
 void TouchChannel::freeze(bool freeze) {
-  // hold all gates in their current state
-  switch (mode) {
-    case MONO:
-      break;
-    case QUANTIZE:
-      enableQuantizer = freeze ? false : true;
-      break;
-    case QUANTIZE_LOOP:
-      // turn quantizer off
-      enableLoop = freeze ? false : true;
-      enableQuantizer = freeze ? false : true;
-      break;
-    case MONO_LOOP:
-      enableLoop = freeze ? false : true;
-      break;
-  }
+  if (freeze) setMode(FREEZE);
+  else setMode(prevMode);
 }
 
 void TouchChannel::reset() {
-  disableQueuedEvent(); // you should probably get the currently queued event, see if it has been triggered yet, and disable it if it has been triggered
+  // you should probably get the currently queued event, see if it has been triggered yet, and disable it if it has been triggered
   switch (mode) {
     case MONO:
+      resetClock();
       break;
     case QUANTIZE_LOOP:
-      currPosition = 0;
-      currStep = 0;
+      resetClock();
       break;
     case MONO_LOOP:
-      // NOTE: you probably don't want to reset the 'tick' value, as it would make it very dificult to line up with the global clock;
-      currPosition = 0;
-      currStep = 0;
+      resetClock();
       break;
   }
 }
