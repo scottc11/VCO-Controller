@@ -83,7 +83,9 @@ enum LedState: int {
 #define SLEW_CV_BUFFER                 1000
 #define MAX_LOOP_STEPS                 32
 
-#define MAX_FREQ_SAMPLES            100    // how many frequency calculations we want to use to obtain our average frequency prediction of the input. The higher the number, the more accurate the result
+#define DEFAULT_VOLTAGE_ADJMNT      200
+#define MAX_CALIB_ATTEMPTS          20
+#define MAX_FREQ_SAMPLES            25    // how many frequency calculations we want to use to obtain our average frequency prediction of the input. The higher the number, the more accurate the result
 #define VCO_SAMPLE_RATE_US          125     // 8000hz is equal to 125us (microseconds)
 #define VCO_ZERO_CROSSING           32767   // ADC range is 0v - 3.3v, so the midpoint of the sine wave should be 1.65v (ie. 65535 / 2 32767)
 #define VCO_ZERO_CROSS_THRESHOLD    500     // for handling hysterisis at zero crossing point
@@ -153,5 +155,8 @@ const int MIDI_NOTE_MAP[8][3] = {
 // const int DAC_OCTAVE_MAP[4] = {0, 13107, 26214, 39321 };
 const int DAC_OCTAVE_MAP[4] = { 0, 8, 16, 24 };
 const int MIDI_OCTAVE_MAP[4] = { 36, 48, 60, 72 };
+
+const int CALIBRATION_LED_MAP[24] = { 0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7 };
+
 
 #endif

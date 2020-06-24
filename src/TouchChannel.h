@@ -115,7 +115,7 @@ class TouchChannel : public EventLoop {
     bool slopeIsPositive;                // whether the sine wave is rising or falling
     float prevAvgFreq;
     float avgFreq;
-    int adjustment = 100;
+    int adjustment = DEFAULT_VOLTAGE_ADJMNT;
     volatile float vcoFrequency;                  // 
     volatile float vcoFreqAvrg;                   // the running average of frequency calculations
     volatile float vcoPeriod;
@@ -123,6 +123,7 @@ class TouchChannel : public EventLoop {
     int calNoteIndex;                    // 0..31 --> when calibrating, increment this value to step each voltage representation of a semi-tone via dacVoltageValues[]
     int calLedIndex;                     //
     bool overshoot;                      // a flag to determine if the new voltage adjustment overshot/uncershot the target frequency
+    int calibrationAttemps;              // when this num exceeds MAX_CALIB_ATTEMPTS, accept your failure and move on.
     bool calibrationFinished;            // flag to tell program when calibration process is finished
     volatile bool readyToCalibrate;      // flag telling polling loop when enough freq average samples have been taken to accurately calibrate
     volatile int freqSampleIndex = 0;        // incrementing value to place current frequency sample into array

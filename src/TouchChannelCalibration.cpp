@@ -39,24 +39,19 @@ void TouchChannel::calibrateVCO() {
   if (readyToCalibrate) {
     
     prevAvgFreq = avgFreq;
-    float threshold = 0.05;
+    float threshold = 0.1;
     avgFreq = this->calculateAverageFreq();     // determine the new average frequency
     
     // if avgFreq is close enough to desired freq
-    if (avgFreq <= PITCH_FREQ[calNoteIndex] + threshold && avgFreq >= PITCH_FREQ[calNoteIndex] - threshold) {
+    if ((avgFreq <= PITCH_FREQ[calNoteIndex] + threshold && avgFreq >= PITCH_FREQ[calNoteIndex] - threshold) || calibrationAttemps > MAX_CALIB_ATTEMPTS) {
       
-      setLed(1, HIGH);
-      wait_ms(100);
-      setLed(1, LOW);
-      
-      // if (calNoteIndex == 1) {
-      //   setLed(1, HIGH);wait_ms(50);setLed(1, LOW);wait_ms(50);setLed(1, HIGH);wait_ms(50);setLed(1, LOW);
-      // }
-
       // move to next pitch to be calibrated
-      if (calNoteIndex < 12) {
-        adjustment = 100;     // reset to default
+      if (calNoteIndex < 24) {
+        setLed(CALIBRATION_LED_MAP[calNoteIndex], LOW);
+        adjustment = DEFAULT_VOLTAGE_ADJMNT;     // reset to default
+        calibrationAttemps = 0;
         calNoteIndex += 1;    // increase note index by 1
+        setLed(CALIBRATION_LED_MAP[calNoteIndex], HIGH);
       }
       // finished calibrating
       else {
@@ -71,7 +66,7 @@ void TouchChannel::calibrateVCO() {
       if (avgFreq > PITCH_FREQ[calNoteIndex] + threshold) {     // if overshoot
         if (prevAvgFreq < PITCH_FREQ[calNoteIndex] - threshold) {
           overshoot = true;
-          adjustment = adjustment / 2;
+          adjustment = (adjustment / 2) + 1; // so it never becomes zero
         }
         currVal -= adjustment;
         dacVoltageValues[calNoteIndex] = currVal;
@@ -80,7 +75,7 @@ void TouchChannel::calibrateVCO() {
       else if (avgFreq < PITCH_FREQ[calNoteIndex] - threshold) { // if undershoot
         if (prevAvgFreq > PITCH_FREQ[calNoteIndex] + threshold) {
           overshoot = false;
-          adjustment = adjustment / 2;
+          adjustment = (adjustment / 2) + 1; // so it never becomes zero
         }
         currVal += adjustment;
         dacVoltageValues[calNoteIndex] = currVal;
@@ -91,11 +86,13 @@ void TouchChannel::calibrateVCO() {
     wait_ms(50); // give time for new voltage to 'settle'
     freqSampleIndex = 0;
     readyToCalibrate = false;
+    calibrationAttemps += 1;
   }
 }
 
 /**
  * this function takes an 1D array and converts it into a 2D array formatted like [[0, 1, 2], ...]
+ * take the first 12 values from dacVoltageValues. find the difference dacVoltageValues[i]
 */ 
 void TouchChannel::generateDacVoltageMap() {
   int index = 0;
