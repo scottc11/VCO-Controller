@@ -23,11 +23,10 @@ git submodule update --remote
 - Root Note adjustments / offset
 - Copy/Paste Recorded Sequence to other channels
 - Auto Calibration UI
-- active degree limit in quantizer mode
 - MIDI implementation
 - Record octave changes
+- dim octave LED being output in qunatizer mode
 - Start Every channel in the middle octave
-- In quantizer mode, limit channel to selected octaves. touching an octave will either add or remove from available mappings
 - Clock multiplier / divider per channel
 - Should REC being held down mean loop can be over-dubbed?
 - FREEZE should contrinue loop sequence, but only at a pre-set number of steps - creating loop "windows". In other words, freeze actually just cuts the current loop by certain divisions ie. 8 step loop cus down to 4, then 2, then 1 etc.

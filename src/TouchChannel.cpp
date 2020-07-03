@@ -289,7 +289,10 @@ void TouchChannel::handleTouch() {
               triggerNote(i, currOctave, ON);
               break;
             case QUANTIZE:
-              // set start time
+              /**
+               * TODO: start timer for setting max active degrees
+               * RESET will now reset activeDegreeLimit to its max value of 8
+              */
               setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
               break;
             case QUANTIZE_LOOP:
@@ -392,16 +395,21 @@ void TouchChannel::setMode(Mode targetMode) {
 void TouchChannel::setOctave(int value) {
   
   currOctave = value;
-  updateOctaveLeds(currOctave);
 
   switch (mode) {
     case MONO:
+      updateOctaveLeds(currOctave);
       triggerNote(currNoteIndex, currOctave, ON);
       break;
-    case QUANTIZE:
-      break;
     case MONO_LOOP:
+      updateOctaveLeds(currOctave);
       triggerNote(currNoteIndex, currOctave, SUSTAIN);
+      break;
+    case QUANTIZE:
+      setActiveOctaves(value);
+      break;
+    case QUANTIZE_LOOP:
+      setActiveOctaves(value);
       break;
   }
 
@@ -495,12 +503,26 @@ void TouchChannel::updateLeds(uint8_t touched) {
 }
 
 void TouchChannel::updateOctaveLeds(int octave) {
-  for (int i = 0; i < 4; i++) {
-    if (i == octave) {
-      setOctaveLed(i, HIGH);
-    } else {
-      setOctaveLed(i, LOW);
+  if (mode == MONO || mode == MONO_LOOP) {
+    for (int i = 0; i < OCTAVE_COUNT; i++) {
+      if (i == octave) {
+        setOctaveLed(i, HIGH);
+      } else {
+        setOctaveLed(i, LOW);
+      }
     }
+  } else {
+    numActiveOctaves = 0;
+    for (int i = 0; i < OCTAVE_COUNT; i++) {
+      if (bitRead(activeOctaves, i)) {
+        setOctaveLed(i, HIGH);
+        activeOctaveValues[numActiveOctaves].octave = i;
+        numActiveOctaves += 1;
+      } else {
+        setOctaveLed(i, LOW);
+      }
+    }
+    
   }
 }
 

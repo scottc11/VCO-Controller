@@ -71,6 +71,7 @@ void GlobalControl::handleOctaveTouched() {
   uint8_t touchedAB = touchOctAB->touched();
   uint8_t touchedCD = touchOctCD->touched();
   currOctavesTouched = two8sTo16(touchedCD, touchedAB);
+  
   if (currOctavesTouched != prevOctavesTouched) {
     for (int i=0; i<16; i++) {
       if (touchCtrl->padIsTouched(i, currOctavesTouched, prevOctavesTouched)) {

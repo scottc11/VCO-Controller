@@ -14,10 +14,16 @@
 #include "BitwiseMethods.h"
 #include "EventLoop.h"
 
-typedef struct QuantizerValue {
+typedef struct QuantDegree {
   int threshold;
   int noteIndex;
-} QuantizerValue;
+} QuantDegree;
+
+typedef struct QuantOctave {
+  int threshold;
+  int octave;
+} QuantOctave;
+
 
 
 class TouchChannel : public EventLoop {
@@ -82,9 +88,12 @@ class TouchChannel : public EventLoop {
     // quantizer variables
     bool enableQuantizer;                 // by default set to true, only ever changes with a 'freeze' event
     int activeDegrees;                    // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
+    int activeOctaves;                    // 4-bits to represent which octaves external CV will get mapped to (active = 1, inactive= 0)
     int numActiveDegrees;                 // number of degrees which are active (to quantize voltage input)
+    int numActiveOctaves;                 // number of active octaves for mapping CV to
     int activeDegreeLimit;                // the max number of degrees allowed to be enabled at one time.
-    QuantizerValue activeDegreeValues[8]; // array which holds noteIndex values and their associated DAC/1vo values
+    QuantDegree activeDegreeValues[8]; // array which holds noteIndex values and their associated DAC/1vo values
+    QuantOctave activeOctaveValues[OCTAVE_COUNT];
 
     int dacVoltageMap[32][3];
     int dacVoltageValues[59];             // pre/post calibrated 16-bit DAC values
@@ -222,6 +231,7 @@ class TouchChannel : public EventLoop {
     void handleCVInput(int value);
     void setActiveDegrees(int degrees);
     void setActiveDegreeLimit(int value);
+    void setActiveOctaves(int octave);
 
     void enableCalibrationMode();
     void disableCalibrationMode();
