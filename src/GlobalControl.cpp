@@ -140,14 +140,16 @@ void GlobalControl::setChannelOctave(int pad) {
 */
 void GlobalControl::handleTouch(int pad) {
   
-  handleGesture();
+  if (handleGesture()) {
+    return;
+  }
   
   switch (pad) {
     case FREEZE:
       handleFreeze(true);
       break;
     case RESET:
-      handleClockReset();
+      channels[selectedChannel]->clearLoop();
       break;
     case LOOP_LENGTH:
       channels[0]->enableLoopLengthUI();
@@ -211,24 +213,36 @@ void GlobalControl::handleRelease(int pad) {
   }
 }
 
-void GlobalControl::handleGesture() {
+bool GlobalControl::handleGesture() {
   switch (currTouched) {
     case _FREEZE:
-      break;
-    case CLEAR_LOOP:
-      channels[selectedChannel]->clearEventLoop();
-      break;
+      return true;
+    case RESET_LOOP_A:
+      channels[0]->reset();
+      return true;
+    case RESET_LOOP_B:
+      channels[1]->reset();
+      return true;
+    case RESET_LOOP_C:
+      channels[2]->reset();
+      return true;
+    case RESET_LOOP_D:
+      channels[3]->reset();
+      return true;
     case CALIBRATE:
-      break;
+      return true;
     case CLEAR_CH_A_LOOP:
-      break;
+      return true;
     case CLEAR_CH_B_LOOP:
-      break;
+      return true;
     case CLEAR_CH_C_LOOP:
-      break;
+      return true;
     case CLEAR_CH_D_LOOP:
-      break;
+      return true;
+    default:
+      return false;
   }
+  return false;
 }
 
 /**

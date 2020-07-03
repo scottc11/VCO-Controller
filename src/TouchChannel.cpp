@@ -178,7 +178,10 @@ void TouchChannel::handleLoopLengthUI() {
 
 
 void TouchChannel::clearLoop() {
-  
+  if (this->loopContainsEvents) {
+    this->clearEventLoop();
+    setMode(prevMode);
+  }
 }
 
 void TouchChannel::setLoopLength(int value) {
@@ -219,6 +222,7 @@ void TouchChannel::disableLoopMode() {
 
   // ADDITIONALLY, this would be a good place to count the amount of steps which have passed while the REC button has
   // been held down, and if this value is greater than the current loop length, update the loop length to accomodate.
+  // the new loop length would just increase the multiplier by one
 
   if (loopContainsEvents) {   // if a touch event was recorded, remain in loop mode
     return;

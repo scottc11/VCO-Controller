@@ -67,7 +67,7 @@ public:
   void enableLoopLengthUI();
   void handleTouch(int pad);
   void handleRelease(int pad);
-  void handleGesture();
+  bool handleGesture();
   void handleTouchEvent();
   void handleOctaveTouched();
   void setChannelOctave(int pad);
@@ -82,7 +82,8 @@ public:
   }
 
 private:
-  enum PadNames {
+  
+  enum PadNames { // integers correlate to 8-bit index position
     RESET = 7,         // 0b10000000
     FREEZE = 6,        // 0b01000000
     LOOP_LENGTH = 0,   // 0b00000001
@@ -95,7 +96,10 @@ private:
 
   enum Gestures {
     _FREEZE = 0b01000000,
-    CLEAR_LOOP = 0b10000010,      // REC + RESET
+    RESET_LOOP_A = 0b10100000,      // CHANNEL + RESET
+    RESET_LOOP_B = 0b10010000,      // CHANNEL + RESET
+    RESET_LOOP_C = 0b10001000,      // CHANNEL + RESET
+    RESET_LOOP_D = 0b10000100,      // CHANNEL + RESET
     CALIBRATE  = 0b11000010,      // REC + RESET + FREEZE
     CLEAR_CH_A_LOOP = 0b10100010,
     CLEAR_CH_B_LOOP = 0b10010010,
