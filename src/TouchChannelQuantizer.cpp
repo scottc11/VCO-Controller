@@ -13,29 +13,26 @@
 #include "TouchChannel.h"
 
 #define CV_MAX     65535
-#define CV_OCTAVE  16384 // obsolete
 
-const int CV_INPUT_MAP[8] = { 2048, 4096, 6144, 8192, 10240, 12288, 14366, CV_OCTAVE };  // ADC values for each degree in one octave
-const int CV_OCTAVES[4] = { CV_OCTAVE, 32768, 49152, 65535 };  // max ADC divided into 4 octaves
 
-void TouchChannel::initQuantizer() {
+void TouchChannel::initQuantizerMode() {
   this->activeDegrees = 0xFF;
   this->activeOctaves = 0xF;
   this->numActiveDegrees = DEGREE_COUNT;
+  this->numActiveOctaves = 3; // there is a bug requiring this to be set in initialization, even though it should be set when turning on the octave leds via setActiveOctaves fn
 
-  for (int i = 0; i < this->numActiveDegrees; i++) {
-    activeDegreeValues[i].noteIndex = i;
-    activeDegreeValues[i].threshold = CV_INPUT_MAP[i];
-  }
-  
-  if (this->mode == QUANTIZE || this->mode == QUANTIZE_LOOP) {
-    this->updateLeds(activeDegrees);
-  }
+  this->setActiveOctaves(3);
+
+  this->quantizerHasBeenInitialized = true;
 }
+
+
 
 void TouchChannel::setActiveDegreeLimit(int value) {
   activeDegreeLimit = value;
 }
+
+
 
 void TouchChannel::handleCVInput(int value) {
   int adcValue = CV_MAX - value; // NOTE: CV voltage input is inverted, so everything needs to be flipped to make more sense
@@ -56,15 +53,15 @@ void TouchChannel::handleCVInput(int value) {
     if (refinedValue < activeDegreeValues[i].threshold) {                              // break from loop as soon as we can
       if (prevNoteIndex != activeDegreeValues[i].noteIndex || prevOctave != octave) {  // catch duplicate triggering of that same note.
         this->triggerNote(prevNoteIndex, prevOctave, OFF);
-        if (bitRead(activeDegrees, prevNoteIndex)) { // if prevNote still active, its led needs to be set from blinking back fully on
+        if (bitRead(activeDegrees, prevNoteIndex)) { // if prevNote still active, its led needs to be set from dimmed back fully ON
           setLed(prevNoteIndex, HIGH);
         }
         this->triggerNote(activeDegreeValues[i].noteIndex, octave, ON, true);
         
-        /**
-         * TODO: DIM current octave LED
-         * this->updateOctaveLeds(octave);
-        */ 
+        if (bitRead(activeOctaves, prevOctave)) {
+          this->setOctaveLed(prevOctave, LedState::HIGH);
+        }
+        this->setOctaveLed(octave, LedState::BLINK);
       }
       break;
     }
@@ -90,7 +87,7 @@ void TouchChannel::setActiveDegrees(int degrees) {
     }
   }
   
-  int octaveThreshold = CV_MAX / numActiveOctaves;        // divide max ADC value by num octaves and then by
+  int octaveThreshold = CV_MAX / numActiveOctaves;        // divide max ADC value by num octaves
   int min_threshold = octaveThreshold / numActiveDegrees; // then numActiveDegrees
   
   // for each active octave, generate an ADC threshold for mapping ADC values to DAC octave values
@@ -115,4 +112,14 @@ void TouchChannel::setActiveOctaves(int octave) {
     this->setActiveDegrees(activeDegrees);
   }
   
+}
+
+void TouchChannel::updateActiveDegreeLeds() {
+  for (int i = 0; i < 8; i++) {
+    if (bitRead(activeDegrees, i)) {
+      setLed(i, HIGH);
+    } else {
+      setLed(i, LOW);
+    }
+  }
 }

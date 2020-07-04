@@ -38,7 +38,6 @@ void TouchChannel::init() {
   uiMode = DEFAULT_UI;
 
   this->setOctave(currOctave);
-  this->initQuantizer();
 }
 /** ------------------------------------------------------------------------
  *         POLL    POLL    POLL    POLL    POLL    POLL    POLL    POLL    
@@ -359,6 +358,7 @@ void TouchChannel::setMode(Mode targetMode) {
       enableQuantizer = false;
       mode = MONO;
       setAllLeds(LOW);
+      updateOctaveLeds(currOctave);
       triggerNote(currNoteIndex, currOctave, ON);
       triggerNote(currNoteIndex, currOctave, OFF);
       break;
@@ -367,15 +367,18 @@ void TouchChannel::setMode(Mode targetMode) {
       enableQuantizer = false;
       mode = MONO_LOOP;
       setAllLeds(LOW);
+      updateOctaveLeds(currOctave);
       triggerNote(currNoteIndex, currOctave, ON);
       triggerNote(currNoteIndex, currOctave, OFF);
       break;
     case QUANTIZE:
+      if (!quantizerHasBeenInitialized) { initQuantizerMode(); }
       enableLoop = false;
       enableQuantizer = true;
       mode = QUANTIZE;
       setAllLeds(LOW);
       updateActiveDegreeLeds();
+      updateOctaveLeds(activeOctaves);
       triggerNote(currNoteIndex, currOctave, OFF);
       break;
     case QUANTIZE_LOOP:
@@ -536,15 +539,6 @@ void TouchChannel::updateLoopMultiplierLeds() {
   }
 }
 
-void TouchChannel::updateActiveDegreeLeds() {
-  for (int i = 0; i < 8; i++) {
-    if (bitRead(activeDegrees, i)) {
-      setLed(i, HIGH);
-    } else {
-      setLed(i, LOW);
-    }
-  }
-}
 
 /** ------------------------------------------------------------------------
  *        TRIGGER NOTE
