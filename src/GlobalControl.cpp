@@ -1,12 +1,5 @@
 #include "GlobalControl.h"
 
-/**
- * TODO:
- * clear button for loop mode
- * reset button for loop mode
- * freeze button
-*/
-
 void GlobalControl::init() {
   touchCtrl->init();
   touchOctAB->init();
@@ -26,11 +19,15 @@ void GlobalControl::poll() {
     handleTouchEvent();
     touchDetected = false;
   }
+  
   handleOctaveTouched();
-  // if (octaveTouchDetected) {
-    
-  //   octaveTouchDetected = false;
-  // }
+
+  if (timer.read() > 2) {
+    calibrateChannel(selectedChannel);
+    timer.stop();
+    timer.reset();
+  }
+  
 }
 
 
@@ -74,6 +71,7 @@ void GlobalControl::handleOctaveTouched() {
   uint8_t touchedAB = touchOctAB->touched();
   uint8_t touchedCD = touchOctCD->touched();
   currOctavesTouched = two8sTo16(touchedCD, touchedAB);
+  
   if (currOctavesTouched != prevOctavesTouched) {
     for (int i=0; i<16; i++) {
       if (touchCtrl->padIsTouched(i, currOctavesTouched, prevOctavesTouched)) {
@@ -143,16 +141,16 @@ void GlobalControl::setChannelOctave(int pad) {
 */
 void GlobalControl::handleTouch(int pad) {
   
+  if (handleGesture()) {
+    return;
+  }
+  
   switch (pad) {
     case FREEZE:
       handleFreeze(true);
       break;
     case RESET:
-      if (currTouched == CLEAR_LOOP) {
-        handleClearLoop();
-      } else {
-        handleClockReset();
-      }
+      channels[selectedChannel]->clearLoop();
       break;
     case LOOP_LENGTH:
       channels[0]->enableLoopLengthUI();
@@ -167,6 +165,7 @@ void GlobalControl::handleTouch(int pad) {
       channels[3]->enableLoopMode();
       break;
     case CTRL_A:
+      timer.start();
       selectChannel(0);
       break;
     case CTRL_B:
@@ -204,6 +203,7 @@ void GlobalControl::handleRelease(int pad) {
       channels[3]->disableLoopMode();
       break;
     case CTRL_A:
+      timer.stop();
       break;
     case CTRL_B:
       break;
@@ -212,6 +212,38 @@ void GlobalControl::handleRelease(int pad) {
     case CTRL_D:
       break;
   }
+}
+
+bool GlobalControl::handleGesture() {
+  switch (currTouched) {
+    case _FREEZE:
+      return true;
+    case RESET_LOOP_A:
+      channels[0]->reset();
+      return true;
+    case RESET_LOOP_B:
+      channels[1]->reset();
+      return true;
+    case RESET_LOOP_C:
+      channels[2]->reset();
+      return true;
+    case RESET_LOOP_D:
+      channels[3]->reset();
+      return true;
+    case CALIBRATE:
+      return true;
+    case CLEAR_CH_A_LOOP:
+      return true;
+    case CLEAR_CH_B_LOOP:
+      return true;
+    case CLEAR_CH_C_LOOP:
+      return true;
+    case CLEAR_CH_D_LOOP:
+      return true;
+    default:
+      return false;
+  }
+  return false;
 }
 
 /**
@@ -237,9 +269,8 @@ void GlobalControl::handleClockReset() {
   channels[3]->reset();
 }
 
-/**
- * HANDLE RESET
-*/
-void GlobalControl::handleClearLoop() {
-  channels[selectedChannel]->clearEventLoop();
+
+void GlobalControl::calibrateChannel(int chan) {
+  this->mode = Mode::CALIBRATING;
+  channels[0]->enableCalibrationMode();
 }

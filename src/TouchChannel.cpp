@@ -1,6 +1,13 @@
 #include "TouchChannel.h"
 
 void TouchChannel::init() {
+
+  for (int i = 0; i < 59; i++) {                 // copy default pre-calibrated dac voltage values into class object member
+    dacVoltageValues[i] = DAC_VOLTAGE_VALUES[i];
+  }
+
+  this->generateDacVoltageMap();
+
   touch->init();
   leds->initialize();
 
@@ -31,7 +38,6 @@ void TouchChannel::init() {
   uiMode = DEFAULT_UI;
 
   this->setOctave(currOctave);
-  this->initQuantizer();
 }
 /** ------------------------------------------------------------------------
  *         POLL    POLL    POLL    POLL    POLL    POLL    POLL    POLL    
@@ -39,47 +45,50 @@ void TouchChannel::init() {
 // HANDLE ALL INTERUPT FLAGS
 void TouchChannel::poll() {
   
-  // Timer polling --> flag if timer is active, and if it is start counting to 3 seconds
-  // after 3 seconds, call a function which takes the currTouched variable and applies it to the activeDegreeLimit.
-  // then disable timer poll flag.
+  if (!freezeChannel) { // don't do anything if freeze enabled
+    
+    // Timer polling --> flag if timer is active, and if it is start counting to 3 seconds
+    // after 3 seconds, call a function which takes the currTouched variable and applies it to the activeDegreeLimit.
+    // then disable timer poll flag.
 
-  if (uiMode == LOOP_LENGTH_UI) {
-    handleLoopLengthUI();
-  }
-
-  if (touchDetected) {
-    handleTouch();
-    touchDetected = false;
-  }
-
-  currModeBtnState = modeBtn.read();
-  if (currModeBtnState != prevModeBtnState) {
-    if (currModeBtnState == LOW) {
-      this->toggleMode();
+    if (uiMode == LOOP_LENGTH_UI) {
+      handleLoopLengthUI();
     }
-    prevModeBtnState = currModeBtnState;
-  }
 
-  if (degrees->hasChanged[channel]) {
-    handleDegreeChange();
-  }
-
-  if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer) {
-    currCVInputValue = cvInput.read_u16();
-    if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER ) {
-      handleCVInput(currCVInputValue);
-      prevCVInputValue = currCVInputValue;
+    if (touchDetected) {
+      handleTouch();
+      touchDetected = false;
     }
-  }
 
-  // currSlewCV = slewCvInput.read();
-  // if (currSlewCV >= prevSlewCV + 0.1 || currSlewCV <= prevSlewCV - 0.1) {
-  //   setSlewAmount(currSlewCV);
-  //   prevSlewCV = currSlewCV;
-  // }
+    currModeBtnState = modeBtn.read();
+    if (currModeBtnState != prevModeBtnState) {
+      if (currModeBtnState == LOW) {
+        this->toggleMode();
+      }
+      prevModeBtnState = currModeBtnState;
+    }
 
-  if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && enableLoop ) {
-    handleQueuedEvent(currPosition);
+    if (degrees->hasChanged[channel]) {
+      handleDegreeChange();
+    }
+
+    if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer) {
+      currCVInputValue = cvInput.read_u16();
+      if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER ) {
+        handleCVInput(currCVInputValue);
+        prevCVInputValue = currCVInputValue;
+      }
+    }
+
+    // currSlewCV = slewCvInput.read();
+    // if (currSlewCV >= prevSlewCV + 0.1 || currSlewCV <= prevSlewCV - 0.1) {
+    //   setSlewAmount(currSlewCV);
+    //   prevSlewCV = currSlewCV;
+    // }
+
+    if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && enableLoop ) {
+      handleQueuedEvent(currPosition);
+    }
   }
 }
 // ------------------------------------------------------------------------
@@ -168,7 +177,10 @@ void TouchChannel::handleLoopLengthUI() {
 
 
 void TouchChannel::clearLoop() {
-  
+  if (this->loopContainsEvents) {
+    this->clearEventLoop();
+    setMode(prevMode);
+  }
 }
 
 void TouchChannel::setLoopLength(int value) {
@@ -209,6 +221,7 @@ void TouchChannel::disableLoopMode() {
 
   // ADDITIONALLY, this would be a good place to count the amount of steps which have passed while the REC button has
   // been held down, and if this value is greater than the current loop length, update the loop length to accomodate.
+  // the new loop length would just increase the multiplier by one
 
   if (loopContainsEvents) {   // if a touch event was recorded, remain in loop mode
     return;
@@ -275,7 +288,10 @@ void TouchChannel::handleTouch() {
               triggerNote(i, currOctave, ON);
               break;
             case QUANTIZE:
-              // set start time
+              /**
+               * TODO: start timer for setting max active degrees
+               * RESET will now reset activeDegreeLimit to its max value of 8
+              */
               setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
               break;
             case QUANTIZE_LOOP:
@@ -342,6 +358,7 @@ void TouchChannel::setMode(Mode targetMode) {
       enableQuantizer = false;
       mode = MONO;
       setAllLeds(LOW);
+      updateOctaveLeds(currOctave);
       triggerNote(currNoteIndex, currOctave, ON);
       triggerNote(currNoteIndex, currOctave, OFF);
       break;
@@ -350,15 +367,18 @@ void TouchChannel::setMode(Mode targetMode) {
       enableQuantizer = false;
       mode = MONO_LOOP;
       setAllLeds(LOW);
+      updateOctaveLeds(currOctave);
       triggerNote(currNoteIndex, currOctave, ON);
       triggerNote(currNoteIndex, currOctave, OFF);
       break;
     case QUANTIZE:
+      if (!quantizerHasBeenInitialized) { initQuantizerMode(); }
       enableLoop = false;
       enableQuantizer = true;
       mode = QUANTIZE;
       setAllLeds(LOW);
       updateActiveDegreeLeds();
+      updateOctaveLeds(activeOctaves);
       triggerNote(currNoteIndex, currOctave, OFF);
       break;
     case QUANTIZE_LOOP:
@@ -369,9 +389,6 @@ void TouchChannel::setMode(Mode targetMode) {
       updateActiveDegreeLeds();
       triggerNote(currNoteIndex, currOctave, OFF);
       break;
-    case FREEZE:
-      mode = FREEZE;
-      break;
   }
 }
 
@@ -381,16 +398,21 @@ void TouchChannel::setMode(Mode targetMode) {
 void TouchChannel::setOctave(int value) {
   
   currOctave = value;
-  updateOctaveLeds(currOctave);
 
   switch (mode) {
     case MONO:
+      updateOctaveLeds(currOctave);
       triggerNote(currNoteIndex, currOctave, ON);
       break;
-    case QUANTIZE:
-      break;
     case MONO_LOOP:
+      updateOctaveLeds(currOctave);
       triggerNote(currNoteIndex, currOctave, SUSTAIN);
+      break;
+    case QUANTIZE:
+      setActiveOctaves(value);
+      break;
+    case QUANTIZE_LOOP:
+      setActiveOctaves(value);
       break;
   }
 
@@ -419,9 +441,10 @@ void TouchChannel::handleDegreeChange() {
 void TouchChannel::setAllLeds(int state) {
   switch (state) {
     case HIGH:
+      leds->setAllOutputsHigh();
       break;
     case LOW:
-      leds->setAllOutputsOff();
+      leds->setAllOutputsLow();
       break;
   }
 }
@@ -483,12 +506,26 @@ void TouchChannel::updateLeds(uint8_t touched) {
 }
 
 void TouchChannel::updateOctaveLeds(int octave) {
-  for (int i = 0; i < 4; i++) {
-    if (i == octave) {
-      setOctaveLed(i, HIGH);
-    } else {
-      setOctaveLed(i, LOW);
+  if (mode == MONO || mode == MONO_LOOP) {
+    for (int i = 0; i < OCTAVE_COUNT; i++) {
+      if (i == octave) {
+        setOctaveLed(i, HIGH);
+      } else {
+        setOctaveLed(i, LOW);
+      }
     }
+  } else {
+    numActiveOctaves = 0;
+    for (int i = 0; i < OCTAVE_COUNT; i++) {
+      if (bitRead(activeOctaves, i)) {
+        setOctaveLed(i, HIGH);
+        activeOctaveValues[numActiveOctaves].octave = i;
+        numActiveOctaves += 1;
+      } else {
+        setOctaveLed(i, LOW);
+      }
+    }
+    
   }
 }
 
@@ -502,15 +539,6 @@ void TouchChannel::updateLoopMultiplierLeds() {
   }
 }
 
-void TouchChannel::updateActiveDegreeLeds() {
-  for (int i = 0; i < 8; i++) {
-    if (bitRead(activeDegrees, i)) {
-      setLed(i, HIGH);
-    } else {
-      setLed(i, LOW);
-    }
-  }
-}
 
 /** ------------------------------------------------------------------------
  *        TRIGGER NOTE
@@ -552,7 +580,8 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool dimL
 }
 
 int TouchChannel::calculateDACNoteValue(int index, int octave) {
-  return DAC_NOTE_MAP[index][degrees->switchStates[index]] + DAC_OCTAVE_MAP[octave];
+  //                  [ note index + octave (0..31) ]     [ switch state (0..2) ]
+  return dacVoltageMap[ index + DAC_OCTAVE_MAP[octave] ][ degrees->switchStates[index] ];
 }
 
 int TouchChannel::calculateMIDINoteValue(int index, int octave) {
@@ -572,8 +601,7 @@ void TouchChannel::setSlewAmount(float val) {
  * NOTE: a good way to freeze everything would be to just change the current mode to FREEZE, and then everything in the POLL fn would not execute.
 */ 
 void TouchChannel::freeze(bool freeze) {
-  if (freeze) setMode(FREEZE);
-  else setMode(prevMode);
+  this->freezeChannel = freeze;
 }
 
 void TouchChannel::reset() {

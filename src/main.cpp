@@ -12,6 +12,10 @@
 #include "MCP4461.h"
 
 
+// read 08040000
+
+FlashIAP flashStorage; // start address should equal 0x08060000 (ie. ADDR_FLASH_SECTOR_7)
+
 int OCTAVE_LED_PINS_A[4] = { 0, 1, 2, 3 };     // via TLC59116
 int OCTAVE_LED_PINS_B[4] = { 4, 5, 6, 7 };     // via TLC59116
 int OCTAVE_LED_PINS_C[4] = { 8, 9, 10, 11 };   // via TLC59116
@@ -23,7 +27,6 @@ I2C i2c3(I2C3_SDA, I2C3_SCL);
 Ticker ticker;
 Timer timer;
 MIDI midi(MIDI_TX, MIDI_RX);
-Metronome metronome;
 InterruptIn extClockInput(EXT_CLOCK_INPUT);
 
 DAC8554 dac(SPI2_MOSI, SPI2_SCK, DAC_CS);
@@ -48,12 +51,12 @@ CAP1208 touchOctCD(&i2c1, &i2cMux, TCA9548A::CH3);
 
 Degrees degrees(DEGREES_INT, &io);
 
-TouchChannel channelA(0, &timer, MODE_PIN_A, GATE_OUT_A, TOUCH_INT_A, CTRL_LED_A, ADC_A, SLEW_ADC_A, &touchA, &ledsA, &octaveLeds, OCTAVE_LED_PINS_A, &degrees, &midi, &dac, DAC8554::CHAN_A, &digiPots, MCP4461::Wiper3);
-TouchChannel channelB(1, &timer, MODE_PIN_B, GATE_OUT_B, TOUCH_INT_B, CTRL_LED_B, ADC_B, SLEW_ADC_B, &touchB, &ledsB, &octaveLeds, OCTAVE_LED_PINS_B, &degrees, &midi, &dac, DAC8554::CHAN_B, &digiPots, MCP4461::Wiper0);
-TouchChannel channelC(2, &timer, MODE_PIN_C, GATE_OUT_C, TOUCH_INT_C, CTRL_LED_C, ADC_C, SLEW_ADC_C, &touchC, &ledsC, &octaveLeds, OCTAVE_LED_PINS_C, &degrees, &midi, &dac, DAC8554::CHAN_C, &digiPots, MCP4461::Wiper1);
-TouchChannel channelD(3, &timer, MODE_PIN_D, GATE_OUT_D, TOUCH_INT_D, CTRL_LED_D, ADC_D, SLEW_ADC_D, &touchD, &ledsD, &octaveLeds, OCTAVE_LED_PINS_D, &degrees, &midi, &dac, DAC8554::CHAN_D, &digiPots, MCP4461::Wiper2);
+TouchChannel channelA(0, &timer, &ticker, MODE_PIN_A, GATE_OUT_A, TOUCH_INT_A, CTRL_LED_A, ADC_A, SLEW_ADC_A, &touchA, &ledsA, &octaveLeds, OCTAVE_LED_PINS_A, &degrees, &midi, &dac, DAC8554::CHAN_A, &digiPots, MCP4461::Wiper3);
+TouchChannel channelB(1, &timer, &ticker, MODE_PIN_B, GATE_OUT_B, TOUCH_INT_B, CTRL_LED_B, ADC_B, SLEW_ADC_B, &touchB, &ledsB, &octaveLeds, OCTAVE_LED_PINS_B, &degrees, &midi, &dac, DAC8554::CHAN_B, &digiPots, MCP4461::Wiper0);
+TouchChannel channelC(2, &timer, &ticker, MODE_PIN_C, GATE_OUT_C, TOUCH_INT_C, CTRL_LED_C, ADC_C, SLEW_ADC_C, &touchC, &ledsC, &octaveLeds, OCTAVE_LED_PINS_C, &degrees, &midi, &dac, DAC8554::CHAN_C, &digiPots, MCP4461::Wiper1);
+TouchChannel channelD(3, &timer, &ticker, MODE_PIN_D, GATE_OUT_D, TOUCH_INT_D, CTRL_LED_D, ADC_D, SLEW_ADC_D, &touchD, &ledsD, &octaveLeds, OCTAVE_LED_PINS_D, &degrees, &midi, &dac, DAC8554::CHAN_D, &digiPots, MCP4461::Wiper2);
 
-GlobalControl globalCTRL(&touchCTRL, &touchOctAB, &touchOctCD, TOUCH_INT_CTRL, TOUCH_INT_OCT, &channelA, &channelB, &channelC, &channelD, &metronome);
+GlobalControl globalCTRL(&touchCTRL, &touchOctAB, &touchOctCD, TOUCH_INT_CTRL, TOUCH_INT_OCT, &channelA, &channelB, &channelC, &channelD);
 
 int newClockTimeStamp;
 int lastClockTimeStamp;
@@ -111,14 +114,24 @@ int main() {
   extClockInput.rise(&extTick);
 
   while(1) {
-
-    degrees.poll();
-    channelA.poll();
-    channelB.poll();
-    channelC.poll();
-    channelD.poll();
-
+    
     globalCTRL.poll();
+    
+    if (globalCTRL.mode == GlobalControl::CALIBRATING) {
+      if (!channelA.calibrationFinished) {
+        channelA.calibrateVCO();
+      } else {
+        globalCTRL.mode = GlobalControl::DEFAULT;
+      }
+    } else {
+      degrees.poll();
+      channelA.poll();
+      channelB.poll();
+      channelC.poll();
+      channelD.poll();
+      
+    }
+    
     
   }
 }

@@ -14,10 +14,16 @@
 #include "BitwiseMethods.h"
 #include "EventLoop.h"
 
-typedef struct QuantizerValue {
+typedef struct QuantDegree {
   int threshold;
   int noteIndex;
-} QuantizerValue;
+} QuantDegree;
+
+typedef struct QuantOctave {
+  int threshold;
+  int octave;
+} QuantOctave;
+
 
 
 class TouchChannel : public EventLoop {
@@ -44,7 +50,6 @@ class TouchChannel : public EventLoop {
       MONO_LOOP = 1,
       QUANTIZE = 2,
       QUANTIZE_LOOP = 3,
-      FREEZE = 4,
     };
 
     enum UIMode { // not yet implemented
@@ -61,7 +66,8 @@ class TouchChannel : public EventLoop {
     DigitalOut gateOut;             // gate output pin
     DigitalOut ctrlLed;             // via global controls
     DigitalIn modeBtn;              // tactile button for toggleing between channel modes
-    Timer *gestureTimer;            // timer for handling duration based touch events
+    Timer *timer;            // timer for handling duration based touch events
+    Ticker *ticker;                 // for handling time based callbacks
     MIDI *midi;                     // pointer to mbed midi instance
     CAP1208 *touch;                 // i2c touch IC
     DAC8554 *dac;                   // pointer to dual channel digital-analog-converter
@@ -80,11 +86,18 @@ class TouchChannel : public EventLoop {
     volatile bool touchDetected;
     
     // quantizer variables
+    bool quantizerHasBeenInitialized;
     bool enableQuantizer;                 // by default set to true, only ever changes with a 'freeze' event
     int activeDegrees;                    // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
+    int activeOctaves;                    // 4-bits to represent which octaves external CV will get mapped to (active = 1, inactive= 0)
     int numActiveDegrees;                 // number of degrees which are active (to quantize voltage input)
+    int numActiveOctaves;                 // number of active octaves for mapping CV to
     int activeDegreeLimit;                // the max number of degrees allowed to be enabled at one time.
-    QuantizerValue activeDegreeValues[8]; // array which holds noteIndex values and their associated DAC/1vo values
+    QuantDegree activeDegreeValues[8];    // array which holds noteIndex values and their associated DAC/1vo values
+    QuantOctave activeOctaveValues[OCTAVE_COUNT];
+
+    int dacVoltageMap[32][3];
+    int dacVoltageValues[59];             // pre/post calibrated 16-bit DAC values
 
     int redLedPins[8] = { 14, 12, 10, 8, 6, 4, 2, 0 };    // hardcoded values to be passed to the 16 chan LED driver
     int greenLedPins[8] = { 15, 13, 11, 9, 7, 5, 3, 1 };  // hardcoded values to be passed to the 16 chan LED driver
@@ -104,9 +117,33 @@ class TouchChannel : public EventLoop {
     int currModeBtnState;        // ** to be refractored into MomentaryButton class
     int prevModeBtnState;        // ** to be refractored into MomentaryButton class
     
+    bool freezeChannel;          //
+
+    // calibration
+    int currVCOInputVal;                 // the current sampled value of sinewave input
+    int prevVCOInputVal;                 // the previous sampled value of sinewave input
+    bool slopeIsPositive;                // whether the sine wave is rising or falling
+    float prevAvgFreq;
+    float avgFreq;
+    int adjustment = DEFAULT_VOLTAGE_ADJMNT;
+    volatile float vcoFrequency;                  // 
+    volatile float vcoFreqAvrg;                   // the running average of frequency calculations
+    volatile float vcoPeriod;
+    volatile int numSamplesTaken;                 // How many times we have sampled the zero crossing (used in frequency calculation formula)
+    int calNoteIndex;                    // 0..31 --> when calibrating, increment this value to step each voltage representation of a semi-tone via dacVoltageValues[]
+    int calLedIndex;                     //
+    bool overshoot;                      // a flag to determine if the new voltage adjustment overshot/uncershot the target frequency
+    int calibrationAttemps;              // when this num exceeds MAX_CALIB_ATTEMPTS, accept your failure and move on.
+    bool calibrationFinished;            // flag to tell program when calibration process is finished
+    volatile bool readyToCalibrate;      // flag telling polling loop when enough freq average samples have been taken to accurately calibrate
+    volatile int freqSampleIndex = 0;        // incrementing value to place current frequency sample into array
+    volatile float freqSamples[MAX_FREQ_SAMPLES]; // array of frequency samples for obtaining the running average of the VCO
+    
+
     TouchChannel(
         int _channel,
         Timer *timer_ptr,
+        Ticker *ticker_ptr,
         PinName modePin,
         PinName gateOutPin,
         PinName tchIntPin,
@@ -125,7 +162,8 @@ class TouchChannel : public EventLoop {
         MCP4461::Wiper _wiperCh
       ) : modeBtn(modePin), gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), ctrlLed(ctrlLedPin), cvInput(cvInputPin), slewCvInput(slewInputPin) {
       
-      gestureTimer = timer_ptr;
+      timer = timer_ptr;
+      ticker = ticker_ptr;
       touch = touch_ptr;
       leds = leds_ptr;
       octLeds = octLeds_ptr;
@@ -190,10 +228,18 @@ class TouchChannel : public EventLoop {
     void handleQueuedEvent(int position);
 
     // QUANTIZE FUNCTIONS
-    void initQuantizer();
+    void initQuantizerMode();
     void handleCVInput(int value);
     void setActiveDegrees(int degrees);
     void setActiveDegreeLimit(int value);
+    void setActiveOctaves(int octave);
+
+    void enableCalibrationMode();
+    void disableCalibrationMode();
+    void calibrateVCO();
+    void sampleVCOFrequency();
+    float calculateAverageFreq();
+    void generateDacVoltageMap();
 };
 
 #endif
