@@ -12,6 +12,10 @@
 #include "MCP4461.h"
 
 
+// read 08040000
+
+FlashIAP flashStorage; // start address should equal 0x08060000 (ie. ADDR_FLASH_SECTOR_7)
+
 int OCTAVE_LED_PINS_A[4] = { 0, 1, 2, 3 };     // via TLC59116
 int OCTAVE_LED_PINS_B[4] = { 4, 5, 6, 7 };     // via TLC59116
 int OCTAVE_LED_PINS_C[4] = { 8, 9, 10, 11 };   // via TLC59116

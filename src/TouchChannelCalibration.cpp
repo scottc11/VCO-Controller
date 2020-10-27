@@ -33,6 +33,16 @@ void TouchChannel::disableCalibrationMode() {
   this->setMode(MONO);
 }
 
+void saveCalibrationToFlash() {
+  // uint32_t memAddr = 0x08060000;
+  // uint16_t flashData[8] = { 0xFF, 0xCA, 0xEB, 0x3C, 0xDE, 0xAD, 0xF3, 0xE7 };
+  // volatile uint32_t success;
+  // flashStorage.init();
+  // success = flashStorage.erase(memAddr, flashStorage.get_sector_size(memAddr));
+  // success = flashStorage.program(flashData, memAddr, 16);
+  // flashStorage.deinit();
+}
+
 void TouchChannel::calibrateVCO() {
 
   // wait till MAX_FREQ_SAMPLES has been obtained
@@ -91,7 +101,7 @@ void TouchChannel::calibrateVCO() {
 }
 
 /**
- * this function takes an 1D array and converts it into a 2D array formatted like [[0, 1, 2], ...]
+ * this function takes a 1D array and converts it into a 2D array formatted as [[0, 1, 2], ...]
  * take the first 12 values from dacVoltageValues. find the difference dacVoltageValues[i]
 */ 
 void TouchChannel::generateDacVoltageMap() {
