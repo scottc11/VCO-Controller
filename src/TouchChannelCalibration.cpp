@@ -141,7 +141,7 @@ float TouchChannel::calculateAverageFreq() {
 */ 
 void TouchChannel::sampleVCOFrequency() {
   if (!readyToCalibrate) {
-    currVCOInputVal = slewCvInput.read_u16();
+    currVCOInputVal = cvInput.read_u16();
 
     // NEGATIVE
     if (currVCOInputVal >= (VCO_ZERO_CROSSING + VCO_ZERO_CROSS_THRESHOLD) && prevVCOInputVal < (VCO_ZERO_CROSSING + VCO_ZERO_CROSS_THRESHOLD) && slopeIsPositive) {   // maybe plus threshold zero crossing

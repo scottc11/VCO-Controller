@@ -6,10 +6,10 @@ void GlobalControl::init() {
   touchOctCD->init();
 
   if (!touchOctAB->isConnected()) {
-    channels[2]->ctrlLed.write(HIGH);
+    // channels[2]->ctrlLed.write(HIGH);
   }
 
-  channels[0]->ctrlLed.write(HIGH);
+  // channels[0]->ctrlLed.write(HIGH);
   selectChannel(0);
 }
 
@@ -38,14 +38,12 @@ void GlobalControl::poll() {
 void GlobalControl::selectChannel(int channel) {
   for (int i = 0; i < 4; i++) {
     if (i != channel) {
-      channels[i]->ctrlLed.write(LOW);
       channels[i]->isSelected = false;
     }
   }
   
   selectedChannel = channel;
   channels[selectedChannel]->isSelected = true;
-  channels[selectedChannel]->ctrlLed.write(HIGH);
 }
 
 /**

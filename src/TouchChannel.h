@@ -7,12 +7,15 @@
 #include "DAC8554.h"
 #include "CAP1208.h"
 #include "TCA9544A.h"
-#include "TLC59116.h"
-#include "MCP4461.h"
+#include "SX1509.h"
 #include "MIDI.h"
 #include "QuantizeMethods.h"
 #include "BitwiseMethods.h"
 #include "EventLoop.h"
+
+#define CHANNEL_IO_MODE_PIN 5
+#define CHANNEL_IO_TOGGLE_PIN_1 6
+#define CHANNEL_IO_TOGGLE_PIN_2 7
 
 typedef struct QuantDegree {
   int threshold;
@@ -64,23 +67,16 @@ class TouchChannel : public EventLoop {
     Mode prevMode;                  // used for reverting to previous mode when toggling between UI modes
     UIMode uiMode;                  // for settings and alt LED uis
     DigitalOut gateOut;             // gate output pin
-    DigitalOut ctrlLed;             // via global controls
-    DigitalIn modeBtn;              // tactile button for toggleing between channel modes
-    Timer *timer;            // timer for handling duration based touch events
+    Timer *timer;                   // timer for handling duration based touch events
     Ticker *ticker;                 // for handling time based callbacks
     MIDI *midi;                     // pointer to mbed midi instance
     CAP1208 *touch;                 // i2c touch IC
     DAC8554 *dac;                   // pointer to dual channel digital-analog-converter
     DAC8554::Channels dacChannel;   // which dac to address
-    TLC59116 *leds;                 // led driver
-    TLC59116 *octLeds;              // led driver
-    MCP4461 *digiPot;               // digitial potentiometer
-    MCP4461::Wiper wiperChannel;    // wiper channel to use
-    int *octLedPins;                // pin list for led Driver
+    SX1509 *io;                     // IO Expander
     Degrees *degrees;
     InterruptIn touchInterupt;
     AnalogIn cvInput;                // CV input pin for quantizer mode
-    AnalogIn slewCvInput;            // CV input pin for slew control
 
     volatile bool switchHasChanged;  // toggle switches interupt flag
     volatile bool touchDetected;
@@ -98,18 +94,21 @@ class TouchChannel : public EventLoop {
 
     int dacVoltageMap[32][3];
     int dacVoltageValues[59];             // pre/post calibrated 16-bit DAC values
+    
+    int octaveLedPins[4] = { 0, 1, 2, 3 };
+    int chanLedPins[8] = { 15, 14, 13, 12, 11, 10, 9, 8 };
 
     int redLedPins[8] = { 14, 12, 10, 8, 6, 4, 2, 0 };    // hardcoded values to be passed to the 16 chan LED driver
     int greenLedPins[8] = { 15, 13, 11, 9, 7, 5, 3, 1 };  // hardcoded values to be passed to the 16 chan LED driver
-    uint16_t ledStates;            // 16 bits to represent each bi-color led  | 0-Red | 0-Green | 1-Red | 1-Green | 2-Red | 2-Green | etc...
-    unsigned int currCVInputValue; // 16 bit value (0..65,536)
-    unsigned int prevCVInputValue; // 16 bit value (0..65,536)
-    float currSlewCV;              // represented as a float in the range [0.0, 1.0]
-    float prevSlewCV;              // represented as a float in the range [0.0, 1.0]
-    int touched;                   // variable for holding the currently touched degrees
-    int prevTouched;               // variable for holding the previously touched degrees
-    int currOctave;                // current octave value between 0..3
-    int prevOctave;                // previous octave value
+    
+    uint16_t ledStates;                   // 16 bits to represent each bi-color led  | 0-Red | 0-Green | 1-Red | 1-Green | 2-Red | 2-Green | etc...
+    
+    unsigned int currCVInputValue;        // 16 bit value (0..65,536)
+    unsigned int prevCVInputValue;        // 16 bit value (0..65,536)
+    int touched;                          // variable for holding the currently touched degrees
+    int prevTouched;                      // variable for holding the previously touched degrees
+    int currOctave;                       // current octave value between 0..3
+    int prevOctave;                       // previous octave value
     int counter;
     int currNoteIndex;
     int prevNoteIndex;
@@ -144,44 +143,34 @@ class TouchChannel : public EventLoop {
         int _channel,
         Timer *timer_ptr,
         Ticker *ticker_ptr,
-        PinName modePin,
         PinName gateOutPin,
         PinName tchIntPin,
-        PinName ctrlLedPin,
         PinName cvInputPin,
-        PinName slewInputPin,
         CAP1208 *touch_ptr,
-        TLC59116 *leds_ptr,
-        TLC59116 *octLeds_ptr,
-        int *_octLedPins,
+        SX1509 *io_ptr,
         Degrees *degrees_ptr,
         MIDI *midi_p,
         DAC8554 *dac_ptr,
-        DAC8554::Channels _dacChannel,
-        MCP4461 *digiPot_ptr,
-        MCP4461::Wiper _wiperCh
-      ) : modeBtn(modePin), gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), ctrlLed(ctrlLedPin), cvInput(cvInputPin), slewCvInput(slewInputPin) {
+        DAC8554::Channels _dacChannel
+      ) : gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), cvInput(cvInputPin) {
       
       timer = timer_ptr;
       ticker = ticker_ptr;
       touch = touch_ptr;
-      leds = leds_ptr;
-      octLeds = octLeds_ptr;
-      octLedPins = _octLedPins;
+      io = io_ptr;
       degrees = degrees_ptr;
       dac = dac_ptr;
       dacChannel = _dacChannel;
       midi = midi_p;
       touchInterupt.fall(callback(this, &TouchChannel::handleTouchInterupt));
       channel = _channel;
-      digiPot = digiPot_ptr;
-      wiperChannel = _wiperCh;
     };
 
     void init();
     void poll();
     void handleTouchInterupt() { touchDetected = true; }
     
+    void initIOExpander();
     void setLed(int index, LedState state, bool settingUILed=false);
     void setOctaveLed(int octave, LedState state, bool settingUILed=false);
     void setUILed(int index, LedState state);
@@ -204,8 +193,6 @@ class TouchChannel : public EventLoop {
     int quantizePosition(int position);
     int calculateMIDINoteValue(int index, int octave);
     int calculateDACNoteValue(int index, int octave);
-    
-    void setSlewAmount(float val);
 
     void setOctave(int value);
     void triggerNote(int index, int octave, NoteState state, bool dimLed=false);

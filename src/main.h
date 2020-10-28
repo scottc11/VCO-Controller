@@ -28,30 +28,15 @@ enum LedState: int {
 
 #define EXT_CLOCK_INPUT      PB_10
 
-#define MODE_PIN_A           PA_9
-#define MODE_PIN_B           PA_10
-#define MODE_PIN_C           PA_11
-#define MODE_PIN_D           PA_12
-
 #define ADC_A                PA_6
 #define ADC_B                PA_7
-#define ADC_C                PC_4
-#define ADC_D                PC_5
-
-#define SLEW_ADC_A           PA_4
-#define SLEW_ADC_B           PA_5
-#define SLEW_ADC_C           PB_0
-#define SLEW_ADC_D           PB_1
+#define ADC_C                PC_5
+#define ADC_D                PC_4
 
 #define GATE_OUT_A           PC_2
 #define GATE_OUT_B           PC_3
-#define GATE_OUT_C           PA_0
-#define GATE_OUT_D           PA_1
-
-#define CTRL_LED_A           PB_7
-#define CTRL_LED_B           PB_6
-#define CTRL_LED_C           PB_5
-#define CTRL_LED_D           PB_4
+#define GATE_OUT_C           PC_7
+#define GATE_OUT_D           PC_6
 
 #define TOUCH_INT_A          PC_1
 #define TOUCH_INT_B          PC_0
@@ -62,17 +47,18 @@ enum LedState: int {
 
 #define DEGREES_INT          PB_2
 
-#define MCP4461_ADDR             0x58 // 8-bit
+
+
 #define TCA9548A_ADDR            0x70 // 1110000
 #define CAP1208_ADDR             0x50 // 0010100  via mux
 #define CAP1208_CTRL_ADDR        0x50 // 0010100
 
 #define MCP23017_DEGREES_ADDR    0x20 // 0100000
-#define TLC59116_CHAN_A_ADDR     0x60 // 1100000
-#define TLC59116_CHAN_B_ADDR     0x61 // 1100001
-#define TLC59116_CHAN_C_ADDR     0x62 // 1100010
-#define TLC59116_CHAN_D_ADDR     0x64 // 1100100
-#define TLC59116_OCT_LEDS_ADDR   0x68 // 1101000
+
+#define SX1509_CHAN_A_ADDR       0x3E
+#define SX1509_CHAN_B_ADDR       0x70
+#define SX1509_CHAN_C_ADDR       0x3F
+#define SX1509_CHAN_D_ADDR       0x71
 
 
 // DEFAULT INITIALIZATION VALUES

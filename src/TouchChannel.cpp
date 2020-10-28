@@ -9,13 +9,13 @@ void TouchChannel::init() {
   this->generateDacVoltageMap();
 
   touch->init();
-  leds->initialize();
+
+  this->initIOExpander();
 
   if (!touch->isConnected()) { this->updateOctaveLeds(3); return; }
   touch->calibrate();
   touch->clearInterupt();
   dac->init();
-  setSlewAmount(0);
 
   // intialize inheritance variables
   numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
@@ -39,6 +39,31 @@ void TouchChannel::init() {
 
   this->setOctave(currOctave);
 }
+
+
+void TouchChannel::initIOExpander() {
+  io->init();
+
+  io->pinMode(5, SX1509::INPUT, true);
+  io->enableInterupt(5, SX1509::RISING);
+  io->pinMode(6, SX1509::INPUT);
+  io->pinMode(7, SX1509::INPUT);
+
+  // initialize IO Led Driver pins
+  for (int i = 0; i < 8; i++)
+  {
+    io->pinMode(chanLedPins[i], SX1509::ANALOG_OUTPUT);
+    io->setPWM(chanLedPins[i], 0);
+  }
+
+  for (int i = 0; i < 4; i++)
+  {
+    io->pinMode(octaveLedPins[i], SX1509::ANALOG_OUTPUT);
+    io->setPWM(octaveLedPins[i], 0);
+  }
+}
+
+
 /** ------------------------------------------------------------------------
  *         POLL    POLL    POLL    POLL    POLL    POLL    POLL    POLL    
 ---------------------------------------------------------------------------- */
@@ -60,7 +85,7 @@ void TouchChannel::poll() {
       touchDetected = false;
     }
 
-    currModeBtnState = modeBtn.read();
+    currModeBtnState = io->digitalRead(CHANNEL_IO_MODE_PIN);
     if (currModeBtnState != prevModeBtnState) {
       if (currModeBtnState == LOW) {
         this->toggleMode();
@@ -441,37 +466,29 @@ void TouchChannel::handleDegreeChange() {
 void TouchChannel::setAllLeds(int state) {
   switch (state) {
     case HIGH:
-      leds->setAllOutputsHigh();
+      io->writeBankB(0x00);
       break;
     case LOW:
-      leds->setAllOutputsLow();
+      io->writeBankB(0xFF);
       break;
   }
 }
 
 void TouchChannel::setLed(int index, LedState state, bool settingUILed /*false*/) {
   if (uiMode == DEFAULT_UI || settingUILed) {
-    
-    int (*pins_ptr)[8];
-    if (settingUILed) {
-      pins_ptr = &greenLedPins;  // UI modes will always use green leds
-    } else {
-      pins_ptr = mode == MONO_LOOP || mode == QUANTIZE_LOOP ? &redLedPins : &greenLedPins;  // switch between red and green leds based on mode
-    }
-    
 
     switch (state) {
       case LOW:
         ledStates &= ~(1 << index);
-        leds->setLedOutput((*pins_ptr)[index], TLC59116::OFF);
+        io->analogWrite(chanLedPins[index], 0);
         break;
       case HIGH:
         ledStates |= 1 << index;
-        leds->setLedOutput((*pins_ptr)[index], TLC59116::ON);
+        io->analogWrite(chanLedPins[index], 127);
         break;
       case BLINK:
         ledStates |= 1 << index;
-        leds->setLedOutput((*pins_ptr)[index], TLC59116::PWM, 20);
+        io->setBlink(chanLedPins[index], 1, 1, 127, 0);
         break;
     }
   }
@@ -489,20 +506,20 @@ void TouchChannel::setOctaveLed(int octave, LedState state, bool settingUILed /*
   if (uiMode == DEFAULT_UI || settingUILed) {
     switch (state) {
       case LOW:
-        octLeds->setLedOutput(octLedPins[octave], TLC59116::OFF);
+        io->analogWrite(octaveLedPins[octave], 0);
         break;
       case HIGH:
-        octLeds->setLedOutput(octLedPins[octave], TLC59116::ON);
+        io->analogWrite(octaveLedPins[octave], 255);
         break;
       case BLINK:
-        octLeds->setLedOutput(octLedPins[octave], TLC59116::PWM, 20);
+        io->setBlink(octaveLedPins[octave], 1, 1, 255, 0);
         break;
     }
   }
 }
 
 void TouchChannel::updateLeds(uint8_t touched) {
-  leds->setLedOutput16(ledStates);
+  
 }
 
 void TouchChannel::updateOctaveLeds(int octave) {
@@ -586,12 +603,6 @@ int TouchChannel::calculateDACNoteValue(int index, int octave) {
 
 int TouchChannel::calculateMIDINoteValue(int index, int octave) {
   return MIDI_NOTE_MAP[index][degrees->switchStates[index]] + MIDI_OCTAVE_MAP[octave];
-}
-
-
-void TouchChannel::setSlewAmount(float val) {
-  // need to convert float ADC value to a 8-bit value
-  digiPot->writeWiper(wiperChannel, 255 * val);
 }
 
 
