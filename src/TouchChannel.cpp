@@ -2,7 +2,7 @@
 
 void TouchChannel::init() {
 
-  for (int i = 0; i < 59; i++) {                 // copy default pre-calibrated dac voltage values into class object member
+  for (int i = 0; i < CALIBRATION_LENGTH; i++) {                 // copy default pre-calibrated dac voltage values into class object member
     dacVoltageValues[i] = DAC_VOLTAGE_VALUES[i];
   }
 

@@ -93,8 +93,8 @@ class TouchChannel : public EventLoop {
     QuantOctave activeOctaveValues[OCTAVE_COUNT];
 
     int dacVoltageMap[32][3];
-    int dacVoltageValues[59];             // pre/post calibrated 16-bit DAC values
-    
+    int dacVoltageValues[CALIBRATION_LENGTH]; // pre/post calibrated 16-bit DAC values
+
     int octaveLedPins[4] = { 0, 1, 2, 3 };
     int chanLedPins[8] = { 15, 14, 13, 12, 11, 10, 9, 8 };
 

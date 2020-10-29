@@ -35,16 +35,18 @@ public:
   bool octaveTouchDetected;
 
   GlobalControl(
-    CAP1208 *ctrl_ptr,
-    CAP1208 *tchAB_ptr,
-    CAP1208 *tchCD_ptr,
-    PinName ctrl_int,
-    PinName oct_int,
-    TouchChannel *chanA_ptr,
-    TouchChannel *chanB_ptr,
-    TouchChannel *chanC_ptr,
-    TouchChannel *chanD_ptr ) : ctrlInterupt(ctrl_int, PullUp), octaveInterupt(oct_int) {
-    
+      CAP1208 *ctrl_ptr,
+      CAP1208 *tchAB_ptr,
+      CAP1208 *tchCD_ptr,
+      PinName ctrl_int,
+      PinName oct_int_ab,
+      PinName oct_int_cd,
+      TouchChannel *chanA_ptr,
+      TouchChannel *chanB_ptr,
+      TouchChannel *chanC_ptr,
+      TouchChannel *chanD_ptr) : ctrlInterupt(ctrl_int, PullUp), octaveInterupt(oct_int_ab)
+  {
+
     mode = Mode::DEFAULT;
     touchCtrl = ctrl_ptr;
     touchOctAB = tchAB_ptr;
@@ -56,7 +58,7 @@ public:
     ctrlInterupt.fall(callback(this, &GlobalControl::handleTouchInterupt));
     octaveInterupt.fall(callback(this, &GlobalControl::handleOctaveInterupt));
   }
-  
+
   void init();
   void poll();
   void selectChannel(int channel);

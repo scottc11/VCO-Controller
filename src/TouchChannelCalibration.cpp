@@ -56,7 +56,7 @@ void TouchChannel::calibrateVCO() {
     if ((avgFreq <= PITCH_FREQ[calNoteIndex] + threshold && avgFreq >= PITCH_FREQ[calNoteIndex] - threshold) || calibrationAttemps > MAX_CALIB_ATTEMPTS) {
       
       // move to next pitch to be calibrated
-      if (calNoteIndex < 59) {
+      if (calNoteIndex < CALIBRATION_LENGTH) {
         setLed(CALIBRATION_LED_MAP[calNoteIndex], LOW);
         adjustment = DEFAULT_VOLTAGE_ADJMNT;     // reset to default
         calibrationAttemps = 0;
