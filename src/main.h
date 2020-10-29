@@ -24,7 +24,7 @@ enum LedState: int {
 #define SPI2_MISO            PB_14
 #define SPI2_SCK             PB_13
 
-#define EXT_CLOCK_INPUT      PB_10
+#define EXT_CLOCK_INPUT      PA_3
 
 #define ADC_A                PA_6
 #define ADC_B                PA_7
@@ -55,6 +55,11 @@ enum LedState: int {
 #define CAP1208_CTRL_ADDR        0x50 // 0010100
 
 #define MCP23017_DEGREES_ADDR    0x20 // 0100000
+
+#define IO_INT_PIN_A             PA_12
+#define IO_INT_PIN_B             PA_11
+#define IO_INT_PIN_C             PA_10
+#define IO_INT_PIN_D             PA_9
 
 #define SX1509_CHAN_A_ADDR       0x3E
 #define SX1509_CHAN_B_ADDR       0x70

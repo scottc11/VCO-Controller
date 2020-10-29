@@ -44,10 +44,10 @@ void TouchChannel::init() {
 void TouchChannel::initIOExpander() {
   io->init();
 
-  io->pinMode(5, SX1509::INPUT, true);
+  io->pinMode(CHANNEL_IO_MODE_PIN, SX1509::INPUT, true);
   io->enableInterupt(5, SX1509::RISING);
-  io->pinMode(6, SX1509::INPUT);
-  io->pinMode(7, SX1509::INPUT);
+  io->pinMode(CHANNEL_IO_TOGGLE_PIN_1, SX1509::INPUT);
+  io->pinMode(CHANNEL_IO_TOGGLE_PIN_2, SX1509::INPUT);
 
   // initialize IO Led Driver pins
   for (int i = 0; i < 8; i++)
@@ -85,12 +85,10 @@ void TouchChannel::poll() {
       touchDetected = false;
     }
 
-    currModeBtnState = io->digitalRead(CHANNEL_IO_MODE_PIN);
-    if (currModeBtnState != prevModeBtnState) {
-      if (currModeBtnState == LOW) {
-        this->toggleMode();
-      }
-      prevModeBtnState = currModeBtnState;
+
+    if (modeChangeDetected) {
+      this->toggleMode();
+      modeChangeDetected = false;
     }
 
     if (degrees->hasChanged[channel]) {
@@ -104,12 +102,6 @@ void TouchChannel::poll() {
         prevCVInputValue = currCVInputValue;
       }
     }
-
-    // currSlewCV = slewCvInput.read();
-    // if (currSlewCV >= prevSlewCV + 0.1 || currSlewCV <= prevSlewCV - 0.1) {
-    //   setSlewAmount(currSlewCV);
-    //   prevSlewCV = currSlewCV;
-    // }
 
     if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && enableLoop ) {
       handleQueuedEvent(currPosition);
@@ -366,8 +358,11 @@ void TouchChannel::handleTouch() {
 
 /**
  * TOGGLE MODE
+ * 
+ * still needs to be written to handle 3-stage toggle switch.
 **/
 void TouchChannel::toggleMode() {
+  io->digitalRead(CHANNEL_IO_MODE_PIN);
   if (mode == MONO || mode == MONO_LOOP) {
     setMode(QUANTIZE);
   } else {
@@ -382,7 +377,7 @@ void TouchChannel::setMode(Mode targetMode) {
       enableLoop = false;
       enableQuantizer = false;
       mode = MONO;
-      setAllLeds(LOW);
+      setAllLeds(LOW);               // I think this is just a "start from a clean slate" kinda thing
       updateOctaveLeds(currOctave);
       triggerNote(currNoteIndex, currOctave, ON);
       triggerNote(currNoteIndex, currOctave, OFF);
@@ -466,10 +461,24 @@ void TouchChannel::handleDegreeChange() {
 void TouchChannel::setAllLeds(int state) {
   switch (state) {
     case HIGH:
-      io->writeBankB(0x00);
+      setLed(0, HIGH);
+      setLed(1, HIGH);
+      setLed(2, HIGH);
+      setLed(3, HIGH);
+      setLed(4, HIGH);
+      setLed(5, HIGH);
+      setLed(6, HIGH);
+      setLed(7, HIGH);
       break;
     case LOW:
-      io->writeBankB(0xFF);
+      setLed(0, LOW);
+      setLed(1, LOW);
+      setLed(2, LOW);
+      setLed(3, LOW);
+      setLed(4, LOW);
+      setLed(5, LOW);
+      setLed(6, LOW);
+      setLed(7, LOW);
       break;
   }
 }
@@ -488,7 +497,7 @@ void TouchChannel::setLed(int index, LedState state, bool settingUILed /*false*/
         break;
       case BLINK:
         ledStates |= 1 << index;
-        io->setBlink(chanLedPins[index], 1, 1, 127, 0);
+        io->analogWrite(chanLedPins[index], 20);
         break;
     }
   }
@@ -512,7 +521,7 @@ void TouchChannel::setOctaveLed(int octave, LedState state, bool settingUILed /*
         io->analogWrite(octaveLedPins[octave], 255);
         break;
       case BLINK:
-        io->setBlink(octaveLedPins[octave], 1, 1, 255, 0);
+        io->analogWrite(octaveLedPins[octave], 70);
         break;
     }
   }

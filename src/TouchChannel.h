@@ -76,10 +76,12 @@ class TouchChannel : public EventLoop {
     SX1509 *io;                     // IO Expander
     Degrees *degrees;
     InterruptIn touchInterupt;
+    InterruptIn ioInterupt;         // for SC1509 3-stage toggle switch + tactile mode button
     AnalogIn cvInput;                // CV input pin for quantizer mode
 
     volatile bool switchHasChanged;  // toggle switches interupt flag
     volatile bool touchDetected;
+    volatile bool modeChangeDetected;
     
     // quantizer variables
     bool quantizerHasBeenInitialized;
@@ -145,6 +147,7 @@ class TouchChannel : public EventLoop {
         Ticker *ticker_ptr,
         PinName gateOutPin,
         PinName tchIntPin,
+        PinName ioIntPin,
         PinName cvInputPin,
         CAP1208 *touch_ptr,
         SX1509 *io_ptr,
@@ -152,7 +155,7 @@ class TouchChannel : public EventLoop {
         MIDI *midi_p,
         DAC8554 *dac_ptr,
         DAC8554::Channels _dacChannel
-      ) : gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), cvInput(cvInputPin) {
+      ) : gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), ioInterupt(ioIntPin, PullUp), cvInput(cvInputPin) {
       
       timer = timer_ptr;
       ticker = ticker_ptr;
@@ -163,13 +166,15 @@ class TouchChannel : public EventLoop {
       dacChannel = _dacChannel;
       midi = midi_p;
       touchInterupt.fall(callback(this, &TouchChannel::handleTouchInterupt));
+      ioInterupt.fall(callback(this, &TouchChannel::handleIOInterupt));
       channel = _channel;
     };
 
     void init();
     void poll();
     void handleTouchInterupt() { touchDetected = true; }
-    
+    void handleIOInterupt() { modeChangeDetected = true; }
+
     void initIOExpander();
     void setLed(int index, LedState state, bool settingUILed=false);
     void setOctaveLed(int octave, LedState state, bool settingUILed=false);

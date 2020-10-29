@@ -50,10 +50,10 @@ CAP1208 touchCTRL2(&i2c1, &i2cMux, TCA9548A::CH7);
 
 Degrees degrees(DEGREES_INT, &io);
 
-TouchChannel channelA(0, &timer, &ticker, GATE_OUT_A, TOUCH_INT_A, ADC_A, &touchA, &ioA, &degrees, &midi, &dac1, DAC8554::CHAN_A);
-TouchChannel channelB(0, &timer, &ticker, GATE_OUT_B, TOUCH_INT_B, ADC_B, &touchB, &ioB, &degrees, &midi, &dac1, DAC8554::CHAN_B);
-TouchChannel channelC(0, &timer, &ticker, GATE_OUT_C, TOUCH_INT_C, ADC_C, &touchC, &ioC, &degrees, &midi, &dac1, DAC8554::CHAN_C);
-TouchChannel channelD(0, &timer, &ticker, GATE_OUT_D, TOUCH_INT_D, ADC_D, &touchD, &ioD, &degrees, &midi, &dac1, DAC8554::CHAN_D);
+TouchChannel channelA(0, &timer, &ticker, GATE_OUT_A, TOUCH_INT_A, IO_INT_PIN_A, ADC_A, &touchA, &ioA, &degrees, &midi, &dac1, DAC8554::CHAN_A);
+TouchChannel channelB(0, &timer, &ticker, GATE_OUT_B, TOUCH_INT_B, IO_INT_PIN_B, ADC_B, &touchB, &ioB, &degrees, &midi, &dac1, DAC8554::CHAN_B);
+TouchChannel channelC(0, &timer, &ticker, GATE_OUT_C, TOUCH_INT_C, IO_INT_PIN_C, ADC_C, &touchC, &ioC, &degrees, &midi, &dac1, DAC8554::CHAN_C);
+TouchChannel channelD(0, &timer, &ticker, GATE_OUT_D, TOUCH_INT_D, IO_INT_PIN_D, ADC_D, &touchD, &ioD, &degrees, &midi, &dac1, DAC8554::CHAN_D);
 
 GlobalControl globalCTRL(&touchCTRL1, &touchOctAB, &touchOctCD, TOUCH_INT_CTRL_1, TOUCH_INT_OCT_AB, TOUCH_INT_OCT_CD, &channelA, &channelB, &channelC, &channelD);
 
