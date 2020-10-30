@@ -9,7 +9,7 @@ enum LedState: int {
   BLINK = 2,
 };
 
-#define PPQN                 4
+#define PPQN                 96
 
 #define MIDI_BAUD            31250
 #define MIDI_TX              PA_2
@@ -24,6 +24,8 @@ enum LedState: int {
 #define SPI2_MISO            PB_14
 #define SPI2_SCK             PB_13
 
+#define TEMPO_LED            PA_1
+#define TEMPO_POT            PA_2
 #define EXT_CLOCK_INPUT      PA_3
 
 #define ADC_A                PA_6

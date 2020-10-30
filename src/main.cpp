@@ -57,16 +57,12 @@ TouchChannel channelD(0, &timer, &ticker, GATE_OUT_D, TOUCH_INT_D, IO_INT_PIN_D,
 
 GlobalControl globalCTRL(&touchCTRL1, &touchOctAB, &touchOctCD, TOUCH_INT_CTRL_1, TOUCH_INT_OCT_AB, TOUCH_INT_OCT_CD, &channelA, &channelB, &channelC, &channelD);
 
+Metronome metronome(TEMPO_LED, TEMPO_POT, PPQN, DEFAULT_CHANNEL_LOOP_STEPS);
+
 int newClockTimeStamp;
 int lastClockTimeStamp;
 int clockPeriod;
 
-void tick() {
-  // channelA.tickClock();
-  // channelB.tickClock();
-  // channelC.tickClock();
-  // channelD.tickClock();
-}
 
 void extTick() {
   // you need to advance every quarter note when an external clock signal is detected
@@ -82,7 +78,7 @@ void extTick() {
   // channelC.stepClock();
   // channelD.stepClock();
 
-  channelA.tickClock();
+  // channelA.tickClock();
   // channelB.tickClock();
   // channelC.tickClock();
   // channelD.tickClock();
@@ -97,6 +93,8 @@ int main() {
   
   timer.start();
 
+  metronome.init();
+
   degrees.init();
 
   channelA.init();
@@ -110,7 +108,7 @@ int main() {
   extClockInput.rise(&extTick);
 
   while(1) {
-
+    metronome.poll();
     globalCTRL.poll();
     degrees.poll();
     
