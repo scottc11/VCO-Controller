@@ -57,7 +57,7 @@ TouchChannel channelD(0, &timer, &ticker, GATE_OUT_D, TOUCH_INT_D, IO_INT_PIN_D,
 
 GlobalControl globalCTRL(&touchCTRL1, &touchOctAB, &touchOctCD, TOUCH_INT_CTRL_1, TOUCH_INT_OCT_AB, TOUCH_INT_OCT_CD, &channelA, &channelB, &channelC, &channelD);
 
-Metronome metronome(TEMPO_LED, TEMPO_POT, PPQN, DEFAULT_CHANNEL_LOOP_STEPS);
+Metronome metronome(TEMPO_LED, TEMPO_POT, INT_CLOCK_OUTPUT, PPQN, DEFAULT_CHANNEL_LOOP_STEPS);
 
 int newClockTimeStamp;
 int lastClockTimeStamp;
