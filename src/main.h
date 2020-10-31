@@ -3,12 +3,6 @@
 
 #include <mbed.h>
 
-enum LedState: int {
-  LOW = 0,
-  HIGH = 1,
-  BLINK = 2,
-};
-
 #define PPQN                 96
 
 #define MIDI_BAUD            31250
@@ -27,7 +21,7 @@ enum LedState: int {
 #define TEMPO_LED            PA_1
 #define TEMPO_POT            PA_2
 #define EXT_CLOCK_INPUT      PA_3
-#define INT_CLOCK_OUTPUT     PB_2
+#define INT_CLOCK_OUTPUT     PB_10
 
 #define ADC_A                PA_6
 #define ADC_B                PA_7

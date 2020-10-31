@@ -42,7 +42,7 @@ void TouchChannel::init() {
 
 void TouchChannel::initIOExpander() {
   io->init();
-
+  io->setBlinkFrequency(SX1509::FAST);
   io->pinMode(CHANNEL_IO_MODE_PIN, SX1509::INPUT, true);
   io->enableInterupt(5, SX1509::RISING);
   io->pinMode(CHANNEL_IO_TOGGLE_PIN_1, SX1509::INPUT);
@@ -496,7 +496,10 @@ void TouchChannel::setLed(int index, LedState state, bool settingUILed /*false*/
         break;
       case BLINK:
         ledStates |= 1 << index;
-        io->analogWrite(chanLedPins[index], 20);
+        io->blinkLED(chanLedPins[index], 1, 1, 127, 1);
+        break;
+      case DIM:
+        io->setPWM(chanLedPins[index], 10);
         break;
     }
   }
@@ -520,6 +523,9 @@ void TouchChannel::setOctaveLed(int octave, LedState state, bool settingUILed /*
         io->analogWrite(octaveLedPins[octave], 255);
         break;
       case BLINK:
+        io->analogWrite(octaveLedPins[octave], 70);
+        break;
+      case DIM:
         io->analogWrite(octaveLedPins[octave], 70);
         break;
     }
@@ -576,7 +582,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool dimL
         setLed(currNoteIndex, LOW);  // set the 'previous' active note led LOW
         setLed(index, HIGH);         // new active note HIGH
       }
-      if (dimLed) setLed(index, BLINK);
+      if (dimLed) setLed(index, DIM);
       prevOctave = currOctave;       // the following two lines of code used to be outside the switch block
       prevNoteIndex = currNoteIndex;
       currNoteIndex = index;

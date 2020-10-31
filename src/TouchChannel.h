@@ -48,6 +48,14 @@ class TouchChannel : public EventLoop {
       GREEN
     };
 
+    enum LedState : int
+    {
+      LOW = 0,
+      HIGH = 1,
+      BLINK = 2,
+      DIM = 3
+    };
+
     enum Mode {
       MONO = 0,
       MONO_LOOP = 1,

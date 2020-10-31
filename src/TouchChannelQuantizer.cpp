@@ -61,7 +61,7 @@ void TouchChannel::handleCVInput(int value) {
         if (bitRead(activeOctaves, prevOctave)) {
           this->setOctaveLed(prevOctave, LedState::HIGH);
         }
-        this->setOctaveLed(octave, LedState::BLINK);
+        this->setOctaveLed(octave, LedState::DIM);
       }
       break;
     }
