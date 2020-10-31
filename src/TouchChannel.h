@@ -111,7 +111,7 @@ class TouchChannel : public EventLoop {
     int prevTouched;                      // variable for holding the previously touched degrees
     int currOctave;                       // current octave value between 0..3
     int prevOctave;                       // previous octave value
-    int counter;
+
     int currNoteIndex;
     int prevNoteIndex;
 

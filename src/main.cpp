@@ -55,7 +55,7 @@ TouchChannel channelB(0, &timer, &ticker, GATE_OUT_B, TOUCH_INT_B, IO_INT_PIN_B,
 TouchChannel channelC(0, &timer, &ticker, GATE_OUT_C, TOUCH_INT_C, IO_INT_PIN_C, ADC_C, &touchC, &ioC, &degrees, &midi, &dac1, DAC8554::CHAN_C);
 TouchChannel channelD(0, &timer, &ticker, GATE_OUT_D, TOUCH_INT_D, IO_INT_PIN_D, ADC_D, &touchD, &ioD, &degrees, &midi, &dac1, DAC8554::CHAN_D);
 
-GlobalControl globalCTRL(&touchCTRL1, &touchOctAB, &touchOctCD, TOUCH_INT_CTRL_1, TOUCH_INT_OCT_AB, TOUCH_INT_OCT_CD, &channelA, &channelB, &channelC, &channelD);
+GlobalControl globalCTRL(&touchCTRL1, &touchCTRL2, &touchOctAB, &touchOctCD, TOUCH_INT_CTRL_1, TOUCH_INT_CTRL_2, TOUCH_INT_OCT_AB, TOUCH_INT_OCT_CD, REC_LED, &channelA, &channelB, &channelC, &channelD);
 
 Metronome metronome(TEMPO_LED, TEMPO_POT, INT_CLOCK_OUTPUT, PPQN, DEFAULT_CHANNEL_LOOP_STEPS);
 

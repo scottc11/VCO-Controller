@@ -30,7 +30,6 @@ void TouchChannel::init() {
   // initialize default variables
   currNoteIndex = 0;
   currOctave = 0;
-  counter = 0;
   touched = 0;
   prevTouched = 0;
   enableQuantizer = false;

@@ -50,6 +50,8 @@ enum LedState: int {
 
 #define DEGREES_INT          PB_4
 
+#define REC_LED              PA_15
+
 #define DAC1_CS              PB_12
 #define DAC2_CS              PC_8
 

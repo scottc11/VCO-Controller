@@ -1,7 +1,8 @@
 #include "GlobalControl.h"
 
 void GlobalControl::init() {
-  touchCtrl->init();
+  touchCtrl1->init();
+  touchCtrl2->init();
   touchOctAB->init();
   touchOctCD->init();
 
@@ -20,7 +21,10 @@ void GlobalControl::poll() {
     touchDetected = false;
   }
   
-  handleOctaveTouched();
+  if (octaveTouchDetected) {
+    handleOctaveTouched();
+    octaveTouchDetected = false;
+  }
 
   if (timer.read() > 2) {
     calibrateChannel(selectedChannel);
@@ -50,13 +54,17 @@ void GlobalControl::selectChannel(int channel) {
  * HANDLE TOUCH EVENT
 */
 void GlobalControl::handleTouchEvent() {
-  currTouched = touchCtrl->touched();
+  // put both touch ICs data into a 16 bit int
+
+  uint8_t touched1 = touchCtrl1->touched();
+  uint8_t touched2 = touchCtrl2->touched();
+  currTouched = two8sTo16(touched2, touched1);
   if (currTouched != prevTouched) {
-    for (int i=0; i<8; i++) {
-      if (touchCtrl->padIsTouched(i, currTouched, prevTouched)) {
+    for (int i=0; i<16; i++) {
+      if (touchCtrl1->padIsTouched(i, currTouched, prevTouched)) {
         handleTouch(i);
       }
-      if (touchCtrl->padWasTouched(i, currTouched, prevTouched)) {
+      if (touchCtrl1->padWasTouched(i, currTouched, prevTouched)) {
         handleRelease(i);
       }
     }
@@ -72,7 +80,7 @@ void GlobalControl::handleOctaveTouched() {
   
   if (currOctavesTouched != prevOctavesTouched) {
     for (int i=0; i<16; i++) {
-      if (touchCtrl->padIsTouched(i, currOctavesTouched, prevOctavesTouched)) {
+      if (touchOctAB->padIsTouched(i, currOctavesTouched, prevOctavesTouched)) {
         switch (currTouched) {
           case 0b00000001: // loop length is currenttly being touched
             setChannelLoopMultiplier(i);
@@ -82,7 +90,7 @@ void GlobalControl::handleOctaveTouched() {
             break;
         }
       }
-      if (touchCtrl->padWasTouched(i, currOctavesTouched, prevOctavesTouched)) {
+      if (touchOctAB->padWasTouched(i, currOctavesTouched, prevOctavesTouched)) {
         
       }
     }
@@ -157,10 +165,21 @@ void GlobalControl::handleTouch(int pad) {
       channels[3]->enableLoopLengthUI();
       break;
     case RECORD:
-      channels[0]->enableLoopMode();
-      channels[1]->enableLoopMode();
-      channels[2]->enableLoopMode();
-      channels[3]->enableLoopMode();
+      if (!recordEnabled) {
+        rec_led.write(1);
+        channels[0]->enableLoopMode();
+        channels[1]->enableLoopMode();
+        channels[2]->enableLoopMode();
+        channels[3]->enableLoopMode();
+        recordEnabled = true;
+      } else {
+        rec_led.write(0);
+        channels[0]->disableLoopMode();
+        channels[1]->disableLoopMode();
+        channels[2]->disableLoopMode();
+        channels[3]->disableLoopMode();
+        recordEnabled = false;
+      }
       break;
     case CTRL_A:
       timer.start();
@@ -195,10 +214,10 @@ void GlobalControl::handleRelease(int pad) {
       channels[3]->disableLoopLengthUI();
       break;
     case RECORD:
-      channels[0]->disableLoopMode();
-      channels[1]->disableLoopMode();
-      channels[2]->disableLoopMode();
-      channels[3]->disableLoopMode();
+      // channels[0]->disableLoopMode();
+      // channels[1]->disableLoopMode();
+      // channels[2]->disableLoopMode();
+      // channels[3]->disableLoopMode();
       break;
     case CTRL_A:
       timer.stop();
