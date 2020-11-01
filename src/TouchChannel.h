@@ -8,14 +8,19 @@
 #include "CAP1208.h"
 #include "TCA9544A.h"
 #include "SX1509.h"
+#include "AD525X.h"
 #include "MIDI.h"
 #include "QuantizeMethods.h"
 #include "BitwiseMethods.h"
+#include "ArrayMethods.h"
 #include "EventLoop.h"
 
 #define CHANNEL_IO_MODE_PIN 5
 #define CHANNEL_IO_TOGGLE_PIN_1 6
 #define CHANNEL_IO_TOGGLE_PIN_2 7
+
+#define PB_CALIBRATION_RANGE 32
+
 
 typedef struct QuantDegree {
   int threshold;
@@ -41,6 +46,7 @@ class TouchChannel : public EventLoop {
       OFF,
       SUSTAIN,
       PREV,
+      PITCH_BEND
     };
 
     enum LedColor {
@@ -82,10 +88,13 @@ class TouchChannel : public EventLoop {
     DAC8554 *dac;                   // pointer to dual channel digital-analog-converter
     DAC8554::Channels dacChannel;   // which dac to address
     SX1509 *io;                     // IO Expander
+    AD525X *digiPot;                // digipot for pitch bend calibration
+    AD525X::Channels digiPotChan;   // which channel to use for the digipot
     Degrees *degrees;
     InterruptIn touchInterupt;
     InterruptIn ioInterupt;         // for SC1509 3-stage toggle switch + tactile mode button
-    AnalogIn cvInput;                // CV input pin for quantizer mode
+    AnalogIn cvInput;               // CV input pin for quantizer mode
+    AnalogIn pbInput;               // CV input for Pitch Bend
 
     volatile bool switchHasChanged;  // toggle switches interupt flag
     volatile bool touchDetected;
@@ -102,6 +111,18 @@ class TouchChannel : public EventLoop {
     QuantDegree activeDegreeValues[8];    // array which holds noteIndex values and their associated DAC/1vo values
     QuantOctave activeOctaveValues[OCTAVE_COUNT];
 
+    int currPitchBend;                       // 16 bit value (0..65,536)
+    int prevPitchBend;                       // 16 bit value (0..65,536)
+    int pbRange = 2;                         // minimum of 1 semitone, maximum of 12 semitones (1 octave)
+    int pbOffset;                            // the amount of pitch bend to apply to the DAC output
+    int pbCalibration[PB_CALIBRATION_RANGE]; // an array which gets populated during initialization phase to determine a debounce value + zeroing
+    uint16_t pbZero;                         // the average ADC value when pitch bend not being touched / is idle
+    uint16_t pbMax;                          // the minimum value the ADC can achieve when Pitch Bend fully pulled
+    uint16_t pbMin;                          // the maximum value the ADC can achieve when Pitch Bend fully pressed
+    int pbDebounce;
+    
+
+    float dacSemitone = 938.0;               // must be a float, as it gets divided down to a num between 0..1
     int dacVoltageMap[32][3];
     int dacVoltageValues[CALIBRATION_LENGTH]; // pre/post calibrated 16-bit DAC values
 
@@ -115,6 +136,7 @@ class TouchChannel : public EventLoop {
     
     unsigned int currCVInputValue;        // 16 bit value (0..65,536)
     unsigned int prevCVInputValue;        // 16 bit value (0..65,536)
+
     int touched;                          // variable for holding the currently touched degrees
     int prevTouched;                      // variable for holding the previously touched degrees
     int currOctave;                       // current octave value between 0..3
@@ -157,13 +179,16 @@ class TouchChannel : public EventLoop {
         PinName tchIntPin,
         PinName ioIntPin,
         PinName cvInputPin,
+        PinName pbInputPin,
         CAP1208 *touch_ptr,
         SX1509 *io_ptr,
         Degrees *degrees_ptr,
         MIDI *midi_p,
         DAC8554 *dac_ptr,
-        DAC8554::Channels _dacChannel
-      ) : gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), ioInterupt(ioIntPin, PullUp), cvInput(cvInputPin) {
+        DAC8554::Channels _dacChannel,
+        AD525X *digiPot_ptr,
+        AD525X::Channels _digiPotChannel
+      ) : gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), ioInterupt(ioIntPin, PullUp), cvInput(cvInputPin), pbInput(pbInputPin) {
       
       timer = timer_ptr;
       ticker = ticker_ptr;
@@ -172,6 +197,8 @@ class TouchChannel : public EventLoop {
       degrees = degrees_ptr;
       dac = dac_ptr;
       dacChannel = _dacChannel;
+      digiPot = digiPot_ptr;
+      digiPotChan = _digiPotChannel;
       midi = midi_p;
       touchInterupt.fall(callback(this, &TouchChannel::handleTouchInterupt));
       ioInterupt.fall(callback(this, &TouchChannel::handleIOInterupt));
@@ -182,6 +209,9 @@ class TouchChannel : public EventLoop {
     void poll();
     void handleTouchInterupt() { touchDetected = true; }
     void handleIOInterupt() { modeChangeDetected = true; }
+
+    // Pitch Bend
+    void calibratePitchBend();
 
     void initIOExpander();
     void setLed(int index, LedState state, bool settingUILed=false);

@@ -28,6 +28,11 @@
 #define ADC_C                PC_5
 #define ADC_D                PC_4
 
+#define PB_ADC_A             PA_4
+#define PB_ADC_B             PA_5
+#define PB_ADC_C             PB_0
+#define PB_ADC_D             PB_1
+
 #define GATE_OUT_A           PC_2
 #define GATE_OUT_B           PC_3
 #define GATE_OUT_C           PC_7

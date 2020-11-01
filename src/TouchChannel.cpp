@@ -17,6 +17,8 @@ void TouchChannel::init() {
   touch->clearInterupt();
   dac->init();
 
+  calibratePitchBend();
+
   // intialize inheritance variables
   numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
   loopMultiplier = 1;
@@ -93,6 +95,8 @@ void TouchChannel::poll() {
     if (degrees->hasChanged[channel]) {
       handleDegreeChange();
     }
+
+    triggerNote(currNoteIndex, currOctave, PITCH_BEND);
 
     if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer) {
       currCVInputValue = cvInput.read_u16();
@@ -607,12 +611,33 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool dimL
     case PREV:
       setLed(index, HIGH);
       break;
+    case PITCH_BEND:
+      dac->write(dacChannel, calculateDACNoteValue(index, octave));
+      break;
   }
 }
 
-int TouchChannel::calculateDACNoteValue(int index, int octave) {
+int TouchChannel::calculateDACNoteValue(int index, int octave)
+{
+  // apply the pitch bend by mapping the ADC value to a value between PB Range value and the current note being outputted
+  currPitchBend = pbInput.read_u16();
+  if (currPitchBend > pbZero + pbDebounce || currPitchBend < pbZero - pbDebounce)
+  {
+    if (currPitchBend > pbZero) {
+      float c = dacSemitone * pbRange;
+      int y = pbMax - pbZero;
+      float x = c / y;
+      pbOffset = x * (currPitchBend - pbZero);
+      // pbOffset = ((dacSemitone * pbRange) / (pbMax - pbZero)) * currPitchBend;
+    }
+    else {
+      pbOffset = ((dacSemitone * pbRange) / (pbZero - pbMin)) * currPitchBend;
+    }
+  }
+  
+
   //                  [ note index + octave (0..31) ]     [ switch state (0..2) ]
-  return dacVoltageMap[ index + DAC_OCTAVE_MAP[octave] ][ degrees->switchStates[index] ];
+  return dacVoltageMap[ index + DAC_OCTAVE_MAP[octave] ][ degrees->switchStates[index] ] + pbOffset;
 }
 
 int TouchChannel::calculateMIDINoteValue(int index, int octave) {
@@ -642,4 +667,31 @@ void TouchChannel::reset() {
       resetClock();
       break;
   }
+}
+
+void TouchChannel::calibratePitchBend() {
+
+  // apply op-amp gain via digi pot
+  digiPot->setWiper(digiPotChan, 255); // max gain
+  wait_us(1000); // wait for things to settle
+
+  // populate calibration array
+  for (int i = 0; i < PB_CALIBRATION_RANGE; i++)
+  {
+    pbCalibration[i] = pbInput.read_u16();
+    wait_us(1000);
+  }
+
+  // find min/max value from calibration results
+  int max = arr_max(pbCalibration, PB_CALIBRATION_RANGE);
+  int min = arr_min(pbCalibration, PB_CALIBRATION_RANGE);
+  pbDebounce = (max - min + 100) / 2;
+
+  // zero the sensor
+  pbZero = arr_average(pbCalibration, PB_CALIBRATION_RANGE);
+
+
+
+  pbMax = pbZero + 10000;
+  pbMin = pbZero - 10000;
 }

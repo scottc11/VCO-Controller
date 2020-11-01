@@ -8,7 +8,7 @@
 #include "DAC8554.h"
 #include "TCA9548A.h"
 #include "MCP23017.h"
-#include "MCP4461.h"
+#include "AD525X.h"
 #include "SX1509.h"
 
 // read 08040000
@@ -28,6 +28,7 @@ Timer timer;
 MIDI midi(MIDI_TX, MIDI_RX);
 InterruptIn extClockInput(EXT_CLOCK_INPUT);
 
+AD525X digiPot(&i2c1);
 DAC8554 dac1(SPI2_MOSI, SPI2_SCK, DAC1_CS);
 DAC8554 dac2(SPI2_MOSI, SPI2_SCK, DAC2_CS);
 MCP23017 io(&i2c3, MCP23017_DEGREES_ADDR);
@@ -50,10 +51,10 @@ CAP1208 touchCTRL2(&i2c1, &i2cMux, TCA9548A::CH7);
 
 Degrees degrees(DEGREES_INT, &io);
 
-TouchChannel channelA(0, &timer, &ticker, GATE_OUT_A, TOUCH_INT_A, IO_INT_PIN_A, ADC_A, &touchA, &ioA, &degrees, &midi, &dac1, DAC8554::CHAN_A);
-TouchChannel channelB(0, &timer, &ticker, GATE_OUT_B, TOUCH_INT_B, IO_INT_PIN_B, ADC_B, &touchB, &ioB, &degrees, &midi, &dac1, DAC8554::CHAN_B);
-TouchChannel channelC(0, &timer, &ticker, GATE_OUT_C, TOUCH_INT_C, IO_INT_PIN_C, ADC_C, &touchC, &ioC, &degrees, &midi, &dac1, DAC8554::CHAN_C);
-TouchChannel channelD(0, &timer, &ticker, GATE_OUT_D, TOUCH_INT_D, IO_INT_PIN_D, ADC_D, &touchD, &ioD, &degrees, &midi, &dac1, DAC8554::CHAN_D);
+TouchChannel channelA(0, &timer, &ticker, GATE_OUT_A, TOUCH_INT_A, IO_INT_PIN_A, ADC_A, PB_ADC_A, &touchA, &ioA, &degrees, &midi, &dac1, DAC8554::CHAN_A, &digiPot, AD525X::CHAN_A);
+TouchChannel channelB(0, &timer, &ticker, GATE_OUT_B, TOUCH_INT_B, IO_INT_PIN_B, ADC_B, PB_ADC_B, &touchB, &ioB, &degrees, &midi, &dac1, DAC8554::CHAN_B, &digiPot, AD525X::CHAN_B);
+TouchChannel channelC(0, &timer, &ticker, GATE_OUT_C, TOUCH_INT_C, IO_INT_PIN_C, ADC_C, PB_ADC_C, &touchC, &ioC, &degrees, &midi, &dac1, DAC8554::CHAN_C, &digiPot, AD525X::CHAN_C);
+TouchChannel channelD(0, &timer, &ticker, GATE_OUT_D, TOUCH_INT_D, IO_INT_PIN_D, ADC_D, PB_ADC_D, &touchD, &ioD, &degrees, &midi, &dac1, DAC8554::CHAN_D, &digiPot, AD525X::CHAN_D);
 
 GlobalControl globalCTRL(&touchCTRL1, &touchCTRL2, &touchOctAB, &touchOctCD, TOUCH_INT_CTRL_1, TOUCH_INT_CTRL_2, TOUCH_INT_OCT_AB, TOUCH_INT_OCT_CD, REC_LED, &channelA, &channelB, &channelC, &channelD);
 
@@ -113,9 +114,9 @@ int main() {
     degrees.poll();
     
     channelA.poll();
-    channelB.poll();
-    channelC.poll();
-    channelD.poll();
+    // channelB.poll();
+    // channelC.poll();
+    // channelD.poll();
 
 
     // if (globalCTRL.mode == GlobalControl::CALIBRATING) {
