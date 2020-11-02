@@ -623,15 +623,15 @@ int TouchChannel::calculateDACNoteValue(int index, int octave)
   currPitchBend = pbInput.read_u16();
   if (currPitchBend > pbZero + pbDebounce || currPitchBend < pbZero - pbDebounce)
   {
+    float x = dacSemitone * pbRange;
+    int y;
     if (currPitchBend > pbZero) {
-      float c = dacSemitone * pbRange;
-      int y = pbMax - pbZero;
-      float x = c / y;
-      pbOffset = x * (currPitchBend - pbZero);
-      // pbOffset = ((dacSemitone * pbRange) / (pbMax - pbZero)) * currPitchBend;
+      y = pbMax - pbZero;
+      pbOffset = ((x / y) * (currPitchBend - pbZero)) * -1;
     }
     else {
-      pbOffset = ((dacSemitone * pbRange) / (pbZero - pbMin)) * currPitchBend;
+      y = pbMin - pbZero;
+      pbOffset = (x / y) * (currPitchBend - pbZero);
     }
   }
   
@@ -685,7 +685,7 @@ void TouchChannel::calibratePitchBend() {
   // find min/max value from calibration results
   int max = arr_max(pbCalibration, PB_CALIBRATION_RANGE);
   int min = arr_min(pbCalibration, PB_CALIBRATION_RANGE);
-  pbDebounce = (max - min + 100) / 2;
+  pbDebounce = max - min;
 
   // zero the sensor
   pbZero = arr_average(pbCalibration, PB_CALIBRATION_RANGE);
