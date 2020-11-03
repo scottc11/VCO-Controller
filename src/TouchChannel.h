@@ -85,8 +85,10 @@ class TouchChannel : public EventLoop {
     Ticker *ticker;                 // for handling time based callbacks
     MIDI *midi;                     // pointer to mbed midi instance
     CAP1208 *touch;                 // i2c touch IC
-    DAC8554 *dac;                   // pointer to dual channel digital-analog-converter
+    DAC8554 *dac;                   // pointer to 1vo DAC
     DAC8554::Channels dacChannel;   // which dac to address
+    DAC8554 *pb_dac;                // pointer to Pitch Bends DAC
+    DAC8554::Channels pb_dac_chan;  // which dac to address
     SX1509 *io;                     // IO Expander
     AD525X *digiPot;                // digipot for pitch bend calibration
     AD525X::Channels digiPotChan;   // which channel to use for the digipot
@@ -113,13 +115,15 @@ class TouchChannel : public EventLoop {
 
     int currPitchBend;                       // 16 bit value (0..65,536)
     int prevPitchBend;                       // 16 bit value (0..65,536)
-    int pbRange = 2;                         // minimum of 1 semitone, maximum of 12 semitones (1 octave)
-    int pbOffset;                            // the amount of pitch bend to apply to the DAC output
+    int pbNoteOffsetRange = 2;               // minimum of 1 semitone, maximum of 12 semitones (1 octave)
+    int pbOutputRange = 8;                   // +- 8.1v range (min 1, max 8)
+    int pbNoteOffset;                        // the amount of pitch bend to apply to the 1v/o DAC output
+    int pbOutput;                            // the amount of pitch bend to apply Pitch Bend DAC
     int pbCalibration[PB_CALIBRATION_RANGE]; // an array which gets populated during initialization phase to determine a debounce value + zeroing
-    uint16_t pbZero;                         // the average ADC value when pitch bend not being touched / is idle
+    uint16_t pbZero;                         // the average ADC value when pitch bend is idle
     uint16_t pbMax;                          // the minimum value the ADC can achieve when Pitch Bend fully pulled
     uint16_t pbMin;                          // the maximum value the ADC can achieve when Pitch Bend fully pressed
-    int pbDebounce;
+    int pbDebounce;                          // for debouncing the ADC when Pitch Bend is idle
     
 
     float dacSemitone = 938.0;               // must be a float, as it gets divided down to a num between 0..1
@@ -169,7 +173,6 @@ class TouchChannel : public EventLoop {
     volatile bool readyToCalibrate;      // flag telling polling loop when enough freq average samples have been taken to accurately calibrate
     volatile int freqSampleIndex = 0;        // incrementing value to place current frequency sample into array
     volatile float freqSamples[MAX_FREQ_SAMPLES]; // array of frequency samples for obtaining the running average of the VCO
-    
 
     TouchChannel(
         int _channel,
@@ -186,10 +189,12 @@ class TouchChannel : public EventLoop {
         MIDI *midi_p,
         DAC8554 *dac_ptr,
         DAC8554::Channels _dacChannel,
+        DAC8554 *pb_dac_ptr,
+        DAC8554::Channels pb_dac_channel,
         AD525X *digiPot_ptr,
-        AD525X::Channels _digiPotChannel
-      ) : gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), ioInterupt(ioIntPin, PullUp), cvInput(cvInputPin), pbInput(pbInputPin) {
-      
+        AD525X::Channels _digiPotChannel) : gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), ioInterupt(ioIntPin, PullUp), cvInput(cvInputPin), pbInput(pbInputPin)
+    {
+
       timer = timer_ptr;
       ticker = ticker_ptr;
       touch = touch_ptr;
@@ -197,6 +202,8 @@ class TouchChannel : public EventLoop {
       degrees = degrees_ptr;
       dac = dac_ptr;
       dacChannel = _dacChannel;
+      pb_dac = pb_dac_ptr;
+      pb_dac_chan = pb_dac_channel;
       digiPot = digiPot_ptr;
       digiPotChan = _digiPotChannel;
       midi = midi_p;
@@ -223,6 +230,8 @@ class TouchChannel : public EventLoop {
     void updateLoopMultiplierLeds();
     void updateActiveDegreeLeds();
     void updateLeds(uint8_t touched);  // could be obsolete
+
+    void updatePitchBendDAC(uint16_t value);
 
     void handleTouch();
     void handleDegreeChange();

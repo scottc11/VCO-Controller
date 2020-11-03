@@ -17,7 +17,9 @@ void TouchChannel::init() {
   touch->clearInterupt();
   dac->init();
 
+  pb_dac->init();
   calibratePitchBend();
+  updatePitchBendDAC(0);
 
   // intialize inheritance variables
   numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
@@ -623,21 +625,22 @@ int TouchChannel::calculateDACNoteValue(int index, int octave)
   currPitchBend = pbInput.read_u16();
   if (currPitchBend > pbZero + pbDebounce || currPitchBend < pbZero - pbDebounce)
   {
-    float x = dacSemitone * pbRange;
-    int y;
-    if (currPitchBend > pbZero) {
-      y = pbMax - pbZero;
-      pbOffset = ((x / y) * (currPitchBend - pbZero)) * -1;
+    float voOutputRange = dacSemitone * pbNoteOffsetRange;
+    float rawOutputRange = (32767 / 8) * pbOutputRange;
+    if (currPitchBend > pbZero && currPitchBend < pbMax) {
+      pbNoteOffset = ((voOutputRange / (pbMax - pbZero)) * (currPitchBend - pbZero)) * 1; // non-inverted
+      pbOutput = ((rawOutputRange / (pbMax - pbZero)) * (currPitchBend - pbZero)) * -1;   // inverted
+      updatePitchBendDAC(pbOutput);
     }
-    else {
-      y = pbMin - pbZero;
-      pbOffset = (x / y) * (currPitchBend - pbZero);
+    else if (currPitchBend < pbZero && currPitchBend > pbMin)
+    {
+      pbNoteOffset = ((voOutputRange / (pbMin - pbZero)) * (currPitchBend - pbZero)) * -1;  // inverted
+      pbOutput = ((rawOutputRange / (pbMin - pbZero)) * (currPitchBend - pbZero)) * 1;    // non-inverted
+      updatePitchBendDAC(pbOutput);
     }
   }
   
-
-  //                  [ note index + octave (0..31) ]     [ switch state (0..2) ]
-  return dacVoltageMap[ index + DAC_OCTAVE_MAP[octave] ][ degrees->switchStates[index] ] + pbOffset;
+  return dacVoltageMap[ index + DAC_OCTAVE_MAP[octave] ][ degrees->switchStates[index] ] + pbNoteOffset;
 }
 
 int TouchChannel::calculateMIDINoteValue(int index, int octave) {
@@ -672,8 +675,14 @@ void TouchChannel::reset() {
 void TouchChannel::calibratePitchBend() {
 
   // apply op-amp gain via digi pot
-  digiPot->setWiper(digiPotChan, 255); // max gain
+  digiPot->setWiper(digiPotChan, 200); // max gain
   wait_us(1000); // wait for things to settle
+
+  // NOTE: this calibration process is currently flawed, because in the off chance there is an erratic
+  // sensor ready in the positive or negative direction, the min / max values used to determine the debounce 
+  // value would be to far apart, giving a poor debounce. Additionally, pbZero would also not be very accurate due to these
+  // reading. I actually think some DSP smoothing is necessary here, to remove the "noise". Or perhaps just adding debounce caps
+  // on the hardware will help this problem.
 
   // populate calibration array
   for (int i = 0; i < PB_CALIBRATION_RANGE; i++)
@@ -685,13 +694,20 @@ void TouchChannel::calibratePitchBend() {
   // find min/max value from calibration results
   int max = arr_max(pbCalibration, PB_CALIBRATION_RANGE);
   int min = arr_min(pbCalibration, PB_CALIBRATION_RANGE);
-  pbDebounce = max - min;
+  pbDebounce = (max - min) / 2;
 
   // zero the sensor
   pbZero = arr_average(pbCalibration, PB_CALIBRATION_RANGE);
 
+  int minMaxOffset = 20000;
+  pbMax = pbZero + minMaxOffset < 65000 ? pbZero + minMaxOffset : 65000;
+  pbMin = pbZero - minMaxOffset < 500 ? pbZero - minMaxOffset: 500;
+
+}
 
 
-  pbMax = pbZero + 10000;
-  pbMin = pbZero - 10000;
+void TouchChannel::updatePitchBendDAC(uint16_t value) {
+  // need to invert this somehow
+  int zero = 32767;
+  pb_dac->write(pb_dac_chan, zero + value);
 }
