@@ -2,6 +2,7 @@
 #define __MAIN_H
 
 #include <mbed.h>
+#include <arm_math.h> // ARM DSP functions
 
 #define PPQN                 96
 
@@ -84,7 +85,7 @@
 #define MAX_CALIB_ATTEMPTS          20
 #define MAX_FREQ_SAMPLES            25    // how many frequency calculations we want to use to obtain our average frequency prediction of the input. The higher the number, the more accurate the result
 #define VCO_SAMPLE_RATE_US          125     // 8000hz is equal to 125us (microseconds)
-#define VCO_ZERO_CROSSING           32767   // ADC range is 0v - 3.3v, so the midpoint of the sine wave should be 1.65v (ie. 65535 / 2 32767)
+#define VCO_ZERO_CROSSING           60000   // ADC range is 0v - 3.3v, so the midpoint of the sine wave should be 1.65v (ie. 65535 / 2 32767)
 #define VCO_ZERO_CROSS_THRESHOLD    500     // for handling hysterisis at zero crossing point
 
 // 83.333, 166.666, 249.999, 333.332, 416.66499999999996, 499.99799999999993, 583.3309999999999, 666.6639999999999, 749.9969999999998, 833.3299999999998, 916.6629999999998, 999.9959999999998

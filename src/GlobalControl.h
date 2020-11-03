@@ -101,11 +101,12 @@ private:
     RESET = 91,       // 0b10000000
     FREEZE = 92,      // 0b01000000
     LOOP_LENGTH = 93, // 0b00000001
+    CALIBRATE = 3,    
     RECORD = 5,      // 0b00000010
-    CTRL_A = 94,     // 0b00100000
-    CTRL_B = 95,     // 0b00010000
-    CTRL_C = 96,      // 0b00001000
-    CTRL_D = 97,      // 0b00000100
+    CTRL_A = 12,     // 0b00100000
+    CTRL_B = 13,     // 0b00010000
+    CTRL_C = 14,      // 0b00001000
+    CTRL_D = 15,      // 0b00000100
   };
 
   enum Gestures {
@@ -114,7 +115,6 @@ private:
     RESET_LOOP_B = 0b10010000,      // CHANNEL + RESET
     RESET_LOOP_C = 0b10001000,      // CHANNEL + RESET
     RESET_LOOP_D = 0b10000100,      // CHANNEL + RESET
-    CALIBRATE  = 0b11000010,      // REC + RESET + FREEZE
     CLEAR_CH_A_LOOP = 0b10100010,
     CLEAR_CH_B_LOOP = 0b10010010,
     CLEAR_CH_C_LOOP = 0b10001010,

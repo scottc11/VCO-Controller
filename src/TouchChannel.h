@@ -165,9 +165,10 @@ class TouchChannel : public EventLoop {
     volatile float vcoFreqAvrg;                   // the running average of frequency calculations
     volatile float vcoPeriod;
     volatile int numSamplesTaken;                 // How many times we have sampled the zero crossing (used in frequency calculation formula)
+    float initialFrequencyIndex;                 // before calibration, sample the oscillator frequency then find the nearest value in PITCH_FREQ array (to start with / root note)
     int calNoteIndex;                    // 0..31 --> when calibrating, increment this value to step each voltage representation of a semi-tone via dacVoltageValues[]
     int calLedIndex;                     //
-    bool overshoot;                      // a flag to determine if the new voltage adjustment overshot/uncershot the target frequency
+    bool overshoot;                      // a flag to determine if the new voltage adjustment overshot/undershot the target frequency
     int calibrationAttemps;              // when this num exceeds MAX_CALIB_ATTEMPTS, accept your failure and move on.
     bool calibrationFinished;            // flag to tell program when calibration process is finished
     volatile bool readyToCalibrate;      // flag telling polling loop when enough freq average samples have been taken to accurately calibrate

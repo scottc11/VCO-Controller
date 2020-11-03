@@ -105,35 +105,25 @@ int main() {
 
   globalCTRL.init();
 
-
   extClockInput.rise(&extTick);
 
   while(1) {
 
-    metronome.poll();
-    globalCTRL.poll();
-    degrees.poll();
-    
-    channelA.poll();
-    channelB.poll();
-    channelC.poll();
-    channelD.poll();
-
-
-    // if (globalCTRL.mode == GlobalControl::CALIBRATING) {
-    //   if (!channelA.calibrationFinished) {
-    //     channelA.calibrateVCO();
-    //   } else {
-    //     globalCTRL.mode = GlobalControl::DEFAULT;
-    //   }
-    // } else {
-    //   degrees.poll();
-    //   channelA.poll();
-    //   channelB.poll();
-    //   channelC.poll();
-    //   channelD.poll();
-      
-    // }
+    if (globalCTRL.mode == GlobalControl::CALIBRATING) {
+      if (!globalCTRL.channels[globalCTRL.selectedChannel]->calibrationFinished) {
+        globalCTRL.channels[globalCTRL.selectedChannel]->calibrateVCO();
+      } else {
+        globalCTRL.mode = GlobalControl::DEFAULT;
+      }
+    } else {
+      metronome.poll();
+      globalCTRL.poll();
+      degrees.poll();
+      channelA.poll();
+      channelB.poll();
+      channelC.poll();
+      channelD.poll();
+    }
     
     
   }

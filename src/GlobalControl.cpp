@@ -158,6 +158,9 @@ void GlobalControl::handleTouch(int pad) {
     case RESET:
       channels[selectedChannel]->clearLoop();
       break;
+    case CALIBRATE:
+      timer.start();
+      break;
     case LOOP_LENGTH:
       channels[0]->enableLoopLengthUI();
       channels[1]->enableLoopLengthUI();
@@ -182,7 +185,6 @@ void GlobalControl::handleTouch(int pad) {
       }
       break;
     case CTRL_A:
-      timer.start();
       selectChannel(0);
       break;
     case CTRL_B:
@@ -247,8 +249,6 @@ bool GlobalControl::handleGesture() {
     case RESET_LOOP_D:
       channels[3]->reset();
       return true;
-    case CALIBRATE:
-      return true;
     case CLEAR_CH_A_LOOP:
       return true;
     case CLEAR_CH_B_LOOP:
@@ -289,5 +289,5 @@ void GlobalControl::handleClockReset() {
 
 void GlobalControl::calibrateChannel(int chan) {
   this->mode = Mode::CALIBRATING;
-  channels[0]->enableCalibrationMode();
+  channels[chan]->enableCalibrationMode();
 }
