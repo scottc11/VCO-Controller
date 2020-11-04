@@ -1,6 +1,6 @@
 {
   "target_overrides": {
-    "NUCLEO_F401RE": {
+    "NUCLEO_F446RE": {
       "target.clock_source": "USE_PLL_HSE_XTAL",
       "target.lse_available": 0,
       "target.stdio_uart_tx": "PA_2",
