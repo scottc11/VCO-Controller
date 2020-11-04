@@ -27,11 +27,13 @@ public:
   InterruptIn ctrl2Interupt;
   InterruptIn octaveInteruptAB;
   InterruptIn octaveInteruptCD;
+  FlashIAP flash;
+  uint32_t flashAddr = 0x08060000;   // should be 'sector 7', program memory address starts @ 0x08000000
 
   Mode mode;
-  bool recordEnabled;           // used for toggling REC led among other things...
+  bool recordEnabled;                // used for toggling REC led among other things...
   int selectedChannel;
-  int currTouchedChannel;       // ???
+  int currTouchedChannel;            // ???
   uint16_t currTouched;              // variable for holding the currently touched buttons. It is a combination of two 8-bit values from two CAP1208 ICs
   uint16_t prevTouched;              // variable for holding previously touched buttons
   uint16_t currOctavesTouched;
@@ -54,7 +56,6 @@ public:
       TouchChannel *chanC_ptr,
       TouchChannel *chanD_ptr) : ctrl1Interupt(ctrl1_int, PullUp), ctrl2Interupt(ctrl2_int, PullUp), octaveInteruptAB(oct_int_ab), octaveInteruptCD(oct_int_cd), rec_led(recLedPin)
   {
-
     mode = Mode::DEFAULT;
     touchCtrl1 = ctrl1_ptr;
     touchCtrl2 = ctrl2_ptr;
@@ -76,6 +77,9 @@ public:
   void selectChannel(int channel);
   void clearAllChannelEvents();
   void calibrateChannel(int chan);
+  void saveCalibrationToFlash(bool reset=false);
+  void loadCalibrationDataFromFlash();
+
   void handleFreeze(bool enable);
   void handleClockReset();
   void enableLoopLengthUI();

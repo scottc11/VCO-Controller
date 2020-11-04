@@ -32,7 +32,7 @@ void TouchChannel::disableCalibrationMode() {
   calibrationFinished = true;
   this->setMode(MONO);
 
-  // disable ticker?
+  ticker->detach(); // disable ticker
 }
 
 void saveCalibrationToFlash() {

@@ -85,7 +85,7 @@
 #define MAX_CALIB_ATTEMPTS          20
 #define MAX_FREQ_SAMPLES            25    // how many frequency calculations we want to use to obtain our average frequency prediction of the input. The higher the number, the more accurate the result
 #define VCO_SAMPLE_RATE_US          125     // 8000hz is equal to 125us (microseconds)
-#define VCO_ZERO_CROSSING           60000   // ADC range is 0v - 3.3v, so the midpoint of the sine wave should be 1.65v (ie. 65535 / 2 32767)
+#define VCO_ZERO_CROSSING           60000   // The zero crossing is erelivant as the pre-opamp ADC is not bi-polar. Any value close to the ADC ceiling seems to work
 #define VCO_ZERO_CROSS_THRESHOLD    500     // for handling hysterisis at zero crossing point
 
 // 83.333, 166.666, 249.999, 333.332, 416.66499999999996, 499.99799999999993, 583.3309999999999, 666.6639999999999, 749.9969999999998, 833.3299999999998, 916.6629999999998, 999.9959999999998
@@ -155,7 +155,7 @@ const int MIDI_NOTE_MAP[8][3] = {
 const int DAC_OCTAVE_MAP[4] = { 0, 8, 16, 24 };
 const int MIDI_OCTAVE_MAP[4] = { 36, 48, 60, 72 };
 
-#define CALIBRATION_LENGTH   60
+#define CALIBRATION_LENGTH   64
 
 const int CALIBRATION_LED_MAP[CALIBRATION_LENGTH] = {
   0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7,
@@ -163,6 +163,7 @@ const int CALIBRATION_LED_MAP[CALIBRATION_LENGTH] = {
   0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7,
   0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7,
   0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7,
+  0, 1, 2, 4
 };
 
 const int DAC_VOLTAGE_VALUES[CALIBRATION_LENGTH] = {
@@ -171,7 +172,8 @@ const int DAC_VOLTAGE_VALUES[CALIBRATION_LENGTH] = {
   16890, 17828, 18767,  19705, 20643, 21582, 22520, 23458, 24397, 25335, 26274, 27212,
   28150, 29089, 30027,  30965, 31904, 32842, 33780, 34719, 35657, 36596, 37534, 38472,
   39411, 40349, 41287,  42226, 43164, 44102, 45041, 45979, 46917, 47856, 48794, 49733,
-  50671, 51609, 52548,  53486, 54424, 55363, 56301, 57239, 58178, 59116, 60054, 60993
+  50671, 51609, 52548,  53486, 54424, 55363, 56301, 57239, 58178, 59116, 60054, 60993,
+  61931, 62870, 63808, 64746
 };
 
 #endif

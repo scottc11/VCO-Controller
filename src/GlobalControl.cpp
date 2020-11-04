@@ -291,3 +291,43 @@ void GlobalControl::calibrateChannel(int chan) {
   this->mode = Mode::CALIBRATING;
   channels[chan]->enableCalibrationMode();
 }
+
+/**
+ * every time we calibrate a channel, we need to save all 4 channels data due to the fact 
+ * that we must delete/clear an entire sector of data first.
+*/ 
+void GlobalControl::saveCalibrationToFlash(bool reset /* false */)
+{
+  
+  char16_t buffer[CALIBRATION_LENGTH * 4]; // create array of 16 bit chars to hold ALL 4 channels data
+
+  for (int chan = 0; chan < 4; chan++) {                                                   // iterate through each channel
+    for (int i = 0; i < CALIBRATION_LENGTH; i++)
+    {
+      int index = i + CALIBRATION_LENGTH * chan;                                           // determine falshData index position based on channel
+      buffer[index] = reset ? DAC_VOLTAGE_VALUES[i] : channels[chan]->dacVoltageValues[i]; // either reset values to default, or using existing values saved to class
+    }
+  }
+  
+  flash.init();
+  flash.erase(flashAddr, flash.get_sector_size(flashAddr));     // must erase all data before a write
+  flash.program(buffer, flashAddr, 512);                        // number of bytes = CALIBRATION_LENGTH * number of channels * 16 bits / 8 bits
+  flash.deinit();
+}
+
+void GlobalControl::loadCalibrationDataFromFlash() {
+  volatile uint16_t buffer[CALIBRATION_LENGTH * 4];
+
+  flash.init();
+  flash.read((void *)buffer, flashAddr, 512);
+  flash.deinit();
+  for (int chan = 0; chan < 4; chan++) {
+    for (int i = 0; i < CALIBRATION_LENGTH; i++)
+    {
+      int index = i + CALIBRATION_LENGTH * chan; // determine falshData index position based on channel
+      channels[chan]->dacVoltageValues[i] = buffer[index];
+    }
+    channels[chan]->generateDacVoltageMap(); // must call this to map, once again, the above values to the 2 dimensional array
+  }
+
+}

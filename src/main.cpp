@@ -11,9 +11,6 @@
 #include "AD525X.h"
 #include "SX1509.h"
 
-// read 08040000
-
-FlashIAP flashStorage; // start address should equal 0x08060000 (ie. ADDR_FLASH_SECTOR_7)
 
 int OCTAVE_LED_PINS_A[4] = { 0, 1, 2, 3 };     // via TLC59116
 int OCTAVE_LED_PINS_B[4] = { 4, 5, 6, 7 };     // via TLC59116
@@ -104,6 +101,7 @@ int main() {
   channelD.init();
 
   globalCTRL.init();
+  globalCTRL.loadCalibrationDataFromFlash();
 
   extClockInput.rise(&extTick);
 
@@ -113,6 +111,7 @@ int main() {
       if (!globalCTRL.channels[globalCTRL.selectedChannel]->calibrationFinished) {
         globalCTRL.channels[globalCTRL.selectedChannel]->calibrateVCO();
       } else {
+        globalCTRL.saveCalibrationToFlash();
         globalCTRL.mode = GlobalControl::DEFAULT;
       }
     } else {
