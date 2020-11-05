@@ -70,6 +70,7 @@ void GlobalControl::handleTouchEvent() {
     for (int i=0; i<16; i++) {
       if (touchCtrl1->padIsTouched(i, currTouched, prevTouched)) {
         handleTouch(i);
+        // may be able to break here
       }
       if (touchCtrl1->padWasTouched(i, currTouched, prevTouched)) {
         handleRelease(i);
@@ -163,7 +164,6 @@ void GlobalControl::handleTouch(int pad) {
       handleFreeze(true);
       break;
     case RESET:
-      channels[selectedChannel]->clearLoop();
       break;
     case CALIBRATE:
       timer.start();
@@ -216,6 +216,10 @@ void GlobalControl::handleRelease(int pad) {
       break;
     case RESET:
       break;
+    case CALIBRATE:
+      timer.stop();
+      timer.reset();
+      break;
     case LOOP_LENGTH:
       channels[0]->disableLoopLengthUI();
       channels[1]->disableLoopLengthUI();
@@ -242,8 +246,6 @@ void GlobalControl::handleRelease(int pad) {
 
 bool GlobalControl::handleGesture() {
   switch (currTouched) {
-    case _FREEZE:
-      return true;
     case RESET_LOOP_A:
       channels[0]->reset();
       return true;
@@ -257,12 +259,16 @@ bool GlobalControl::handleGesture() {
       channels[3]->reset();
       return true;
     case CLEAR_CH_A_LOOP:
+      channels[0]->clearLoop();
       return true;
     case CLEAR_CH_B_LOOP:
+      channels[1]->clearLoop();
       return true;
     case CLEAR_CH_C_LOOP:
+      channels[2]->clearLoop();
       return true;
     case CLEAR_CH_D_LOOP:
+      channels[3]->clearLoop();
       return true;
     default:
       return false;

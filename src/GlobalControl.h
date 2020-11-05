@@ -108,27 +108,30 @@ public:
 private:
   enum PadNames
   {                  // integers correlate to 8-bit index position
-    RESET = 91,       // 0b10000000
-    FREEZE = 92,      // 0b01000000
-    LOOP_LENGTH = 93, // 0b00000001
-    CALIBRATE = 3,    
+    RESET = 9,      // 0b10000000
+    FREEZE = 10,     // 0b01000000
+    LOOP_LENGTH = 0, // 0b00000001
+    PB_RANGE = 1,
+    CALIBRATE = 3,
     RECORD = 5,      // 0b00000010
-    CTRL_A = 12,     // 0b00100000
-    CTRL_B = 13,     // 0b00010000
-    CTRL_C = 14,      // 0b00001000
-    CTRL_D = 15,      // 0b00000100
+    CLEAR_SEQ = 6,
+    CLEAR_BEND = 7,
+    CTRL_A = 12,     // 0b00010000
+    CTRL_B = 13,     // 0b00100000
+    CTRL_C = 14,     // 0b01000000
+    CTRL_D = 15,     // 0b10000000
   };
 
-  enum Gestures {
-    _FREEZE = 0b01000000,
-    RESET_LOOP_A = 0b10100000,      // CHANNEL + RESET
-    RESET_LOOP_B = 0b10010000,      // CHANNEL + RESET
-    RESET_LOOP_C = 0b10001000,      // CHANNEL + RESET
-    RESET_LOOP_D = 0b10000100,      // CHANNEL + RESET
-    CLEAR_CH_A_LOOP = 0b10100010,
-    CLEAR_CH_B_LOOP = 0b10010010,
-    CLEAR_CH_C_LOOP = 0b10001010,
-    CLEAR_CH_D_LOOP = 0b10000110,
+  enum Gestures
+  {
+    RESET_LOOP_A = 0b10100000, // CHANNEL + RESET
+    RESET_LOOP_B = 0b10010000, // CHANNEL + RESET
+    RESET_LOOP_C = 0b10001000, // CHANNEL + RESET
+    RESET_LOOP_D = 0b10000100, // CHANNEL + RESET
+    CLEAR_CH_A_LOOP = 0b0001000001000000,  // CLEAR_SEQ + CHANNEL
+    CLEAR_CH_B_LOOP = 0b0010000001000000,
+    CLEAR_CH_C_LOOP = 0b0100000001000000,
+    CLEAR_CH_D_LOOP = 0b1000000001000000,
   };
 };
 
