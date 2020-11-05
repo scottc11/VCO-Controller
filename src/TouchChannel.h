@@ -117,13 +117,14 @@ class TouchChannel : public EventLoop {
     int prevPitchBend;                       // 16 bit value (0..65,536)
     int pbNoteOffsetRange = 2;               // minimum of 1 semitone, maximum of 12 semitones (1 octave)
     int pbOutputRange = 8;                   // +- 8.1v range (min 1, max 8)
-    int pbNoteOffset;                        // the amount of pitch bend to apply to the 1v/o DAC output
+    int pbNoteOffset;                        // the amount of pitch bend to apply to the 1v/o DAC output. Can be positive/negative centered @ 0
     int pbOutput;                            // the amount of pitch bend to apply Pitch Bend DAC
     int pbCalibration[PB_CALIBRATION_RANGE]; // an array which gets populated during initialization phase to determine a debounce value + zeroing
     uint16_t pbZero;                         // the average ADC value when pitch bend is idle
     uint16_t pbMax;                          // the minimum value the ADC can achieve when Pitch Bend fully pulled
     uint16_t pbMin;                          // the maximum value the ADC can achieve when Pitch Bend fully pressed
     int pbDebounce;                          // for debouncing the ADC when Pitch Bend is idle
+    bool pbEnabled;                          // for toggleing on/off the pitch bend effect to JUST the 1vo output
     
 
     float dacSemitone = 938.0;               // must be a float, as it gets divided down to a num between 0..1

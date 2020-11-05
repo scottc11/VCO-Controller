@@ -109,11 +109,11 @@ void TouchChannel::calibrateVCO() {
         dacVoltageValues[dacIndex] = currVal;
       }
     }
-    // output new voltage and reset calibration process
-    dac->write(dacChannel, dacVoltageValues[dacIndex]);
-    wait_us(10000); // give time for new voltage to 'settle'
+
+    dac->write(dacChannel, dacVoltageValues[dacIndex]); // output new voltage and reset calibration process
+    wait_us(10000);                                     // give time for new voltage to 'settle'
     freqSampleIndex = 0;
-    readyToCalibrate = false;
+    readyToCalibrate = false;                           // flag telling interupt routine to start sampling again
     calibrationAttemps += 1;
   }
 }

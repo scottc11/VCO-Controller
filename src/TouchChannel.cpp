@@ -31,6 +31,8 @@ void TouchChannel::init() {
   setLoopTotalSteps();
   setLoopTotalPPQN();
 
+  toggleMode();
+
   // initialize default variables
   currNoteIndex = 0;
   currOctave = 0;
@@ -48,9 +50,12 @@ void TouchChannel::initIOExpander() {
   io->init();
   io->setBlinkFrequency(SX1509::FAST);
   io->pinMode(CHANNEL_IO_MODE_PIN, SX1509::INPUT, true);
-  io->enableInterupt(5, SX1509::RISING);
+  io->enableInterupt(CHANNEL_IO_MODE_PIN, SX1509::RISING);
+
   io->pinMode(CHANNEL_IO_TOGGLE_PIN_1, SX1509::INPUT);
   io->pinMode(CHANNEL_IO_TOGGLE_PIN_2, SX1509::INPUT);
+  io->enableInterupt(CHANNEL_IO_TOGGLE_PIN_1, SX1509::FALLING);
+  io->enableInterupt(CHANNEL_IO_TOGGLE_PIN_2, SX1509::FALLING);
 
   // initialize IO Led Driver pins
   for (int i = 0; i < 8; i++)
@@ -367,12 +372,24 @@ void TouchChannel::handleTouch() {
  * still needs to be written to handle 3-stage toggle switch.
 **/
 void TouchChannel::toggleMode() {
-  io->digitalRead(CHANNEL_IO_MODE_PIN);
-  if (mode == MONO || mode == MONO_LOOP) {
-    setMode(QUANTIZE);
-  } else {
-    setMode(MONO);
+  if (io->digitalRead(CHANNEL_IO_MODE_PIN) == HIGH) {
+    if (mode == MONO || mode == MONO_LOOP) {
+      setMode(QUANTIZE);
+    }
+    else {
+      setMode(MONO);
+    }
   }
+
+  switch (io->readBankA()) {
+    case 128:
+      pbEnabled = true;
+      break;
+    case 192:
+      pbEnabled = false;
+      break;
+  }
+
 }
 
 void TouchChannel::setMode(Mode targetMode) {
@@ -628,14 +645,14 @@ int TouchChannel::calculateDACNoteValue(int index, int octave)
     float voOutputRange = dacSemitone * pbNoteOffsetRange;
     float rawOutputRange = (32767 / 8) * pbOutputRange;
     if (currPitchBend > pbZero && currPitchBend < pbMax) {
-      pbNoteOffset = ((voOutputRange / (pbMax - pbZero)) * (currPitchBend - pbZero)) * 1; // non-inverted
-      pbOutput = ((rawOutputRange / (pbMax - pbZero)) * (currPitchBend - pbZero)) * -1;   // inverted
+      pbNoteOffset = pbEnabled ? ((voOutputRange / (pbMax - pbZero)) * (currPitchBend - pbZero)) * -1 : 0; // inverted
+      pbOutput = ((rawOutputRange / (pbMax - pbZero)) * (currPitchBend - pbZero)) * 1;                     // non-inverted
       updatePitchBendDAC(pbOutput);
     }
     else if (currPitchBend < pbZero && currPitchBend > pbMin)
     {
-      pbNoteOffset = ((voOutputRange / (pbMin - pbZero)) * (currPitchBend - pbZero)) * -1;  // inverted
-      pbOutput = ((rawOutputRange / (pbMin - pbZero)) * (currPitchBend - pbZero)) * 1;    // non-inverted
+      pbNoteOffset = pbEnabled ? ((voOutputRange / (pbMin - pbZero)) * (currPitchBend - pbZero)) * 1 : 0;  // non-inverted
+      pbOutput = ((rawOutputRange / (pbMin - pbZero)) * (currPitchBend - pbZero)) * -1;                    // inverted
       updatePitchBendDAC(pbOutput);
     }
   }
@@ -675,7 +692,7 @@ void TouchChannel::reset() {
 void TouchChannel::calibratePitchBend() {
 
   // apply op-amp gain via digi pot
-  digiPot->setWiper(digiPotChan, 200); // max gain
+  digiPot->setWiper(digiPotChan, 255); // max gain
   wait_us(1000); // wait for things to settle
 
   // NOTE: this calibration process is currently flawed, because in the off chance there is an erratic
@@ -694,12 +711,12 @@ void TouchChannel::calibratePitchBend() {
   // find min/max value from calibration results
   int max = arr_max(pbCalibration, PB_CALIBRATION_RANGE);
   int min = arr_min(pbCalibration, PB_CALIBRATION_RANGE);
-  pbDebounce = (max - min) / 2;
+  pbDebounce = (max - min);
 
   // zero the sensor
   pbZero = arr_average(pbCalibration, PB_CALIBRATION_RANGE);
 
-  int minMaxOffset = 20000;
+  int minMaxOffset = 10000;
   pbMax = pbZero + minMaxOffset < 65000 ? pbZero + minMaxOffset : 65000;
   pbMin = pbZero - minMaxOffset < 500 ? pbZero - minMaxOffset: 500;
 
@@ -707,7 +724,6 @@ void TouchChannel::calibratePitchBend() {
 
 
 void TouchChannel::updatePitchBendDAC(uint16_t value) {
-  // need to invert this somehow
   int zero = 32767;
   pb_dac->write(pb_dac_chan, zero + value);
 }
