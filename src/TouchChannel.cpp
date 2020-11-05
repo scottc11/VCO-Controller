@@ -61,13 +61,15 @@ void TouchChannel::initIOExpander() {
   for (int i = 0; i < 8; i++)
   {
     io->pinMode(chanLedPins[i], SX1509::ANALOG_OUTPUT);
-    io->setPWM(chanLedPins[i], 0);
+    io->setPWM(chanLedPins[i], 127);
+    io->digitalWrite(chanLedPins[i], 1);
   }
 
   for (int i = 0; i < 4; i++)
   {
     io->pinMode(octaveLedPins[i], SX1509::ANALOG_OUTPUT);
-    io->setPWM(octaveLedPins[i], 0);
+    io->setPWM(octaveLedPins[i], 255);
+    io->digitalWrite(chanLedPins[i], 1);
   }
 }
 
@@ -163,7 +165,7 @@ void TouchChannel::disableLoopLengthUI() {
     updateOctaveLeds(currOctave);
     triggerNote(currNoteIndex, currOctave, PREV);
   } else {
-    updateActiveDegreeLeds(); // TODO: additionally set active note to BLINK
+    updateActiveDegreeLeds(); // TODO: additionally set active note to BLINK_ON
   }
 }
 
@@ -172,9 +174,9 @@ void TouchChannel::updateLoopLengthUI() {
   updateLoopMultiplierLeds();
   for (int i = 0; i < numLoopSteps; i++) {
     if (i == currStep) {
-      setUILed(i, BLINK);
+      setLed(i, BLINK_ON, true);
     } else {
-      setUILed(i, HIGH);
+      setLed(i, HIGH, true);
     }
   }
 }
@@ -185,18 +187,18 @@ void TouchChannel::handleLoopLengthUI() {
     int modulo = currStep % numLoopSteps;
     
     if (modulo != 0) {           // setting the previous LED back to normal
-      setUILed(modulo - 1, HIGH);
+      setLed(modulo - 1, HIGH, true);
     } else {                     // when modulo rolls past 7 and back to 0
-      setUILed(numLoopSteps - 1, HIGH);
+      setLed(numLoopSteps - 1, HIGH, true);
     }
 
-    setUILed(modulo, BLINK);
+    setLed(modulo, BLINK_ON, true);
     
     for (int i = 0; i < loopMultiplier; i++) {
       if (currStep < (numLoopSteps * (i + 1)) && currStep >= (numLoopSteps * i)) {
-        setUIOctaveLed(i, BLINK);
+        setOctaveLed(i, BLINK_ON, true);
       } else {
-        setUIOctaveLed(i, HIGH);
+        setOctaveLed(i, HIGH, true);
       }
     }
   }
@@ -485,24 +487,10 @@ void TouchChannel::handleDegreeChange() {
 void TouchChannel::setAllLeds(int state) {
   switch (state) {
     case HIGH:
-      setLed(0, HIGH);
-      setLed(1, HIGH);
-      setLed(2, HIGH);
-      setLed(3, HIGH);
-      setLed(4, HIGH);
-      setLed(5, HIGH);
-      setLed(6, HIGH);
-      setLed(7, HIGH);
+      io->writeBankB(0x00);
       break;
     case LOW:
-      setLed(0, LOW);
-      setLed(1, LOW);
-      setLed(2, LOW);
-      setLed(3, LOW);
-      setLed(4, LOW);
-      setLed(5, LOW);
-      setLed(6, LOW);
-      setLed(7, LOW);
+      io->writeBankB(0xFF);
       break;
   }
 }
@@ -513,15 +501,20 @@ void TouchChannel::setLed(int index, LedState state, bool settingUILed /*false*/
     switch (state) {
       case LOW:
         ledStates &= ~(1 << index);
-        io->analogWrite(chanLedPins[index], 0);
+        io->setOnTime(chanLedPins[index], 0);
+        io->digitalWrite(chanLedPins[index], 1);
         break;
       case HIGH:
         ledStates |= 1 << index;
-        io->analogWrite(chanLedPins[index], 127);
+        io->setOnTime(chanLedPins[index], 0);
+        io->digitalWrite(chanLedPins[index], 0);
         break;
-      case BLINK:
+      case BLINK_ON:
         ledStates |= 1 << index;
-        io->blinkLED(chanLedPins[index], 1, 1, 127, 1);
+        io->blinkLED(chanLedPins[index], 1, 2, 127, 0);
+        break;
+      case BLINK_OFF:
+        io->setOnTime(chanLedPins[index], 0);
         break;
       case DIM:
         io->setPWM(chanLedPins[index], 10);
@@ -530,25 +523,20 @@ void TouchChannel::setLed(int index, LedState state, bool settingUILed /*false*/
   }
 }
 
-void TouchChannel::setUILed(int index, LedState state) {
-  setLed(index, state, true);
-}
-
-void TouchChannel::setUIOctaveLed(int index, LedState state) {
-  setOctaveLed(index, state, true);
-}
 
 void TouchChannel::setOctaveLed(int octave, LedState state, bool settingUILed /*false*/) {
   if (uiMode == DEFAULT_UI || settingUILed) {
     switch (state) {
       case LOW:
-        io->analogWrite(octaveLedPins[octave], 0);
+        io->setOnTime(octaveLedPins[octave], 0);     // reset any blinking state
+        io->digitalWrite(octaveLedPins[octave], 1);
         break;
       case HIGH:
-        io->analogWrite(octaveLedPins[octave], 255);
+        io->setOnTime(octaveLedPins[octave], 0);     // reset any blinking state
+        io->digitalWrite(octaveLedPins[octave], 0);
         break;
-      case BLINK:
-        io->analogWrite(octaveLedPins[octave], 70);
+      case BLINK_ON:
+        io->blinkLED(octaveLedPins[octave], 1, 1, 255, 0);
         break;
       case DIM:
         io->analogWrite(octaveLedPins[octave], 70);
@@ -587,10 +575,10 @@ void TouchChannel::updateOctaveLeds(int octave) {
 
 void TouchChannel::updateLoopMultiplierLeds() {
   for (int i = 0; i < 4; i++) {
-    if (i < loopMultiplier) {  // loopMultiplier is not zro indexed
-      setUIOctaveLed(i, HIGH);
+    if (i < loopMultiplier) {  // loopMultiplier is not zero indexed
+      setOctaveLed(i, HIGH, true);
     } else {
-      setUIOctaveLed(i, LOW);
+      setOctaveLed(i, LOW, true);
     }
   }
 }
@@ -600,14 +588,15 @@ void TouchChannel::updateLoopMultiplierLeds() {
  *        TRIGGER NOTE
 ---------------------------------------------------------------------------- */
  
-void TouchChannel::triggerNote(int index, int octave, NoteState state, bool dimLed /* false */) {
+void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blinkLED /* false */) {
   switch (state) {
     case ON:
       if (mode == MONO || mode == MONO_LOOP) {
         setLed(currNoteIndex, LOW);  // set the 'previous' active note led LOW
         setLed(index, HIGH);         // new active note HIGH
       }
-      if (dimLed) setLed(index, DIM);
+      if (blinkLED) setLed(index, BLINK_ON);
+      
       prevOctave = currOctave;       // the following two lines of code used to be outside the switch block
       prevNoteIndex = currNoteIndex;
       currNoteIndex = index;

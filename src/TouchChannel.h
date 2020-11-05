@@ -58,8 +58,9 @@ class TouchChannel : public EventLoop {
     {
       LOW = 0,
       HIGH = 1,
-      BLINK = 2,
-      DIM = 3
+      BLINK_ON = 2,
+      BLINK_OFF = 3,
+      DIM = 4
     };
 
     enum Mode {
@@ -225,8 +226,6 @@ class TouchChannel : public EventLoop {
     void initIOExpander();
     void setLed(int index, LedState state, bool settingUILed=false);
     void setOctaveLed(int octave, LedState state, bool settingUILed=false);
-    void setUILed(int index, LedState state);
-    void setUIOctaveLed(int index, LedState state);
     void setAllLeds(int state);
     void updateOctaveLeds(int octave);
     void updateLoopMultiplierLeds();
@@ -249,7 +248,7 @@ class TouchChannel : public EventLoop {
     int calculateDACNoteValue(int index, int octave);
 
     void setOctave(int value);
-    void triggerNote(int index, int octave, NoteState state, bool dimLed=false);
+    void triggerNote(int index, int octave, NoteState state, bool blinkLED=false);
     void freeze(bool enable);
     void reset();
 

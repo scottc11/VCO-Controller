@@ -19,9 +19,9 @@ void TouchChannel::initQuantizerMode() {
   this->activeDegrees = 0xFF;
   this->activeOctaves = 0xF;
   this->numActiveDegrees = DEGREE_COUNT;
-  this->numActiveOctaves = 3; // there is a bug requiring this to be set in initialization, even though it should be set when turning on the octave leds via setActiveOctaves fn
+  this->numActiveOctaves = 4; // there is a bug requiring this to be set in initialization, even though it should be set when turning on the octave leds via setActiveOctaves fn
 
-  this->setActiveOctaves(3);
+  this->setActiveOctaves(4);
 
   this->quantizerHasBeenInitialized = true;
 }
@@ -61,7 +61,7 @@ void TouchChannel::handleCVInput(int value) {
         if (bitRead(activeOctaves, prevOctave)) {
           this->setOctaveLed(prevOctave, LedState::HIGH);
         }
-        this->setOctaveLed(octave, LedState::DIM);
+        this->setOctaveLed(octave, LedState::BLINK_ON);
       }
       break;
     }
