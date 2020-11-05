@@ -15,10 +15,10 @@ void GlobalControl::init() {
 }
 
 void GlobalControl::tickChannels() {
-  // channels[0]->tickClock();
-  // channels[1]->tickClock();
-  // channels[2]->tickClock();
-  // channels[3]->tickClock();
+  channels[0]->tickClock();
+  channels[1]->tickClock();
+  channels[2]->tickClock();
+  channels[3]->tickClock();
 }
 
 

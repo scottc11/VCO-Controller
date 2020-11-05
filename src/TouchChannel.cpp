@@ -54,8 +54,8 @@ void TouchChannel::initIOExpander() {
 
   io->pinMode(CHANNEL_IO_TOGGLE_PIN_1, SX1509::INPUT);
   io->pinMode(CHANNEL_IO_TOGGLE_PIN_2, SX1509::INPUT);
-  io->enableInterupt(CHANNEL_IO_TOGGLE_PIN_1, SX1509::FALLING);
-  io->enableInterupt(CHANNEL_IO_TOGGLE_PIN_2, SX1509::FALLING);
+  io->enableInterupt(CHANNEL_IO_TOGGLE_PIN_1, SX1509::RISE_FALL);
+  io->enableInterupt(CHANNEL_IO_TOGGLE_PIN_2, SX1509::RISE_FALL);
 
   // initialize IO Led Driver pins
   for (int i = 0; i < 8; i++)
@@ -273,7 +273,7 @@ void TouchChannel::tickClock() {
   // when currTick exceeds PPQN, reset to 0
   if (currTick >= PPQN) {
     currTick = 0;
-    currStep += 1;
+    this->stepClock();
   }
   if (currPosition >= totalPPQN) {
     currPosition = 0;
@@ -282,10 +282,9 @@ void TouchChannel::tickClock() {
 }
 
 void TouchChannel::stepClock() {
-  currTick = 0;
   currStep += 1;
-  // when currStep eqauls number of steps in loop, reset currStep and currPosition to 0
-  if (currStep >= totalSteps) {
+
+  if (currStep >= totalSteps) {  // when currStep eqauls number of steps in loop, reset currStep and currPosition to 0
     currStep = 0;
   }
 }
@@ -380,12 +379,15 @@ void TouchChannel::toggleMode() {
       setMode(MONO);
     }
   }
-
-  switch (io->readBankA()) {
+  int state = io->readBankA();
+  switch (state) {
     case 128:
       pbEnabled = true;
       break;
     case 192:
+      pbEnabled = false;
+      break;
+    case 64:
       pbEnabled = false;
       break;
   }
