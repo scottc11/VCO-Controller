@@ -41,6 +41,11 @@ void Metronome::tick() {
   currTick += 1;
   position += 1;
 
+  // if a callback function exists, call it now
+  if (callbackFn) {
+    callbackFn();
+  }
+
   if (currTick > ticksPerStep) {
     this->step();
   }
@@ -57,7 +62,9 @@ void Metronome::step() {
   }
 }
 
-
+void Metronome::attachTickCallback(Callback<void()> func) {
+  callbackFn = func;
+}
 
 void Metronome::setNumberOfSteps(int num) {
   numSteps = num;

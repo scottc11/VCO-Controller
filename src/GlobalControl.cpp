@@ -1,17 +1,24 @@
 #include "GlobalControl.h"
 
 void GlobalControl::init() {
+
+  metronome->init();
+
+  metronome->attachTickCallback(callback(this, &GlobalControl::tickChannels));
+
   touchCtrl1->init();
   touchCtrl2->init();
   touchOctAB->init();
   touchOctCD->init();
 
-  if (!touchOctAB->isConnected()) {
-    // channels[2]->ctrlLed.write(HIGH);
-  }
+  selectChannel(0);  // select a default channel
+}
 
-  // channels[0]->ctrlLed.write(HIGH);
-  selectChannel(0);
+void GlobalControl::tickChannels() {
+  // channels[0]->tickClock();
+  // channels[1]->tickClock();
+  // channels[2]->tickClock();
+  // channels[3]->tickClock();
 }
 
 

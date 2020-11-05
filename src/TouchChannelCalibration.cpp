@@ -152,10 +152,11 @@ float TouchChannel::calculateAverageFreq() {
   return sum / (MAX_FREQ_SAMPLES - 1);
 }
 
-
 /**
  * CALLBACK executing at desired VCO_SAMPLE_RATE_US
-*/ 
+ * TODO: implement CircularBuffer -> https://os.mbed.com/docs/mbed-os/v5.14/apis/circularbuffer.html as it is "thread safe"
+ * 
+*/
 void TouchChannel::sampleVCOFrequency() {
   if (!readyToCalibrate) {
     currVCOInputVal = cvInput.read_u16();

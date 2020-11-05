@@ -21,7 +21,9 @@ public:
   DigitalOut tempoOutput;
   Ticker ticker; //
 
-  int tickInterval;       // how long, in microseconds, a tick lasts. 120bpm == 0.5s == 500000us (microseconds)
+  Callback<void()> callbackFn;  // copying how ticker class does it
+
+  int tickInterval;          // how long, in microseconds, a tick lasts. 120bpm == 0.5s == 500000us (microseconds)
   uint16_t newTempoPotValue; // Analog value rep. the position of the potentiometer
   uint16_t oldTempoPotValue; // Analog value rep. the position of the potentiometer
   uint8_t bpm;
@@ -34,7 +36,13 @@ public:
   uint32_t pulseDuration; // how long, in microseconds, the clock led will be lit
   uint32_t lastClock;     // time of the last clocked event
 
-  Metronome(PinName ledPin, PinName potPin, PinName clockOutPin, int ppqn, int defaultNumSteps) : tempoLed(ledPin), tempoPot(potPin), tempoOutput(clockOutPin)
+  Metronome(
+    PinName ledPin,
+    PinName potPin,
+    PinName clockOutPin,
+    int ppqn,
+    int defaultNumSteps
+    ) : tempoLed(ledPin), tempoPot(potPin), tempoOutput(clockOutPin)
   {
     ticksPerStep = ppqn;
     numSteps = defaultNumSteps;
@@ -54,6 +62,7 @@ public:
   void handleEncoder();
   void pollTempoPot();
   void updateTempo(int us);
+  void attachTickCallback(Callback<void()> func);
 };
 
 #endif

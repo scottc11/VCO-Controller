@@ -7,6 +7,7 @@
 #include "TouchChannel.h"
 #include "DualDigitDisplay.h"
 #include "RotaryEncoder.h"
+#include "Metronome.h"
 
 
 class GlobalControl {
@@ -16,6 +17,7 @@ public:
     CALIBRATING
   };
 
+  Metronome *metronome;
   CAP1208 *touchCtrl1;
   CAP1208 *touchCtrl2;
   CAP1208 *touchOctAB;
@@ -42,7 +44,8 @@ public:
   bool octaveTouchDetected;
 
   GlobalControl(
-      CAP1208 *ctrl1_ptr,
+      Metronome *metronome_ptr,
+      CAP1208 * ctrl1_ptr,
       CAP1208 *ctrl2_ptr,
       CAP1208 *tchAB_ptr,
       CAP1208 *tchCD_ptr,
@@ -57,6 +60,7 @@ public:
       TouchChannel *chanD_ptr) : ctrl1Interupt(ctrl1_int, PullUp), ctrl2Interupt(ctrl2_int, PullUp), octaveInteruptAB(oct_int_ab), octaveInteruptCD(oct_int_cd), rec_led(recLedPin)
   {
     mode = Mode::DEFAULT;
+    metronome = metronome_ptr;
     touchCtrl1 = ctrl1_ptr;
     touchCtrl2 = ctrl2_ptr;
     touchOctAB = tchAB_ptr;
@@ -90,6 +94,8 @@ public:
   void handleOctaveTouched();
   void setChannelOctave(int pad);
   void setChannelLoopMultiplier(int pad);
+
+  void tickChannels();
 
   void handleTouchInterupt() {
     touchDetected = true;
