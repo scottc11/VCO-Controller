@@ -69,7 +69,7 @@ void TouchChannel::initIOExpander() {
   {
     io->pinMode(octaveLedPins[i], SX1509::ANALOG_OUTPUT);
     io->setPWM(octaveLedPins[i], 255);
-    io->digitalWrite(chanLedPins[i], 1);
+    io->digitalWrite(octaveLedPins[i], 1);
   }
 }
 
@@ -381,19 +381,13 @@ void TouchChannel::toggleMode() {
       setMode(MONO);
     }
   }
-  int state = io->readBankA();
-  switch (state) {
-    case 128:
-      pbEnabled = true;
-      break;
-    case 192:
-      pbEnabled = false;
-      break;
-    case 64:
-      pbEnabled = false;
-      break;
+  uint8_t state = io->readBankA();
+  state = (state & 0b11000000) >> 6;
+  if (state == 2 || state == 3) {
+    pbEnabled = !pbEnabled;
+  } else {
+    pbEnabled = false;
   }
-
 }
 
 void TouchChannel::setMode(Mode targetMode) {
@@ -627,6 +621,9 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
   }
 }
 
+
+
+
 int TouchChannel::calculateDACNoteValue(int index, int octave)
 {
   // apply the pitch bend by mapping the ADC value to a value between PB Range value and the current note being outputted
@@ -654,6 +651,8 @@ int TouchChannel::calculateDACNoteValue(int index, int octave)
 int TouchChannel::calculateMIDINoteValue(int index, int octave) {
   return MIDI_NOTE_MAP[index][degrees->switchStates[index]] + MIDI_OCTAVE_MAP[octave];
 }
+
+
 
 
 /**
