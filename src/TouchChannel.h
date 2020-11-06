@@ -220,9 +220,6 @@ class TouchChannel : public EventLoop {
     void handleTouchInterupt() { touchDetected = true; }
     void handleIOInterupt() { modeChangeDetected = true; }
 
-    // Pitch Bend
-    void calibratePitchBend();
-
     void initIOExpander();
     void setLed(int index, LedState state, bool settingUILed=false);
     void setOctaveLed(int octave, LedState state, bool settingUILed=false);
@@ -231,8 +228,11 @@ class TouchChannel : public EventLoop {
     void updateLoopMultiplierLeds();
     void updateActiveDegreeLeds();
     void updateLeds(uint8_t touched);  // could be obsolete
-
+    
+    // Pitch Bend
+    void calibratePitchBend();
     void updatePitchBendDAC(uint16_t value);
+    void calculatePitchBend();
 
     void handleTouch();
     void handleDegreeChange();
