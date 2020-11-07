@@ -644,14 +644,17 @@ int TouchChannel::calculateDACNoteValue(int index, int octave)
 {
   calculatePitchBend();
   uint16_t offset;
-  
+  uint16_t cv;
+
   if (mode == MONO_LOOP || mode == QUANTIZE_LOOP) {   // IF LOOPER MODE APPLIED
-    offset = events[currPosition].pitchBend;          // retreive pbNoteOffset and pbOutput values from sequence struct array
+    offset = events[currPosition].pitchBend;          // retreive pbNoteOffset and cvOffset values from sequence struct array
+    cv = events[currPosition].cvOutput;
   } else {
     offset = pbNoteOffset;                            // business as usual
+    cv = cvOffset;
   }
 
-  updatePitchBendDAC(pbOutput);
+  updatePitchBendDAC(cv);
 
   return dacVoltageMap[ index + DAC_OCTAVE_MAP[octave] ][ degrees->switchStates[index] ] + offset;
 }
@@ -736,16 +739,19 @@ void TouchChannel::calculatePitchBend() {
     if (currPitchBend > pbZero && currPitchBend < pbMax)
     {
       pbNoteOffset = pbEnabled ? ((voOutputRange / (pbMax - pbZero)) * (currPitchBend - pbZero)) * -1 : 0; // inverted
-      pbOutput = ((rawOutputRange / (pbMax - pbZero)) * (currPitchBend - pbZero)) * 1;                     // non-inverted
+      cvOffset = ((rawOutputRange / (pbMax - pbZero)) * (currPitchBend - pbZero)) * 1;                     // non-inverted
     }
     else if (currPitchBend < pbZero && currPitchBend > pbMin)
     {
       pbNoteOffset = pbEnabled ? ((voOutputRange / (pbMin - pbZero)) * (currPitchBend - pbZero)) * 1 : 0; // non-inverted
-      pbOutput = ((rawOutputRange / (pbMin - pbZero)) * (currPitchBend - pbZero)) * -1;                   // inverted
+      cvOffset = ((rawOutputRange / (pbMin - pbZero)) * (currPitchBend - pbZero)) * -1;                   // inverted
     }
     
     // IF record is enabled, record ALL pitch bend values into the sequencer struct array
-    if (recordEnabled) { events[currPosition].pitchBend = pbNoteOffset; }
+    if (recordEnabled) {
+      events[currPosition].pitchBend = pbNoteOffset;
+      events[currPosition].cvOutput = cvOffset;
+    }
   }
 }
 

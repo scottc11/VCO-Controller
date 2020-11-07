@@ -99,6 +99,7 @@ class TouchChannel : public EventLoop {
     AnalogIn cvInput;               // CV input pin for quantizer mode
     AnalogIn pbInput;               // CV input for Pitch Bend
 
+    volatile bool tickerFlag;        // each time the clock gets ticked, this flag gets set to true - then false in polling loop
     volatile bool switchHasChanged;  // toggle switches interupt flag
     volatile bool touchDetected;
     volatile bool modeChangeDetected;
@@ -119,7 +120,7 @@ class TouchChannel : public EventLoop {
     int pbNoteOffsetRange = 2;               // minimum of 1 semitone, maximum of 12 semitones (1 octave)
     int pbOutputRange = 8;                   // +- 8.1v range (min 1, max 8)
     int pbNoteOffset;                        // the amount of pitch bend to apply to the 1v/o DAC output. Can be positive/negative centered @ 0
-    int pbOutput;                            // the amount of pitch bend to apply Pitch Bend DAC
+    int cvOffset;                            // the amount of Control Voltage to apply Pitch Bend DAC
     int pbCalibration[PB_CALIBRATION_RANGE]; // an array which gets populated during initialization phase to determine a debounce value + zeroing
     uint16_t pbZero;                         // the average ADC value when pitch bend is idle
     uint16_t pbMax;                          // the minimum value the ADC can achieve when Pitch Bend fully pulled
