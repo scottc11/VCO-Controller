@@ -700,24 +700,50 @@ void TouchChannel::calibratePitchBend() {
 
   // NOTE: this calibration process is currently flawed, because in the off chance there is an erratic
   // sensor ready in the positive or negative direction, the min / max values used to determine the debounce 
-  // value would be to far apart, giving a poor debounce. Additionally, pbZero would also not be very accurate due to these
-  // reading. I actually think some DSP smoothing is necessary here, to remove the "noise". Or perhaps just adding debounce caps
+  // value would be too far apart, giving a poor debounce value. Additionally, pbZero would also not be very accurate due to these
+  // readings. I actually think some DSP smoothing is necessary here, to remove the "noise". Or perhaps just adding debounce caps
   // on the hardware will help this problem.
+
+
+  
 
   // populate calibration array
   for (int i = 0; i < PB_CALIBRATION_RANGE; i++)
   {
     pbCalibration[i] = pbInput.read_u16();
-    wait_us(1000);
+    wait_us(100);
   }
+
+  // RUNNING-MEAN time series filter
+  // the start and end of the filtered signal is always going to look weird, and you will not want to include it in your final output
+  int filteredSignal[PB_CALIBRATION_RANGE];
+  int sampleWindow = 2; // how many samples to use both forwards and backwards in the array
+
+  for (int i = sampleWindow + 1; i < PB_CALIBRATION_RANGE - sampleWindow - 1; i++)
+  {
+    int sum = 0;
+    int mean = 0;
+    
+    for (int x = i - sampleWindow; x < i + sampleWindow; x++)  // calulate the mean of sample window
+    {
+      sum += pbCalibration[x];
+    }
+    
+    mean = sum / (sampleWindow * 2);
+
+    filteredSignal[i] = mean;
+  }
+
 
   // find min/max value from calibration results
   int max = arr_max(pbCalibration, PB_CALIBRATION_RANGE);
   int min = arr_min(pbCalibration, PB_CALIBRATION_RANGE);
+  // int max = arr_max(filteredSignal + sampleWindow + 1, PB_CALIBRATION_RANGE - (sampleWindow * 2) - 2);
+  // int min = arr_min(filteredSignal + sampleWindow + 1, PB_CALIBRATION_RANGE - (sampleWindow * 2) - 2);
   pbDebounce = (max - min);
 
   // zero the sensor
-  pbZero = arr_average(pbCalibration, PB_CALIBRATION_RANGE);
+  pbZero = arr_average(filteredSignal + sampleWindow + 1, PB_CALIBRATION_RANGE - (sampleWindow * 2) - 2); // use the mean filtered signal
 
   int minMaxOffset = 10000;
   pbMax = pbZero + minMaxOffset < 65000 ? pbZero + minMaxOffset : 65000;
@@ -730,7 +756,7 @@ void TouchChannel::calibratePitchBend() {
  * apply the pitch bend by mapping the ADC value to a value between PB Range value and the current note being outputted
 */
 void TouchChannel::calculatePitchBend() {
-  
+  prevPitchBend = currPitchBend;
   currPitchBend = pbInput.read_u16();
   if (currPitchBend > pbZero + pbDebounce || currPitchBend < pbZero - pbDebounce)
   {
@@ -746,12 +772,16 @@ void TouchChannel::calculatePitchBend() {
       pbNoteOffset = pbEnabled ? ((voOutputRange / (pbMin - pbZero)) * (currPitchBend - pbZero)) * 1 : 0; // non-inverted
       cvOffset = ((rawOutputRange / (pbMin - pbZero)) * (currPitchBend - pbZero)) * -1;                   // inverted
     }
-    
-    // IF record is enabled, record ALL pitch bend values into the sequencer struct array
-    if (recordEnabled) {
-      events[currPosition].pitchBend = pbNoteOffset;
-      events[currPosition].cvOutput = cvOffset;
-    }
+  } else {
+    pbNoteOffset = 0;
+    cvOffset = 0;
+  }
+  
+  // IF record is enabled, record ALL pitch bend values into the sequencer struct array
+  if (recordEnabled)
+  {
+    events[currPosition].pitchBend = pbNoteOffset;
+    events[currPosition].cvOutput = cvOffset;
   }
 }
 

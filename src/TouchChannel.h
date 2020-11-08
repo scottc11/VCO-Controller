@@ -19,7 +19,7 @@
 #define CHANNEL_IO_TOGGLE_PIN_1 6
 #define CHANNEL_IO_TOGGLE_PIN_2 7
 
-#define PB_CALIBRATION_RANGE 32
+#define PB_CALIBRATION_RANGE 64
 
 
 typedef struct QuantDegree {
@@ -115,6 +115,7 @@ class TouchChannel : public EventLoop {
     QuantDegree activeDegreeValues[8];    // array which holds noteIndex values and their associated DAC/1vo values
     QuantOctave activeOctaveValues[OCTAVE_COUNT];
 
+    // Pitch Bend
     int currPitchBend;                       // 16 bit value (0..65,536)
     int prevPitchBend;                       // 16 bit value (0..65,536)
     int pbNoteOffsetRange = 2;               // minimum of 1 semitone, maximum of 12 semitones (1 octave)
