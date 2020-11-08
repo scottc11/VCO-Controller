@@ -772,16 +772,15 @@ void TouchChannel::calculatePitchBend() {
       pbNoteOffset = pbEnabled ? ((voOutputRange / (pbMin - pbZero)) * (currPitchBend - pbZero)) * 1 : 0; // non-inverted
       cvOffset = ((rawOutputRange / (pbMin - pbZero)) * (currPitchBend - pbZero)) * -1;                   // inverted
     }
+
+    if (recordEnabled) // IF record is enabled, record ALL pitch bend values into the sequencer struct array
+    {
+      events[currPosition].pitchBend = pbNoteOffset;
+      events[currPosition].cvOutput = cvOffset;
+    }
   } else {
     pbNoteOffset = 0;
     cvOffset = 0;
-  }
-  
-  // IF record is enabled, record ALL pitch bend values into the sequencer struct array
-  if (recordEnabled)
-  {
-    events[currPosition].pitchBend = pbNoteOffset;
-    events[currPosition].cvOutput = cvOffset;
   }
 }
 
