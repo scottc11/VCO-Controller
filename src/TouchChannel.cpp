@@ -31,7 +31,7 @@ void TouchChannel::init() {
   setLoopTotalSteps();
   setLoopTotalPPQN();
 
-  toggleMode();
+  handleIOInterupt();
 
   // initialize default variables
   currNoteIndex = 0;
@@ -91,13 +91,13 @@ void TouchChannel::poll() {
     }
 
     if (touchDetected) {
-      handleTouch();
+      handleTouchInterupt();
       touchDetected = false;
     }
 
 
     if (modeChangeDetected) {
-      this->toggleMode();
+      this->handleIOInterupt();
       modeChangeDetected = false;
     }
 
@@ -183,7 +183,7 @@ void TouchChannel::disableLoopLengthUI() {
 }
 
 void TouchChannel::updateLoopLengthUI() {
-  setAllLeds(LOW);
+  setAllLeds(LOW); // reset
   updateLoopMultiplierLeds();
   for (int i = 0; i < numLoopSteps; i++) {
     if (i == currStep) {
@@ -320,7 +320,7 @@ void TouchChannel::resetClock() {
 
 // NOTE: you need a way to trigger events after a series of touches have happened, and the channel is now not being touched
 
-void TouchChannel::handleTouch() {
+void TouchChannel::handleTouchInterupt() {
   touched = touch->touched();
   if (touched != prevTouched) {
     for (int i=0; i<8; i++) {
@@ -388,7 +388,7 @@ void TouchChannel::handleTouch() {
  * 
  * still needs to be written to handle 3-stage toggle switch.
 **/
-void TouchChannel::toggleMode() {
+void TouchChannel::handleIOInterupt() {
   if (io->digitalRead(CHANNEL_IO_MODE_PIN) == HIGH) {
     if (mode == MONO || mode == MONO_LOOP) {
       setMode(QUANTIZE);
@@ -399,8 +399,8 @@ void TouchChannel::toggleMode() {
   }
   uint8_t state = io->readBankA();
   state = (state & 0b11000000) >> 6;
-  if (state == 2 || state == 3) {
-    pbEnabled = !pbEnabled;
+  if (state == 2) {
+    pbEnabled = true;
   } else {
     pbEnabled = false;
   }

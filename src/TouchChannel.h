@@ -214,15 +214,15 @@ class TouchChannel : public EventLoop {
       digiPot = digiPot_ptr;
       digiPotChan = _digiPotChannel;
       midi = midi_p;
-      touchInterupt.fall(callback(this, &TouchChannel::handleTouchInterupt));
-      ioInterupt.fall(callback(this, &TouchChannel::handleIOInterupt));
+      touchInterupt.fall(callback(this, &TouchChannel::touchInteruptFn));
+      ioInterupt.fall(callback(this, &TouchChannel::ioInteruptFn));
       channel = _channel;
     };
 
     void init();
     void poll();
-    void handleTouchInterupt() { touchDetected = true; }
-    void handleIOInterupt() { modeChangeDetected = true; }
+    void touchInteruptFn() { touchDetected = true; }
+    void ioInteruptFn() { modeChangeDetected = true; }
 
     void initIOExpander();
     void setLed(int index, LedState state, bool settingUILed=false);
@@ -238,9 +238,9 @@ class TouchChannel : public EventLoop {
     void updatePitchBendDAC(uint16_t value);
     void calculatePitchBend();
 
-    void handleTouch();
+    void handleTouchInterupt();
     void handleDegreeChange();
-    void toggleMode();
+    void handleIOInterupt();
     void setMode(Mode targetMode);
     
     void tickClock();
