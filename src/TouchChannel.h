@@ -60,7 +60,9 @@ class TouchChannel : public EventLoop {
       HIGH = 1,
       BLINK_ON = 2,
       BLINK_OFF = 3,
-      DIM = 4
+      DIM_LOW = 4,
+      DIM_MEDIUM = 5,
+      DIM_HIGH = 6
     };
 
     enum Mode {

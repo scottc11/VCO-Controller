@@ -269,9 +269,9 @@ void TouchChannel::disableLoopMode() {
   if (loopContainsEvents) {   // if a touch event was recorded, remain in loop mode
     return;
   } else {             // if no touch event recorded, revert to previous mode
+    recordEnabled = false;
     setMode(prevMode);
   }
-  recordEnabled = false;
 }
 
 /** ------------------------------------------------------------------------
@@ -414,6 +414,7 @@ void TouchChannel::setMode(Mode targetMode) {
       enableQuantizer = false;
       mode = MONO;
       setAllLeds(LOW);               // I think this is just a "start from a clean slate" kinda thing
+      setAllLeds(DIM_HIGH);
       updateOctaveLeds(currOctave);
       triggerNote(currNoteIndex, currOctave, ON);
       triggerNote(currNoteIndex, currOctave, OFF);
@@ -423,6 +424,7 @@ void TouchChannel::setMode(Mode targetMode) {
       enableQuantizer = false;
       mode = MONO_LOOP;
       setAllLeds(LOW);
+      setAllLeds(DIM_LOW);
       updateOctaveLeds(currOctave);
       triggerNote(currNoteIndex, currOctave, ON);
       triggerNote(currNoteIndex, currOctave, OFF);
@@ -433,6 +435,7 @@ void TouchChannel::setMode(Mode targetMode) {
       enableQuantizer = true;
       mode = QUANTIZE;
       setAllLeds(LOW);
+      setAllLeds(DIM_HIGH);
       updateActiveDegreeLeds();
       updateOctaveLeds(activeOctaves);
       triggerNote(currNoteIndex, currOctave, OFF);
@@ -442,6 +445,7 @@ void TouchChannel::setMode(Mode targetMode) {
       enableQuantizer = true;
       mode = QUANTIZE_LOOP;
       setAllLeds(LOW);
+      setAllLeds(DIM_LOW);
       updateActiveDegreeLeds();
       triggerNote(currNoteIndex, currOctave, OFF);
       break;
@@ -502,6 +506,15 @@ void TouchChannel::setAllLeds(int state) {
     case LOW:
       io->writeBankB(0xFF);
       break;
+    case DIM_LOW:
+      for (int i = 0; i < 8; i++) setLed(i, DIM_LOW);
+      break;
+    case DIM_MEDIUM:
+      for (int i = 0; i < 8; i++) setLed(i, DIM_MEDIUM);
+      break;
+    case DIM_HIGH:
+      for (int i = 0; i < 8; i++) setLed(i, DIM_HIGH);
+      break;
   }
 }
 
@@ -526,8 +539,14 @@ void TouchChannel::setLed(int index, LedState state, bool settingUILed /*false*/
       case BLINK_OFF:
         io->setOnTime(chanLedPins[index], 0);
         break;
-      case DIM:
+      case DIM_LOW:
         io->setPWM(chanLedPins[index], 10);
+        break;
+      case DIM_MEDIUM:
+        io->setPWM(chanLedPins[index], 70);
+        break;
+      case DIM_HIGH:
+        io->setPWM(chanLedPins[index], 127);
         break;
     }
   }
@@ -548,7 +567,7 @@ void TouchChannel::setOctaveLed(int octave, LedState state, bool settingUILed /*
       case BLINK_ON:
         io->blinkLED(octaveLedPins[octave], 1, 1, 255, 0);
         break;
-      case DIM:
+      case DIM_LOW:
         io->analogWrite(octaveLedPins[octave], 70);
         break;
     }
