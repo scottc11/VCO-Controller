@@ -160,7 +160,24 @@ void TouchChannel::handleQueuedEvent(int position) {
 
 }
 
+/** ------------------------------------------------------------------------
+ *         PITCH BEND RANGE UI METHODS
+---------------------------------------------------------------------------- */
+void TouchChannel::enablePitchBendRangeUI() {
+  uiMode = PB_RANGE_UI;
+  
+  for (int i = 0; i < 4; i++)
+    setOctaveLed(i, LOW); // turn all octave leds OFF. Not used in this UI
 
+
+}
+
+void TouchChannel::disablePitchBendRangeUI() {
+
+  setOctaveLed(currOctave, HIGH);
+
+  setMode(prevMode);
+}
 
 /** ------------------------------------------------------------------------
  *         LOOP UI METHODS

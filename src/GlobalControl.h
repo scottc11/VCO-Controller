@@ -87,6 +87,9 @@ public:
   void handleFreeze(bool enable);
   void handleClockReset();
   void enableLoopLengthUI();
+  void enablePitchBendRangeUI();
+  void disablePitchBendRangeUI();
+
   void handleTouch(int pad);
   void handleRelease(int pad);
   bool handleGesture();

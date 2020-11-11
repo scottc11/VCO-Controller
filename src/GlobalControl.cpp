@@ -168,6 +168,12 @@ void GlobalControl::handleTouch(int pad) {
     case CALIBRATE:
       timer.start();
       break;
+    case PB_RANGE:
+      channels[0]->enablePitchBendRangeUI();
+      channels[1]->enablePitchBendRangeUI();
+      channels[2]->enablePitchBendRangeUI();
+      channels[3]->enablePitchBendRangeUI();
+      break;
     case LOOP_LENGTH:
       channels[0]->enableLoopLengthUI();
       channels[1]->enableLoopLengthUI();
@@ -219,6 +225,12 @@ void GlobalControl::handleRelease(int pad) {
     case CALIBRATE:
       timer.stop();
       timer.reset();
+      break;
+    case PB_RANGE:
+      channels[0]->disablePitchBendRangeUI();
+      channels[1]->disablePitchBendRangeUI();
+      channels[2]->disablePitchBendRangeUI();
+      channels[3]->disablePitchBendRangeUI();
       break;
     case LOOP_LENGTH:
       channels[0]->disableLoopLengthUI();
@@ -355,4 +367,12 @@ void GlobalControl::loadCalibrationDataFromFlash() {
     channels[chan]->generateDacVoltageMap(); // must call this to map, once again, the above values to the 2 dimensional array
   }
 
+}
+
+void GlobalControl::enablePitchBendRangeUI() {
+  // disable all channels LED control
+  
+}
+void GlobalControl::disablePitchBendRangeUI() {
+  // re-enable channel LED control after
 }

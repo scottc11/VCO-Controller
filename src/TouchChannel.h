@@ -75,6 +75,7 @@ class TouchChannel : public EventLoop {
     enum UIMode { // not yet implemented
       DEFAULT_UI,
       LOOP_LENGTH_UI,
+      PB_RANGE_UI
     };
 
   public:
@@ -120,7 +121,7 @@ class TouchChannel : public EventLoop {
     // Pitch Bend
     int currPitchBend;                       // 16 bit value (0..65,536)
     int prevPitchBend;                       // 16 bit value (0..65,536)
-    int pbNoteOffsetRange = 2;               // minimum of 1 semitone, maximum of 12 semitones (1 octave)
+    int pbNoteOffsetRange = 4;               // minimum of 1 semitone, maximum of 12 semitones (1 octave)
     int pbOutputRange = 8;                   // +- 8.1v range (min 1, max 8)
     int pbNoteOffset;                        // the amount of pitch bend to apply to the 1v/o DAC output. Can be positive/negative centered @ 0
     int cvOffset;                            // the amount of Control Voltage to apply Pitch Bend DAC
@@ -260,6 +261,9 @@ class TouchChannel : public EventLoop {
     void disableLoopLengthUI();
     void updateLoopLengthUI();
     void handleLoopLengthUI();
+
+    void enablePitchBendRangeUI();
+    void disablePitchBendRangeUI();
 
     void clearLoop();
     void enableLoopMode();
