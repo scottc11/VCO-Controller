@@ -160,81 +160,6 @@ void TouchChannel::handleQueuedEvent(int position) {
 
 }
 
-/** ------------------------------------------------------------------------
- *         PITCH BEND RANGE UI METHODS
----------------------------------------------------------------------------- */
-void TouchChannel::enablePitchBendRangeUI() {
-  uiMode = PB_RANGE_UI;
-  
-  for (int i = 0; i < 4; i++)
-    setOctaveLed(i, LOW); // turn all octave leds OFF. Not used in this UI
-
-
-}
-
-void TouchChannel::disablePitchBendRangeUI() {
-
-  setOctaveLed(currOctave, HIGH);
-
-  setMode(prevMode);
-}
-
-/** ------------------------------------------------------------------------
- *         LOOP UI METHODS
----------------------------------------------------------------------------- */
-
-void TouchChannel::enableLoopLengthUI() {
-  uiMode = LOOP_LENGTH_UI;
-  updateLoopLengthUI();
-}
-
-void TouchChannel::disableLoopLengthUI() {
-  uiMode = DEFAULT_UI;
-  setAllLeds(LOW);
-  if (mode == MONO || mode == MONO_LOOP) {
-    updateOctaveLeds(currOctave);
-    triggerNote(currNoteIndex, currOctave, PREV);
-  } else {
-    updateActiveDegreeLeds(); // TODO: additionally set active note to BLINK_ON
-  }
-}
-
-void TouchChannel::updateLoopLengthUI() {
-  setAllLeds(LOW); // reset
-  updateLoopMultiplierLeds();
-  for (int i = 0; i < numLoopSteps; i++) {
-    if (i == currStep) {
-      setLed(i, BLINK_ON, true);
-    } else {
-      setLed(i, HIGH, true);
-    }
-  }
-}
-
-void TouchChannel::handleLoopLengthUI() {
-  // take current clock step and flash the corrosponding channel LED and Octave LED
-  if (currTick == 0) {
-    int modulo = currStep % numLoopSteps;
-    
-    if (modulo != 0) {           // setting the previous LED back to normal
-      setLed(modulo - 1, HIGH, true);
-    } else {                     // when modulo rolls past 7 and back to 0
-      setLed(numLoopSteps - 1, HIGH, true);
-    }
-
-    setLed(modulo, BLINK_ON, true);
-    
-    for (int i = 0; i < loopMultiplier; i++) {
-      if (currStep < (numLoopSteps * (i + 1)) && currStep >= (numLoopSteps * i)) {
-        setOctaveLed(i, BLINK_ON, true);
-      } else {
-        setOctaveLed(i, HIGH, true);
-      }
-    }
-  }
-}
-
-
 void TouchChannel::clearLoop() {
   if (this->loopContainsEvents) {
     this->clearEventLoop();
@@ -343,6 +268,7 @@ void TouchChannel::handleTouchInterupt() {
     for (int i=0; i<8; i++) {
       // if it *is* touched and *wasnt* touched before, alert!
       if (touch->getBitStatus(touched, i) && !touch->getBitStatus(prevTouched, i)) {
+        
         if (uiMode == DEFAULT_UI) {
           switch (mode) {
             case MONO:
@@ -367,7 +293,14 @@ void TouchChannel::handleTouchInterupt() {
           }
         }
         else { // LOOP_LENGTH_UI mode
-          setLoopLength(i + 1); // loop length is not zero indexed
+          switch(uiMode) {
+            case LOOP_LENGTH_UI:
+              setLoopLength(i + 1); // loop length is not zero indexed
+              break;
+            case PB_RANGE_UI:
+              setPitchBendRange(i);
+              break;
+          }
         }
       }
       // if it *was* touched and now *isnt*, alert!
@@ -571,7 +504,7 @@ void TouchChannel::setLed(int index, LedState state, bool settingUILed /*false*/
 
 
 void TouchChannel::setOctaveLed(int octave, LedState state, bool settingUILed /*false*/) {
-  if (uiMode == DEFAULT_UI || settingUILed) {
+  if (uiMode == DEFAULT_UI || settingUILed) {  // this is how you keep sequences going whilst "blocking" the sequence from changing any LEDs when a UI mode is active
     switch (state) {
       case LOW:
         io->setOnTime(octaveLedPins[octave], 0);     // reset any blinking state
@@ -796,7 +729,7 @@ void TouchChannel::calculatePitchBend() {
   currPitchBend = pbInput.read_u16();
   if (currPitchBend > pbZero + pbDebounce || currPitchBend < pbZero - pbDebounce)
   {
-    float voOutputRange = dacSemitone * pbNoteOffsetRange;
+    float voOutputRange = dacSemitone * PB_RANGE_MAP[pbNoteOffsetRange]; // map 0..7 ranged value to preset pitch bend ranges
     float rawOutputRange = (32767 / 8) * pbOutputRange;
     if (currPitchBend > pbZero && currPitchBend < pbMax)
     {
@@ -821,9 +754,19 @@ void TouchChannel::calculatePitchBend() {
 }
 
 
-
 void TouchChannel::updatePitchBendDAC(uint16_t value)
 {
   int zero = 32767;
   pb_dac->write(pb_dac_chan, zero + value);
+}
+
+/**
+ * Set the pitch bend range to be applied to 1v/o output
+ * NOTE: There are 12 notes, but only 8 possible PB range options, meaning there are preset values for each PB range option via PB_RANGE_MAP global
+ * value: num with range 0..7
+*/
+void TouchChannel::setPitchBendRange(int touchedIndex)
+{
+  pbNoteOffsetRange = touchedIndex;
+  updatePitchBendRangeUI();                        // update leds with new touchedIndex
 }

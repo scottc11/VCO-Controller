@@ -21,6 +21,7 @@
 
 #define PB_CALIBRATION_RANGE 64
 
+const int PB_RANGE_MAP[8] = {1, 2, 3, 4, 5, 7, 10, 12};
 
 typedef struct QuantDegree {
   int threshold;
@@ -121,7 +122,7 @@ class TouchChannel : public EventLoop {
     // Pitch Bend
     int currPitchBend;                       // 16 bit value (0..65,536)
     int prevPitchBend;                       // 16 bit value (0..65,536)
-    int pbNoteOffsetRange = 4;               // minimum of 1 semitone, maximum of 12 semitones (1 octave)
+    int pbNoteOffsetRange = 4;               // 
     int pbOutputRange = 8;                   // +- 8.1v range (min 1, max 8)
     int pbNoteOffset;                        // the amount of pitch bend to apply to the 1v/o DAC output. Can be positive/negative centered @ 0
     int cvOffset;                            // the amount of Control Voltage to apply Pitch Bend DAC
@@ -238,6 +239,7 @@ class TouchChannel : public EventLoop {
     void calibratePitchBend();
     void updatePitchBendDAC(uint16_t value);
     void calculatePitchBend();
+    void setPitchBendRange(int touchedIndex);
 
     void handleTouchInterupt();
     void handleDegreeChange();
@@ -264,6 +266,7 @@ class TouchChannel : public EventLoop {
 
     void enablePitchBendRangeUI();
     void disablePitchBendRangeUI();
+    void updatePitchBendRangeUI();
 
     void clearLoop();
     void enableLoopMode();
