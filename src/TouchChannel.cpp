@@ -43,6 +43,7 @@ void TouchChannel::init() {
   uiMode = DEFAULT_UI;
 
   this->setOctave(currOctave);
+  gateOut.write(LOW);
 }
 
 
@@ -122,7 +123,7 @@ void TouchChannel::poll() {
       
       if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && enableLoop)        // HANDLE SEQUENCE
       {
-        handleQueuedEvent(currPosition);
+        handleSequence(currPosition);
       }
 
       tickerFlag = false;
@@ -132,7 +133,7 @@ void TouchChannel::poll() {
 // ------------------------------------------------------------------------
 
 
-void TouchChannel::handleQueuedEvent(int position) {
+void TouchChannel::handleSequence(int position) {
   if (events[position].active) {
     if (events[position].triggered == false) {
       events[prevEventIndex].triggered = false;
@@ -161,7 +162,7 @@ void TouchChannel::handleQueuedEvent(int position) {
 }
 
 void TouchChannel::clearLoop() {
-  if (this->loopContainsEvents) {
+  if (this->sequenceContainsEvents) {
     this->clearEventSequence();
     setMode(prevMode);
   }
@@ -208,7 +209,7 @@ void TouchChannel::disableLoopMode() {
   // been held down, and if this value is greater than the current loop length, update the loop length to accomodate.
   // the new loop length would just increase the multiplier by one
 
-  if (loopContainsEvents) {   // if a touch event was recorded, remain in loop mode
+  if (sequenceContainsEvents) {   // if a touch event was recorded, remain in loop mode
     return;
   } else {             // if no touch event recorded, revert to previous mode
     recordEnabled = false;
@@ -288,6 +289,7 @@ void TouchChannel::handleTouchInterupt() {
               break;
             case MONO_LOOP:
               createEvent(currPosition, i);
+              // clearExistingNodes = true;
               triggerNote(i, currOctave, ON);
               break;
           }
@@ -319,7 +321,8 @@ void TouchChannel::handleTouchInterupt() {
             case QUANTIZE_LOOP:
               break;
             case MONO_LOOP:
-              // triggerNote(i, currOctave, OFF);
+              triggerNote(i, currOctave, OFF);
+              // create note OFF event
               // enableLoop = true;
               break;
           }

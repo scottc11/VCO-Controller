@@ -79,7 +79,7 @@
 #define EVENT_END_BUFFER               4
 #define CV_QUANT_BUFFER                1000
 #define SLEW_CV_BUFFER                 1000
-#define MAX_LOOP_STEPS                 32
+#define MAX_SEQ_STEPS                 32
 
 #define DEFAULT_VOLTAGE_ADJMNT      200
 #define MAX_CALIB_ATTEMPTS          20

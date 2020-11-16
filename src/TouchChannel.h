@@ -32,15 +32,15 @@ typedef struct QuantOctave {
   int octave;
 } QuantOctave;
 
-typedef struct LoopNode {
-  LoopNode() : pitchBend(0), cvOutput(0) {}
+typedef struct SequenceNode {
+  SequenceNode() : pitchBend(0), cvOutput(0) {}
   uint8_t activeNotes; // byte for holding active/inactive notes for a chord
   uint8_t noteIndex;   // note index between 0 and 7
   uint16_t pitchBend;  // how much pitch bend to apply to the currently outputed note
   uint16_t cvOutput;   // how much raw CV to apply to the CV Output (pitchbend DAC)
-  bool triggered;      // has the LoopNode been triggered
+  bool triggered;      // has the SequenceNode been triggered
   bool active;         // this will tell the loop whether to trigger an event or not
-} LoopNode;
+} SequenceNode;
 
 class TouchChannel {
   private:
@@ -116,10 +116,10 @@ class TouchChannel {
     volatile bool modeChangeDetected;
 
     // SEQUENCER variables
-    LoopNode events[PPQN * MAX_LOOP_STEPS];
+    SequenceNode events[PPQN * MAX_SEQ_STEPS];
     QuantizeMode timeQuantizationMode;
     int prevEventIndex; // index for disabling the last "triggered" event in the loop
-    bool loopContainsEvents;
+    bool sequenceContainsEvents;
     bool deleteEvents;
     bool enableLoop = false; // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
     bool recordEnabled;      //
@@ -303,7 +303,7 @@ class TouchChannel {
     void setLoopTotalPPQN();  // refractor into metronom class
     void setLoopTotalSteps(); // refractor into metronom class
     
-    void handleQueuedEvent(int position);
+    void handleSequence(int position);
 
     // QUANTIZE FUNCTIONS
     void initQuantizerMode();
