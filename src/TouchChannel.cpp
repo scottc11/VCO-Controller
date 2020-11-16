@@ -162,7 +162,7 @@ void TouchChannel::handleQueuedEvent(int position) {
 
 void TouchChannel::clearLoop() {
   if (this->loopContainsEvents) {
-    this->clearEventLoop();
+    this->clearEventSequence();
     setMode(prevMode);
   }
 }

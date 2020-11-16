@@ -13,7 +13,6 @@
 #include "QuantizeMethods.h"
 #include "BitwiseMethods.h"
 #include "ArrayMethods.h"
-#include "EventLoop.h"
 
 #define CHANNEL_IO_MODE_PIN 5
 #define CHANNEL_IO_TOGGLE_PIN_1 6
@@ -33,9 +32,17 @@ typedef struct QuantOctave {
   int octave;
 } QuantOctave;
 
+typedef struct LoopNode {
+  LoopNode() : pitchBend(0), cvOutput(0) {}
+  uint8_t activeNotes; // byte for holding active/inactive notes for a chord
+  uint8_t noteIndex;   // note index between 0 and 7
+  uint16_t pitchBend;  // how much pitch bend to apply to the currently outputed note
+  uint16_t cvOutput;   // how much raw CV to apply to the CV Output (pitchbend DAC)
+  bool triggered;      // has the LoopNode been triggered
+  bool active;         // this will tell the loop whether to trigger an event or not
+} LoopNode;
 
-
-class TouchChannel : public EventLoop {
+class TouchChannel {
   private:
     enum SWITCH_STATES {
       OCTAVE_UP = 0b00001000,
@@ -107,7 +114,23 @@ class TouchChannel : public EventLoop {
     volatile bool switchHasChanged;  // toggle switches interupt flag
     volatile bool touchDetected;
     volatile bool modeChangeDetected;
-    
+
+    // SEQUENCER variables
+    LoopNode events[PPQN * MAX_LOOP_STEPS];
+    QuantizeMode timeQuantizationMode;
+    int prevEventIndex; // index for disabling the last "triggered" event in the loop
+    bool loopContainsEvents;
+    bool deleteEvents;
+    bool enableLoop = false; // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
+    bool recordEnabled;      //
+    volatile int numLoopSteps;
+    volatile int currStep;     // the current 'step' of the loop (lowest value == 0)
+    volatile int currPosition; // the current position in the loop measured by PPQN (lowest value == 0)
+    volatile int currTick;     // the current PPQN position of the step (0..PPQN) (lowest value == 0)
+    int totalPPQN;             // how many PPQN (in total) the loop contains
+    int totalSteps;            // how many Steps (in total) the loop contains
+    int loopMultiplier;        // number between 1 and 4 based on Octave Leds of channel
+
     // quantizer variables
     bool quantizerHasBeenInitialized;
     bool enableQuantizer;                 // by default set to true, only ever changes with a 'freeze' event
@@ -268,7 +291,11 @@ class TouchChannel : public EventLoop {
     void disablePitchBendRangeUI();
     void updatePitchBendRangeUI();
 
-    void clearLoop();
+    void clearEventSequence();
+    void clearPitchBendSequence();
+    void createEvent(int position, int noteIndex);
+    void createChordEvent(int position, uint8_t notes);
+    void clearLoop(); // refractor into clearEventSequence()
     void enableLoopMode();
     void disableLoopMode();
     void setLoopLength(int num);

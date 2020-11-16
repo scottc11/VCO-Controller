@@ -283,16 +283,16 @@ bool GlobalControl::handleGesture() {
       channels[3]->clearLoop();
       return true;
     case CLEAR_CH_A_PB:
-      channels[0]->clearPitchBend();
+      channels[0]->clearPitchBendSequence();
       return true;
     case CLEAR_CH_B_PB:
-      channels[1]->clearPitchBend();
+      channels[1]->clearPitchBendSequence();
       return true;
     case CLEAR_CH_C_PB:
-      channels[2]->clearPitchBend();
+      channels[2]->clearPitchBendSequence();
       return true;
     case CLEAR_CH_D_PB:
-      channels[3]->clearPitchBend();
+      channels[3]->clearPitchBendSequence();
       return true;
     default:
       return false;
