@@ -253,14 +253,14 @@ void TouchChannel::handleTouchInterupt() {
               createChordEvent(currPosition, activeDegrees);
               break;
             case MONO_LOOP:
-              createEvent(currPosition, i);
-              // clearExistingNodes = true;
+              clearExistingNodes = true;
+              createEvent(currPosition, i, HIGH);
               triggerNote(i, currOctave, ON);
               break;
           }
         }
         else { // LOOP_LENGTH_UI mode
-          switch(uiMode) {
+          switch (uiMode) {
             case LOOP_LENGTH_UI:
               setLoopLength(i + 1); // loop length is not zero indexed
               break;
@@ -287,7 +287,9 @@ void TouchChannel::handleTouchInterupt() {
             case QUANTIZE_LOOP:
               break;
             case MONO_LOOP:
+              createEvent(currPosition, i, LOW);
               triggerNote(i, currOctave, OFF);
+              clearExistingNodes = false;
               // create note OFF event
               // enableLoop = true;
               break;
@@ -564,7 +566,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
     case OFF:
       gateOut.write(LOW);
       midi->sendNoteOff(channel, calculateMIDINoteValue(index, octave), 100);
-      wait_us(1);
+      // wait_us(1);
       break;
     case PREV:
       setLed(index, HIGH);

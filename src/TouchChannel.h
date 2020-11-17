@@ -17,9 +17,8 @@
 #define CHANNEL_IO_MODE_PIN 5
 #define CHANNEL_IO_TOGGLE_PIN_1 6
 #define CHANNEL_IO_TOGGLE_PIN_2 7
-
+#define NULL_NOTE_INDEX 99  // used to identify a 'null' or 'deleted' sequence event
 #define PB_CALIBRATION_RANGE 64
-
 const int PB_RANGE_MAP[8] = {1, 2, 3, 4, 5, 7, 10, 12};
 
 typedef struct QuantDegree {
@@ -36,6 +35,7 @@ typedef struct SequenceNode {
   uint8_t activeNotes; // byte for holding active/inactive notes for a chord
   uint8_t noteIndex;   // note index between 0 and 7
   uint16_t pitchBend;  // raw ADC value from pitch bend
+  bool gate;           // set gate HIGH or LOW
   bool triggered;      // has the SequenceNode been triggered
   bool active;         // this will tell the loop whether to trigger an event or not
 } SequenceNode;
@@ -122,12 +122,13 @@ class TouchChannel {
     bool deleteEvents;
     bool enableLoop = false;   // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
     bool recordEnabled;        //
-    volatile int numLoopSteps;
+    int prevNodePosition;      // represents the last node in the sequence which got triggered (either HIGH or LOW)
+    volatile int numLoopSteps; // how many steps the sequence contains (before applying the multiplier)
     volatile int currStep;     // the current 'step' of the loop (lowest value == 0)
-    volatile int currPosition; // the current position in the loop measured by PPQN (lowest value == 0)
+    volatile int currPosition; // the current position in the in the entire sequence (measured by PPQN)
     volatile int currTick;     // the current PPQN position of the step (0..PPQN) (lowest value == 0)
-    int totalPPQN;             // how many PPQN (in total) the loop contains
-    int totalSteps;            // how many Steps (in total) the loop contains
+    int totalPPQN;             // how many PPQN the sequence currently contains (equal to totalSteps * PPQN)
+    int totalSteps;            // how many Steps the sequence contains (in total ie. numLoopSteps * loopMultiplier)
     int loopMultiplier;        // number between 1 and 4 based on Octave Leds of channel
 
     // quantizer variables
@@ -297,7 +298,7 @@ class TouchChannel {
     void clearEvent(int position);
     void clearEventSequence();
     void clearPitchBendSequence();
-    void createEvent(int position, int noteIndex);
+    void createEvent(int position, int noteIndex, bool gate);
     void createChordEvent(int position, uint8_t notes);
     void clearLoop(); // refractor into clearEventSequence()
     void enableLoopMode();
