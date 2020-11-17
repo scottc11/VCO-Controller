@@ -33,11 +33,9 @@ typedef struct QuantOctave {
 } QuantOctave;
 
 typedef struct SequenceNode {
-  SequenceNode() : pitchBend(0), cvOutput(0) {}
   uint8_t activeNotes; // byte for holding active/inactive notes for a chord
   uint8_t noteIndex;   // note index between 0 and 7
-  uint16_t pitchBend;  // how much pitch bend to apply to the currently outputed note
-  uint16_t cvOutput;   // how much raw CV to apply to the CV Output (pitchbend DAC)
+  uint16_t pitchBend;  // raw ADC value from pitch bend
   bool triggered;      // has the SequenceNode been triggered
   bool active;         // this will tell the loop whether to trigger an event or not
 } SequenceNode;
@@ -120,9 +118,10 @@ class TouchChannel {
     QuantizeMode timeQuantizationMode;
     int prevEventIndex; // index for disabling the last "triggered" event in the loop
     bool sequenceContainsEvents;
+    bool clearExistingNodes;   
     bool deleteEvents;
-    bool enableLoop = false; // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
-    bool recordEnabled;      //
+    bool enableLoop = false;   // "Event Triggering Loop" -> This will prevent looped events from triggering if a new event is currently being created
+    bool recordEnabled;        //
     volatile int numLoopSteps;
     volatile int currStep;     // the current 'step' of the loop (lowest value == 0)
     volatile int currPosition; // the current position in the loop measured by PPQN (lowest value == 0)
@@ -145,8 +144,9 @@ class TouchChannel {
     // Pitch Bend
     int currPitchBend;                       // 16 bit value (0..65,536)
     int prevPitchBend;                       // 16 bit value (0..65,536)
-    int pbNoteOffsetRange = 4;               // 
-    int pbOutputRange = 8;                   // +- 8.1v range (min 1, max 8)
+    int pbOffsetIndex = 4;                   // an index value which gets mapped to PB_RANGE_MAP
+    float pbOffsetRange;                     // must be a float!
+    float cvOffsetRange = 32767;             // +- 8.1v DAC range (must be a float!)
     int pbNoteOffset;                        // the amount of pitch bend to apply to the 1v/o DAC output. Can be positive/negative centered @ 0
     int cvOffset;                            // the amount of Control Voltage to apply Pitch Bend DAC
     int pbCalibration[PB_CALIBRATION_RANGE]; // an array which gets populated during initialization phase to determine a debounce value + zeroing
@@ -261,8 +261,9 @@ class TouchChannel {
     // Pitch Bend
     void calibratePitchBend();
     void updatePitchBendDAC(uint16_t value);
-    void calculatePitchBend();
+    void handlePitchBend();
     void setPitchBendRange(int touchedIndex);
+    void setPitchBendOffset(uint16_t pitchBend);
 
     void handleTouchInterupt();
     void handleDegreeChange();
@@ -291,6 +292,9 @@ class TouchChannel {
     void disablePitchBendRangeUI();
     void updatePitchBendRangeUI();
 
+    // SEQUENCER METHODS
+    void initSequencer();
+    void clearEvent(int position);
     void clearEventSequence();
     void clearPitchBendSequence();
     void createEvent(int position, int noteIndex);
@@ -302,10 +306,9 @@ class TouchChannel {
     void setLoopMultiplier(int value);
     void setLoopTotalPPQN();  // refractor into metronom class
     void setLoopTotalSteps(); // refractor into metronom class
-    
     void handleSequence(int position);
 
-    // QUANTIZE FUNCTIONS
+    // QUANTIZER METHODS
     void initQuantizerMode();
     void handleCVInput(int value);
     void setActiveDegrees(int degrees);

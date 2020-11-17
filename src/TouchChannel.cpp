@@ -19,17 +19,10 @@ void TouchChannel::init() {
 
   pb_dac->init();
   calibratePitchBend();
+  setPitchBendRange(2);  // default to a minor 3rd
   updatePitchBendDAC(0);
 
-  // intialize inheritance variables
-  numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
-  loopMultiplier = 1;
-  timeQuantizationMode = QUANT_NONE;
-  currStep = 0;
-  currTick = 0;
-  currPosition = 0;
-  setLoopTotalSteps();
-  setLoopTotalPPQN();
+  initSequencer(); // must be done after pb calibration
 
   handleIOInterupt();
 
@@ -132,34 +125,6 @@ void TouchChannel::poll() {
 }
 // ------------------------------------------------------------------------
 
-
-void TouchChannel::handleSequence(int position) {
-  if (events[position].active) {
-    if (events[position].triggered == false) {
-      events[prevEventIndex].triggered = false;
-      events[position].triggered = true;
-      prevEventIndex = position;
-      switch (mode) {
-        case MONO_LOOP:
-          triggerNote(prevNoteIndex, currOctave, OFF);
-          triggerNote(events[position].noteIndex, currOctave, ON);
-          break;
-        case QUANTIZE_LOOP:
-          setActiveDegrees(events[position].activeNotes);
-          break;
-      }
-    }
-  } else {
-    if (events[prevEventIndex].triggered) {
-      events[prevEventIndex].triggered = false;
-      triggerNote(prevNoteIndex, currOctave, OFF);
-    }
-  }
-
-  // always handle pitch bend value
-  triggerNote(currNoteIndex, currOctave, PITCH_BEND);
-
-}
 
 void TouchChannel::clearLoop() {
   if (this->sequenceContainsEvents) {
@@ -301,6 +266,7 @@ void TouchChannel::handleTouchInterupt() {
               break;
             case PB_RANGE_UI:
               setPitchBendRange(i);
+              updatePitchBendRangeUI();
               break;
           }
         }
@@ -614,21 +580,9 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
 
 int TouchChannel::calculateDACNoteValue(int index, int octave)
 {
-  calculatePitchBend();
-  uint16_t offset;
-  uint16_t cv;
-
-  if (mode == MONO_LOOP || mode == QUANTIZE_LOOP) {   // IF LOOPER MODE APPLIED
-    offset = events[currPosition].pitchBend;          // retreive pbNoteOffset and cvOffset values from sequence struct array
-    cv = events[currPosition].cvOutput;
-  } else {
-    offset = pbNoteOffset;                            // business as usual
-    cv = cvOffset;
-  }
-
-  updatePitchBendDAC(cv);
-
-  return dacVoltageMap[ index + DAC_OCTAVE_MAP[octave] ][ degrees->switchStates[index] ] + offset;
+  handlePitchBend();
+  updatePitchBendDAC(cvOffset);
+  return dacVoltageMap[index + DAC_OCTAVE_MAP[octave]][degrees->switchStates[index]] + (pbEnabled ? pbNoteOffset : 0);
 }
 
 
@@ -727,30 +681,42 @@ void TouchChannel::calibratePitchBend() {
 /**
  * apply the pitch bend by mapping the ADC value to a value between PB Range value and the current note being outputted
 */
-void TouchChannel::calculatePitchBend() {
-  prevPitchBend = currPitchBend;
+void TouchChannel::handlePitchBend()
+{
+  prevPitchBend = currPitchBend; // still need to use this value for debouncing
   currPitchBend = pbInput.read_u16();
-  if (currPitchBend > pbZero + pbDebounce || currPitchBend < pbZero - pbDebounce)
-  {
-    float voOutputRange = dacSemitone * PB_RANGE_MAP[pbNoteOffsetRange]; // map 0..7 ranged value to preset pitch bend ranges
-    float rawOutputRange = (32767 / 8) * pbOutputRange;
-    if (currPitchBend > pbZero && currPitchBend < pbMax)
-    {
-      pbNoteOffset = pbEnabled ? ((voOutputRange / (pbMax - pbZero)) * (currPitchBend - pbZero)) * -1 : 0; // inverted
-      cvOffset = ((rawOutputRange / (pbMax - pbZero)) * (currPitchBend - pbZero)) * 1;                     // non-inverted
-    }
-    else if (currPitchBend < pbZero && currPitchBend > pbMin)
-    {
-      pbNoteOffset = pbEnabled ? ((voOutputRange / (pbMin - pbZero)) * (currPitchBend - pbZero)) * 1 : 0; // non-inverted
-      cvOffset = ((rawOutputRange / (pbMin - pbZero)) * (currPitchBend - pbZero)) * -1;                   // inverted
-    }
 
-    if (recordEnabled) // IF record is enabled, record ALL pitch bend values into the sequencer struct array
-    {
-      events[currPosition].pitchBend = pbNoteOffset;
-      events[currPosition].cvOutput = cvOffset;
+  if (mode == MONO_LOOP || mode == QUANTIZE_LOOP) 
+  {
+    if (currPitchBend > pbZero + pbDebounce || currPitchBend < pbZero - pbDebounce) { // record pitch bend and use new value
+      if (recordEnabled) {
+        events[currPosition].pitchBend = currPitchBend;
+      }
     }
-  } else {
+    setPitchBendOffset(events[currPosition].pitchBend);
+  }
+  else {
+    setPitchBendOffset(currPitchBend);
+  }
+}
+
+void TouchChannel::setPitchBendOffset(uint16_t pitchBend)
+{
+  if (pitchBend > pbZero + pbDebounce || pitchBend < pbZero - pbDebounce) // may be able to move this line into handlePitchBend()
+  {
+    if (pitchBend > pbZero && pitchBend < pbMax)
+    {
+      pbNoteOffset = ((pbOffsetRange / (pbMax - pbZero)) * (pitchBend - pbZero)) * -1; // inverted
+      cvOffset = ((cvOffsetRange / (pbMax - pbZero)) * (pitchBend - pbZero)) * 1;     // non-inverted
+    }
+    else if (pitchBend < pbZero && pitchBend > pbMin)
+    {
+      pbNoteOffset = ((pbOffsetRange / (pbMin - pbZero)) * (pitchBend - pbZero)) * 1; // non-inverted
+      cvOffset = ((cvOffsetRange / (pbMin - pbZero)) * (pitchBend - pbZero)) * -1;    // inverted
+    }
+  }
+  else
+  {
     pbNoteOffset = 0;
     cvOffset = 0;
   }
@@ -770,6 +736,6 @@ void TouchChannel::updatePitchBendDAC(uint16_t value)
 */
 void TouchChannel::setPitchBendRange(int touchedIndex)
 {
-  pbNoteOffsetRange = touchedIndex;
-  updatePitchBendRangeUI();                        // update leds with new touchedIndex
+  pbOffsetIndex = touchedIndex;
+  pbOffsetRange = dacSemitone * PB_RANGE_MAP[pbOffsetIndex]; // map 0..7 ranged value to preset pitch bend ranges
 }

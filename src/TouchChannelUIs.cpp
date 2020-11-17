@@ -101,7 +101,7 @@ void TouchChannel::disablePitchBendRangeUI()
 void TouchChannel::updatePitchBendRangeUI()
 {
     setAllLeds(LOW); // reset
-    for (int i = 0; i < pbNoteOffsetRange + 1; i++)
+    for (int i = 0; i < pbOffsetIndex + 1; i++)
     {
         setLed(i, HIGH, true);
     }
