@@ -258,6 +258,10 @@ void GlobalControl::handleRelease(int pad) {
 
 bool GlobalControl::handleGesture() {
   switch (currTouched) {
+    case RESET_CALIBRATION:
+      saveCalibrationToFlash(true);   // reset calibration to default values
+      loadCalibrationDataFromFlash(); // then load the 'new' values into all the channel instances
+      return true;
     case RESET_LOOP_A:
       channels[0]->reset();
       return true;

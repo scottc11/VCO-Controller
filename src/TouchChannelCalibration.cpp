@@ -35,16 +35,6 @@ void TouchChannel::disableCalibrationMode() {
   ticker->detach(); // disable ticker
 }
 
-void saveCalibrationToFlash() {
-  // uint32_t memAddr = 0x08060000;
-  // uint16_t flashData[8] = { 0xFF, 0xCA, 0xEB, 0x3C, 0xDE, 0xAD, 0xF3, 0xE7 };
-  // volatile uint32_t success;
-  // flashStorage.init();
-  // success = flashStorage.erase(memAddr, flashStorage.get_sector_size(memAddr));
-  // success = flashStorage.program(flashData, memAddr, 16);
-  // flashStorage.deinit();
-}
-
 void TouchChannel::calibrateVCO() {
 
   // wait till MAX_FREQ_SAMPLES has been obtained
