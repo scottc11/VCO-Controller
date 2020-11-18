@@ -175,6 +175,7 @@ void TouchChannel::disableLoopMode() {
   // the new loop length would just increase the multiplier by one
 
   if (sequenceContainsEvents) {   // if a touch event was recorded, remain in loop mode
+    recordEnabled = false;
     return;
   } else {             // if no touch event recorded, revert to previous mode
     recordEnabled = false;
@@ -282,7 +283,6 @@ void TouchChannel::handleTouchInterupt() {
             case QUANTIZE:
               // set end time
               // if (endTime - startTime > gestureThreshold) do something fancy
-              // 
               break;
             case QUANTIZE_LOOP:
               break;
