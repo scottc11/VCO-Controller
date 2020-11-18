@@ -54,16 +54,16 @@ void TouchChannel::initIOExpander() {
   // initialize IO Led Driver pins
   for (int i = 0; i < 8; i++)
   {
-    io->pinMode(chanLedPins[i], SX1509::ANALOG_OUTPUT);
-    io->setPWM(chanLedPins[i], 127);
-    io->digitalWrite(chanLedPins[i], 1);
+    io->pinMode(CHAN_LED_PINS[i], SX1509::ANALOG_OUTPUT);
+    io->setPWM(CHAN_LED_PINS[i], 127);
+    io->digitalWrite(CHAN_LED_PINS[i], 1);
   }
 
   for (int i = 0; i < 4; i++)
   {
-    io->pinMode(octaveLedPins[i], SX1509::ANALOG_OUTPUT);
-    io->setPWM(octaveLedPins[i], 255);
-    io->digitalWrite(octaveLedPins[i], 1);
+    io->pinMode(OCTAVE_LED_PINS[i], SX1509::ANALOG_OUTPUT);
+    io->setPWM(OCTAVE_LED_PINS[i], 255);
+    io->digitalWrite(OCTAVE_LED_PINS[i], 1);
   }
 }
 
@@ -443,29 +443,29 @@ void TouchChannel::setLed(int index, LedState state, bool settingUILed /*false*/
     switch (state) {
       case LOW:
         ledStates &= ~(1 << index);
-        io->setOnTime(chanLedPins[index], 0);
-        io->digitalWrite(chanLedPins[index], 1);
+        io->setOnTime(CHAN_LED_PINS[index], 0);
+        io->digitalWrite(CHAN_LED_PINS[index], 1);
         break;
       case HIGH:
         ledStates |= 1 << index;
-        io->setOnTime(chanLedPins[index], 0);
-        io->digitalWrite(chanLedPins[index], 0);
+        io->setOnTime(CHAN_LED_PINS[index], 0);
+        io->digitalWrite(CHAN_LED_PINS[index], 0);
         break;
       case BLINK_ON:
         ledStates |= 1 << index;
-        io->blinkLED(chanLedPins[index], 1, 2, 127, 0);
+        io->blinkLED(CHAN_LED_PINS[index], 1, 2, 127, 0);
         break;
       case BLINK_OFF:
-        io->setOnTime(chanLedPins[index], 0);
+        io->setOnTime(CHAN_LED_PINS[index], 0);
         break;
       case DIM_LOW:
-        io->setPWM(chanLedPins[index], 10);
+        io->setPWM(CHAN_LED_PINS[index], 10);
         break;
       case DIM_MEDIUM:
-        io->setPWM(chanLedPins[index], 30);
+        io->setPWM(CHAN_LED_PINS[index], 30);
         break;
       case DIM_HIGH:
-        io->setPWM(chanLedPins[index], 70);
+        io->setPWM(CHAN_LED_PINS[index], 70);
         break;
     }
   }
@@ -476,18 +476,18 @@ void TouchChannel::setOctaveLed(int octave, LedState state, bool settingUILed /*
   if (uiMode == DEFAULT_UI || settingUILed) {  // this is how you keep sequences going whilst "blocking" the sequence from changing any LEDs when a UI mode is active
     switch (state) {
       case LOW:
-        io->setOnTime(octaveLedPins[octave], 0);     // reset any blinking state
-        io->digitalWrite(octaveLedPins[octave], 1);
+        io->setOnTime(OCTAVE_LED_PINS[octave], 0);     // reset any blinking state
+        io->digitalWrite(OCTAVE_LED_PINS[octave], 1);
         break;
       case HIGH:
-        io->setOnTime(octaveLedPins[octave], 0);     // reset any blinking state
-        io->digitalWrite(octaveLedPins[octave], 0);
+        io->setOnTime(OCTAVE_LED_PINS[octave], 0);     // reset any blinking state
+        io->digitalWrite(OCTAVE_LED_PINS[octave], 0);
         break;
       case BLINK_ON:
-        io->blinkLED(octaveLedPins[octave], 1, 1, 255, 0);
+        io->blinkLED(OCTAVE_LED_PINS[octave], 1, 1, 255, 0);
         break;
       case DIM_LOW:
-        io->analogWrite(octaveLedPins[octave], 70);
+        io->analogWrite(OCTAVE_LED_PINS[octave], 70);
         break;
     }
   }

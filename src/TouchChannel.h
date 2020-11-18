@@ -19,7 +19,10 @@
 #define CHANNEL_IO_TOGGLE_PIN_2 7
 #define NULL_NOTE_INDEX 99  // used to identify a 'null' or 'deleted' sequence event
 #define PB_CALIBRATION_RANGE 64
-const int PB_RANGE_MAP[8] = {1, 2, 3, 4, 5, 7, 10, 12};
+const int PB_RANGE_MAP[8] = { 1, 2, 3, 4, 5, 7, 10, 12 };
+
+static const int OCTAVE_LED_PINS[4] = { 0, 1, 2, 3 };                 // io pin map for octave LEDs
+static const int CHAN_LED_PINS[8] = { 15, 14, 13, 12, 11, 10, 9, 8 }; // io pin map for channel LEDs
 
 typedef struct QuantDegree {
   int threshold;
@@ -36,7 +39,6 @@ typedef struct SequenceNode {
   uint8_t noteIndex;   // note index between 0 and 7
   uint16_t pitchBend;  // raw ADC value from pitch bend
   bool gate;           // set gate HIGH or LOW
-  bool triggered;      // has the SequenceNode been triggered
   bool active;         // this will tell the loop whether to trigger an event or not
 } SequenceNode;
 
@@ -160,10 +162,7 @@ class TouchChannel {
 
     float dacSemitone = 938.0;               // must be a float, as it gets divided down to a num between 0..1
     int dacVoltageMap[32][3];
-    int dacVoltageValues[CALIBRATION_LENGTH]; // pre/post calibrated 16-bit DAC values
-
-    int octaveLedPins[4] = { 0, 1, 2, 3 };
-    int chanLedPins[8] = { 15, 14, 13, 12, 11, 10, 9, 8 };
+    int dacVoltageValues[CALIBRATION_LENGTH];               // pre/post calibrated 16-bit DAC values
 
     int redLedPins[8] = { 14, 12, 10, 8, 6, 4, 2, 0 };    // hardcoded values to be passed to the 16 chan LED driver
     int greenLedPins[8] = { 15, 13, 11, 9, 7, 5, 3, 1 };  // hardcoded values to be passed to the 16 chan LED driver

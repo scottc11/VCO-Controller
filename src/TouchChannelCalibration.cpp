@@ -21,13 +21,13 @@ void TouchChannel::enableCalibrationMode() {
 void TouchChannel::disableCalibrationMode() {
   ticker->detach();
   this->setAllLeds(HIGH);
-  wait_us(500);
+  wait_us(10000);
   this->setAllLeds(LOW);
-  wait_us(500);
+  wait_us(10000);
   this->setAllLeds(HIGH);
-  wait_us(500);
+  wait_us(10000);
   this->setAllLeds(LOW);
-  wait_us(500);
+  wait_us(10000);
   calNoteIndex = 0;           // deactivate calibration mode
   calibrationFinished = true;
   this->setMode(MONO);

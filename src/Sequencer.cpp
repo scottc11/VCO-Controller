@@ -98,7 +98,6 @@ void TouchChannel::createEvent(int position, int noteIndex, bool gate)
     events[position].noteIndex = noteIndex;
     events[position].gate = gate;
     events[position].active = true;
-    events[position].triggered = false;
 };
 
 void TouchChannel::clearEvent(int position)
@@ -107,7 +106,6 @@ void TouchChannel::clearEvent(int position)
     events[position].active = false;
     events[position].gate = LOW;
     events[position].pitchBend = pbZero;
-    events[position].triggered = false;
 }
 
 void TouchChannel::createChordEvent(int position, uint8_t notes)
@@ -120,5 +118,4 @@ void TouchChannel::createChordEvent(int position, uint8_t notes)
 
     events[position].activeNotes = notes;
     events[position].active = true;
-    events[position].triggered = false;
 };
