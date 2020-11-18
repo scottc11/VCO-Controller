@@ -1,29 +1,38 @@
 #include "TouchChannel.h"
 
+
+void TouchChannel::enableUIMode(UIMode target) {
+    switch (target) {
+        case LOOP_LENGTH_UI:
+            uiMode = LOOP_LENGTH_UI;
+            updateLoopLengthUI();
+            break;
+        case PB_RANGE_UI:
+            uiMode = PB_RANGE_UI;
+            for (int i = 0; i < 4; i++) setOctaveLed(i, LOW, true); // turn all octave leds OFF. Not used in this UI
+            updatePitchBendRangeUI();
+            break;
+    }
+}
+
+void TouchChannel::disableUIMode()
+{
+    prevMode = mode;      // important
+    switch (uiMode) {
+        case LOOP_LENGTH_UI:
+            uiMode = DEFAULT_UI;
+            setMode(mode);
+            break;
+        case PB_RANGE_UI:
+            uiMode = DEFAULT_UI;
+            setMode(mode);
+            break;
+    }
+}
+
 /** ------------------------------------------------------------------------
  *         LOOP UI METHODS
 ---------------------------------------------------------------------------- */
-
-void TouchChannel::enableLoopLengthUI()
-{
-    uiMode = LOOP_LENGTH_UI;
-    updateLoopLengthUI();
-}
-
-void TouchChannel::disableLoopLengthUI()
-{
-    uiMode = DEFAULT_UI;
-    setAllLeds(LOW);
-    if (mode == MONO || mode == MONO_LOOP)
-    {
-        updateOctaveLeds(currOctave);
-        triggerNote(currNoteIndex, currOctave, PREV);
-    }
-    else
-    {
-        updateActiveDegreeLeds(); // TODO: additionally set active note to BLINK_ON
-    }
-}
 
 void TouchChannel::updateLoopLengthUI()
 {
@@ -78,22 +87,6 @@ void TouchChannel::handleLoopLengthUI()
 /** ------------------------------------------------------------------------
  *         PITCH BEND RANGE UI METHODS
 ---------------------------------------------------------------------------- */
-void TouchChannel::enablePitchBendRangeUI()
-{
-    uiMode = PB_RANGE_UI;
-
-    for (int i = 0; i < 4; i++)
-        setOctaveLed(i, LOW, true); // turn all octave leds OFF. Not used in this UI
-    
-    updatePitchBendRangeUI();
-}
-
-void TouchChannel::disablePitchBendRangeUI()
-{
-    uiMode = DEFAULT_UI;
-    setOctaveLed(currOctave, HIGH, true);
-    setMode(prevMode);
-}
 
 /**
  * value: the last touched index (0..7)

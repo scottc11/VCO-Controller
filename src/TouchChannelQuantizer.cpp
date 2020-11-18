@@ -19,7 +19,7 @@ void TouchChannel::initQuantizerMode() {
   this->activeDegrees = 0xFF;
   this->activeOctaves = 0xF;
   this->numActiveDegrees = DEGREE_COUNT;
-  this->numActiveOctaves = 4; // there is a bug requiring this to be set in initialization, even though it should be set when turning on the octave leds via setActiveOctaves fn
+  this->numActiveOctaves = OCTAVE_COUNT; // there is a bug requiring this to be set in initialization, even though it should be set when turning on the octave leds via setActiveOctaves fn
 
   this->setActiveOctaves(3);
 

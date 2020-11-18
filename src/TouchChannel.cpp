@@ -337,8 +337,7 @@ void TouchChannel::setMode(Mode targetMode) {
       setAllLeds(LOW);               // I think this is just a "start from a clean slate" kinda thing
       setAllLeds(DIM_HIGH);
       updateOctaveLeds(currOctave);
-      triggerNote(currNoteIndex, currOctave, ON);
-      triggerNote(currNoteIndex, currOctave, OFF);
+      triggerNote(currNoteIndex, currOctave, SUSTAIN);
       break;
     case MONO_LOOP:
       enableLoop = true;
@@ -347,8 +346,7 @@ void TouchChannel::setMode(Mode targetMode) {
       setAllLeds(LOW);
       setAllLeds(DIM_LOW);
       updateOctaveLeds(currOctave);
-      triggerNote(currNoteIndex, currOctave, ON);
-      triggerNote(currNoteIndex, currOctave, OFF);
+      triggerNote(currNoteIndex, currOctave, SUSTAIN);
       break;
     case QUANTIZE:
       if (!quantizerHasBeenInitialized) { initQuantizerMode(); }
@@ -464,10 +462,10 @@ void TouchChannel::setLed(int index, LedState state, bool settingUILed /*false*/
         io->setPWM(chanLedPins[index], 10);
         break;
       case DIM_MEDIUM:
-        io->setPWM(chanLedPins[index], 70);
+        io->setPWM(chanLedPins[index], 30);
         break;
       case DIM_HIGH:
-        io->setPWM(chanLedPins[index], 127);
+        io->setPWM(chanLedPins[index], 70);
         break;
     }
   }
@@ -560,6 +558,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
       prevNoteIndex = currNoteIndex; // you might need to remove all this setter.
       currNoteIndex = index;
       currOctave = octave;
+      setLed(index, HIGH);
       dac->write(dacChannel, calculateDACNoteValue(index, octave));
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
@@ -570,6 +569,8 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
       break;
     case PREV:
       setLed(index, HIGH);
+      dac->write(dacChannel, calculateDACNoteValue(index, octave));
+      midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
     case PITCH_BEND:
       dac->write(dacChannel, calculateDACNoteValue(index, octave));

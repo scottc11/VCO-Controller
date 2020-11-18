@@ -169,16 +169,16 @@ void GlobalControl::handleTouch(int pad) {
       timer.start();
       break;
     case PB_RANGE:
-      channels[0]->enablePitchBendRangeUI();
-      channels[1]->enablePitchBendRangeUI();
-      channels[2]->enablePitchBendRangeUI();
-      channels[3]->enablePitchBendRangeUI();
+      channels[0]->enableUIMode(TouchChannel::PB_RANGE_UI);
+      channels[1]->enableUIMode(TouchChannel::PB_RANGE_UI);
+      channels[2]->enableUIMode(TouchChannel::PB_RANGE_UI);
+      channels[3]->enableUIMode(TouchChannel::PB_RANGE_UI);
       break;
     case LOOP_LENGTH:
-      channels[0]->enableLoopLengthUI();
-      channels[1]->enableLoopLengthUI();
-      channels[2]->enableLoopLengthUI();
-      channels[3]->enableLoopLengthUI();
+      channels[0]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
+      channels[1]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
+      channels[2]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
+      channels[3]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
       break;
     case RECORD:
       if (!recordEnabled) {
@@ -227,16 +227,16 @@ void GlobalControl::handleRelease(int pad) {
       timer.reset();
       break;
     case PB_RANGE:
-      channels[0]->disablePitchBendRangeUI();
-      channels[1]->disablePitchBendRangeUI();
-      channels[2]->disablePitchBendRangeUI();
-      channels[3]->disablePitchBendRangeUI();
+      channels[0]->disableUIMode();
+      channels[1]->disableUIMode();
+      channels[2]->disableUIMode();
+      channels[3]->disableUIMode();
       break;
     case LOOP_LENGTH:
-      channels[0]->disableLoopLengthUI();
-      channels[1]->disableLoopLengthUI();
-      channels[2]->disableLoopLengthUI();
-      channels[3]->disableLoopLengthUI();
+      channels[0]->disableUIMode();
+      channels[1]->disableUIMode();
+      channels[2]->disableUIMode();
+      channels[3]->disableUIMode();
       break;
     case RECORD:
       // channels[0]->disableLoopMode();

@@ -71,6 +71,7 @@ class TouchChannel {
       DIM_HIGH = 6
     };
 
+  public:
     enum Mode {
       MONO = 0,
       MONO_LOOP = 1,
@@ -84,7 +85,6 @@ class TouchChannel {
       PB_RANGE_UI
     };
 
-  public:
     int channel;                    // 0 based index to represent channel
     bool isSelected;
     Mode mode;                      // which mode channel is currently in
@@ -284,13 +284,11 @@ class TouchChannel {
     void freeze(bool enable);
     void reset();
 
-    void enableLoopLengthUI();
-    void disableLoopLengthUI();
+    // UI METHODS
+    void enableUIMode(UIMode target);
+    void disableUIMode();
     void updateLoopLengthUI();
     void handleLoopLengthUI();
-
-    void enablePitchBendRangeUI();
-    void disablePitchBendRangeUI();
     void updatePitchBendRangeUI();
 
     // SEQUENCER METHODS
