@@ -21,7 +21,7 @@ void TouchChannel::initQuantizerMode() {
   this->numActiveDegrees = DEGREE_COUNT;
   this->numActiveOctaves = 4; // there is a bug requiring this to be set in initialization, even though it should be set when turning on the octave leds via setActiveOctaves fn
 
-  this->setActiveOctaves(4);
+  this->setActiveOctaves(3);
 
   this->quantizerHasBeenInitialized = true;
 }
@@ -102,12 +102,14 @@ void TouchChannel::setActiveDegrees(int degrees) {
   }
 }
 
-void TouchChannel::setActiveOctaves(int octave) {
-  // take the newly touched octave, and either add it or remove it from the activeOctaves list
-  int newActiveOctaves = bitFlip(activeOctaves, octave);
-  
-  if (newActiveOctaves != 0) { // one octave must always remain active.
-    activeOctaves = newActiveOctaves;
+/**
+ * take the newly touched octave, and either add it or remove it from the activeOctaves list
+*/
+void TouchChannel::setActiveOctaves(int octave)
+{  
+  if (bitFlip(activeOctaves, octave) != 0) // one octave must always remain active.
+  {
+    activeOctaves = bitFlip(activeOctaves, octave);
     this->updateOctaveLeds(activeOctaves); // fn also sets numActiveOctaves
     this->setActiveDegrees(activeDegrees);
   }
