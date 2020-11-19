@@ -5,8 +5,8 @@
 #include "BitwiseMethods.h"
 #include "CAP1208.h"
 #include "TouchChannel.h"
+#include "VCOCalibrator.h"
 #include "DualDigitDisplay.h"
-#include "RotaryEncoder.h"
 #include "Metronome.h"
 
 
@@ -18,6 +18,7 @@ public:
   };
 
   Metronome *metronome;
+  VCOCalibrator calibrator;
   CAP1208 *touchCtrl1;
   CAP1208 *touchCtrl2;
   CAP1208 *touchOctAB;

@@ -106,8 +106,8 @@ int main() {
   while(1) {
 
     if (globalCTRL.mode == GlobalControl::CALIBRATING) {
-      if (!globalCTRL.channels[globalCTRL.selectedChannel]->calibrationFinished) {
-        globalCTRL.channels[globalCTRL.selectedChannel]->calibrateVCO();
+      if (globalCTRL.calibrator.calibrationFinished == false) {
+        globalCTRL.calibrator.calibrateVCO();
       } else {
         globalCTRL.saveCalibrationToFlash();
         globalCTRL.mode = GlobalControl::DEFAULT;

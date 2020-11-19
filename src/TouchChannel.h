@@ -62,6 +62,7 @@ class TouchChannel {
       GREEN
     };
 
+  public:
     enum LedState : int
     {
       LOW = 0,
@@ -73,7 +74,6 @@ class TouchChannel {
       DIM_HIGH = 6
     };
 
-  public:
     enum Mode {
       MONO = 0,
       MONO_LOOP = 1,
@@ -185,26 +185,6 @@ class TouchChannel {
     
     bool freezeChannel;          //
 
-    // calibration
-    int currVCOInputVal;                 // the current sampled value of sinewave input
-    int prevVCOInputVal;                 // the previous sampled value of sinewave input
-    bool slopeIsPositive;                // whether the sine wave is rising or falling
-    float prevAvgFreq;
-    float avgFreq;
-    int adjustment = DEFAULT_VOLTAGE_ADJMNT;
-    volatile float vcoFrequency;                  // 
-    volatile float vcoFreqAvrg;                   // the running average of frequency calculations
-    volatile float vcoPeriod;
-    volatile int numSamplesTaken;                 // How many times we have sampled the zero crossing (used in frequency calculation formula)
-    float initialFrequencyIndex;                 // before calibration, sample the oscillator frequency then find the nearest value in PITCH_FREQ array (to start with / root note)
-    int calNoteIndex;                    // 0..31 --> when calibrating, increment this value to step each voltage representation of a semi-tone via dacVoltageValues[]
-    int calLedIndex;                     //
-    bool overshoot;                      // a flag to determine if the new voltage adjustment overshot/undershot the target frequency
-    int calibrationAttemps;              // when this num exceeds MAX_CALIB_ATTEMPTS, accept your failure and move on.
-    bool calibrationFinished;            // flag to tell program when calibration process is finished
-    volatile bool readyToCalibrate;      // flag telling polling loop when enough freq average samples have been taken to accurately calibrate
-    volatile int freqSampleIndex = 0;        // incrementing value to place current frequency sample into array
-    volatile float freqSamples[MAX_FREQ_SAMPLES]; // array of frequency samples for obtaining the running average of the VCO
 
     TouchChannel(
         int _channel,
@@ -282,6 +262,7 @@ class TouchChannel {
     void triggerNote(int index, int octave, NoteState state, bool blinkLED=false);
     void freeze(bool enable);
     void reset();
+    void generateDacVoltageMap();
 
     // UI METHODS
     void enableUIMode(UIMode target);
@@ -312,13 +293,7 @@ class TouchChannel {
     void setActiveDegrees(int degrees);
     void setActiveDegreeLimit(int value);
     void setActiveOctaves(int octave);
-
-    void enableCalibrationMode();
-    void disableCalibrationMode();
-    void calibrateVCO();
-    void sampleVCOFrequency();
-    float calculateAverageFreq();
-    void generateDacVoltageMap();
+    
 };
 
 #endif

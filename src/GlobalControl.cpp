@@ -259,6 +259,7 @@ void GlobalControl::handleRelease(int pad) {
 bool GlobalControl::handleGesture() {
   switch (currTouched) {
     case RESET_CALIBRATION:
+      // TODO: there should be some kind of UI signaling successful clear
       saveCalibrationToFlash(true);   // reset calibration to default values
       loadCalibrationDataFromFlash(); // then load the 'new' values into all the channel instances
       return true;
@@ -330,7 +331,8 @@ void GlobalControl::handleClockReset() {
 
 void GlobalControl::calibrateChannel(int chan) {
   this->mode = Mode::CALIBRATING;
-  channels[chan]->enableCalibrationMode();
+  calibrator.setChannel(channels[chan]);
+  calibrator.enableCalibrationMode();
 }
 
 /**

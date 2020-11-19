@@ -742,3 +742,27 @@ void TouchChannel::setPitchBendRange(int touchedIndex)
   pbOffsetIndex = touchedIndex;
   pbOffsetRange = dacSemitone * PB_RANGE_MAP[pbOffsetIndex]; // map 0..7 ranged value to preset pitch bend ranges
 }
+
+/**
+ * this function takes a 1D array and converts it into a 2D array formatted as [[0, 1, 2], ...]
+ * take the first 12 values from dacVoltageValues. find the difference dacVoltageValues[i]
+*/
+void TouchChannel::generateDacVoltageMap()
+{
+  int octaveIndexes[4] = {0, 12, 24, 36};
+  int multiplier = 1;
+
+  for (int oct = 0; oct < 4; oct++)
+  {
+    int index = octaveIndexes[oct];
+    int limit = 8 * multiplier;
+    for (int i = limit - 8; i < limit; i++)
+    {
+      dacVoltageMap[i][0] = dacVoltageValues[index];
+      dacVoltageMap[i][1] = dacVoltageValues[index + 1];
+      dacVoltageMap[i][2] = dacVoltageValues[index + 2];
+      index += 2;
+    }
+    multiplier += 1;
+  }
+}
