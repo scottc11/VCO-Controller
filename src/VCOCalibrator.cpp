@@ -36,7 +36,7 @@ void VCOCalibrator::disableCalibrationMode()
     channel->setAllLeds(TouchChannel::LOW);
 
     // deactivate calibration mode
-    calNoteIndex = 0;            // ?
+    pitchIndex = 0;            // ?
     calibrationFinished = true;
     channel->setMode(TouchChannel::MONO);
 }
@@ -46,39 +46,36 @@ void VCOCalibrator::calibrateVCO()
     // wait till MAX_FREQ_SAMPLES has been obtained
     if (readyToCalibrate)
     {
-        // handle first iteration of calibrating by finding the frequency to start at
+
+        avgFreq = this->calculateAverageFreq(); // determine the average frequency of all frewuency samples
+
+        // handle first iteration of calibrating by finding the frequency in PITCH_FREQ array closest to the currently sampled frequency
         if (prevAvgFreq == 0 && avgFreq != 0)
         {
-            int n = 0;
-            while (avgFreq > PITCH_FREQ[n])
-            {
-                initialFrequencyIndex = n;
-                calNoteIndex = initialFrequencyIndex;
-                n += 1;
-                if (n >= NUM_PITCH_FREQENCIES - 1)
-                {
-                    break;
-                }
-            }
+            initialPitchIndex = arr_find_closest_float(const_cast<float *>(PITCH_FREQ), NUM_PITCH_FREQENCIES, avgFreq);
+            pitchIndex = initialPitchIndex;
         }
 
-        prevAvgFreq = avgFreq;
         float threshold = 0.1;
-        avgFreq = this->calculateAverageFreq(); // determine the new average frequency
-        int dacIndex = calNoteIndex - initialFrequencyIndex;
+
+        int dacIndex = pitchIndex - initialPitchIndex;
+
+        if (dacIndex > 48) {
+            volatile int boop = pitchIndex;
+        }
 
         // if avgFreq is close enough to desired freq
-        if ((avgFreq <= PITCH_FREQ[calNoteIndex] + threshold && avgFreq >= PITCH_FREQ[calNoteIndex] - threshold) || calibrationAttemps > MAX_CALIB_ATTEMPTS)
+        if ((avgFreq <= PITCH_FREQ[pitchIndex] + threshold && avgFreq >= PITCH_FREQ[pitchIndex] - threshold) || calibrationAttemps > MAX_CALIB_ATTEMPTS)
         {
 
             // move to next pitch to be calibrated
-            if (calNoteIndex < CALIBRATION_LENGTH + initialFrequencyIndex)
+            if (pitchIndex < CALIBRATION_LENGTH + initialPitchIndex)
             {
                 // reset leds LOW every octave
                 channel->setLed(CALIBRATION_LED_MAP[dacIndex == 0 ? 0 : dacIndex - 1], TouchChannel::LOW);
                 adjustment = DEFAULT_VOLTAGE_ADJMNT; // reset to default
                 calibrationAttemps = 0;
-                calNoteIndex += 1; // increase note index by 1
+                pitchIndex += 1; // increase note index by 1
 
                 channel->setLed(CALIBRATION_LED_MAP[dacIndex], TouchChannel::HIGH);
             }
@@ -93,29 +90,30 @@ void VCOCalibrator::calibrateVCO()
         {
             // every time avgFreq over/undershoots the desired frequency, decrement the 'adjustment' value by half.
 
-            int currVal = channel->dacVoltageValues[dacIndex]; // pre-calibrated value to be adjusted
+            uint16_t currVal = channel->dacVoltageValues[dacIndex]; // pre-calibrated value to be adjusted
 
-            if (avgFreq > PITCH_FREQ[calNoteIndex] + threshold)
+            if (avgFreq > PITCH_FREQ[pitchIndex] + threshold)
             { // if overshoot
-                if (prevAvgFreq < PITCH_FREQ[calNoteIndex] - threshold)
+                if (prevAvgFreq < PITCH_FREQ[pitchIndex] - threshold)
                 {
                     overshoot = true;
-                    adjustment = (adjustment / 2) + 1; // so it never becomes zero
+                    adjustment = (adjustment / 2) + 1; // + 1 so it never becomes zero
                 }
                 currVal -= adjustment;
-                channel->dacVoltageValues[dacIndex] = currVal;
             }
 
-            else if (avgFreq < PITCH_FREQ[calNoteIndex] - threshold)
+            else if (avgFreq < PITCH_FREQ[pitchIndex] - threshold)
             { // if undershoot
-                if (prevAvgFreq > PITCH_FREQ[calNoteIndex] + threshold)
+                if (prevAvgFreq > PITCH_FREQ[pitchIndex] + threshold)
                 {
                     overshoot = false;
                     adjustment = (adjustment / 2) + 1; // so it never becomes zero
                 }
                 currVal += adjustment;
-                channel->dacVoltageValues[dacIndex] = currVal;
             }
+
+            prevAvgFreq = avgFreq;
+            channel->dacVoltageValues[dacIndex] = currVal > 65000 ? 65000 : currVal; // replace current DAC value with adjusted value (NOTE: must cap value or else it will roll over to zero)
         }
         
         // output new voltage and reset calibration process
