@@ -60,10 +60,6 @@ void VCOCalibrator::calibrateVCO()
 
         int dacIndex = pitchIndex - initialPitchIndex;
 
-        if (dacIndex > 48) {
-            volatile int boop = pitchIndex;
-        }
-
         // if avgFreq is close enough to desired freq
         if ((avgFreq <= PITCH_FREQ[pitchIndex] + threshold && avgFreq >= PITCH_FREQ[pitchIndex] - threshold) || calibrationAttemps > MAX_CALIB_ATTEMPTS)
         {
