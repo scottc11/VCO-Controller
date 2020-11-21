@@ -92,13 +92,18 @@ void TouchChannel::clearPitchBendSequence()
 
 void TouchChannel::createEvent(int position, int noteIndex, bool gate)
 {
-
     if (sequenceContainsEvents == false) { sequenceContainsEvents = true; }
 
     events[position].noteIndex = noteIndex;
     events[position].gate = gate;
     events[position].active = true;
 };
+
+void TouchChannel::createPitchBendEvent(int position, uint16_t pitchBend) {
+    if (sequenceContainsEvents == false) { sequenceContainsEvents = true; }
+
+    events[position].pitchBend = pitchBend;
+}
 
 void TouchChannel::clearEvent(int position)
 {

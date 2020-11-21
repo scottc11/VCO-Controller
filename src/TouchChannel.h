@@ -278,6 +278,7 @@ class TouchChannel {
     void clearPitchBendSequence();
     void createEvent(int position, int noteIndex, bool gate);
     void createChordEvent(int position, uint8_t notes);
+    void createPitchBendEvent(int position, uint16_t pitchBend);
     void clearLoop(); // refractor into clearEventSequence()
     void enableLoopMode();
     void disableLoopMode();

@@ -693,10 +693,15 @@ void TouchChannel::handlePitchBend()
   {
     if (currPitchBend > pbZero + pbDebounce || currPitchBend < pbZero - pbDebounce) { // record pitch bend and use new value
       if (recordEnabled) {
-        events[currPosition].pitchBend = currPitchBend;
+        createPitchBendEvent(currPosition, currPitchBend);
+        setPitchBendOffset(events[currPosition].pitchBend);
+      } else {
+        setPitchBendOffset(currPitchBend);
       }
+    } else {
+      setPitchBendOffset(events[currPosition].pitchBend);
     }
-    setPitchBendOffset(events[currPosition].pitchBend);
+    
   }
   else {
     setPitchBendOffset(currPitchBend);
