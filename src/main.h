@@ -34,6 +34,8 @@
 #define PB_ADC_C             PB_0
 #define PB_ADC_D             PB_1
 
+#define GLOBAL_GATE_OUT      PB_2
+
 #define GATE_OUT_A           PC_2
 #define GATE_OUT_B           PC_3
 #define GATE_OUT_C           PC_7

@@ -93,6 +93,7 @@ class TouchChannel {
     Mode prevMode;                  // used for reverting to previous mode when toggling between UI modes
     UIMode uiMode;                  // for settings and alt LED uis
     DigitalOut gateOut;             // gate output pin
+    DigitalOut *globalGateOut;      // 
     Timer *timer;                   // timer for handling duration based touch events
     Ticker *ticker;                 // for handling time based callbacks
     MIDI *midi;                     // pointer to mbed midi instance
@@ -185,11 +186,11 @@ class TouchChannel {
     
     bool freezeChannel;          //
 
-
     TouchChannel(
         int _channel,
         Timer *timer_ptr,
         Ticker *ticker_ptr,
+        DigitalOut *globalGateOut_ptr,
         PinName gateOutPin,
         PinName tchIntPin,
         PinName ioIntPin,
@@ -206,7 +207,7 @@ class TouchChannel {
         AD525X *digiPot_ptr,
         AD525X::Channels _digiPotChannel) : gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), ioInterupt(ioIntPin, PullUp), cvInput(cvInputPin), pbInput(pbInputPin)
     {
-
+      globalGateOut = globalGateOut_ptr;
       timer = timer_ptr;
       ticker = ticker_ptr;
       touch = touch_ptr;
@@ -260,6 +261,7 @@ class TouchChannel {
 
     void setOctave(int value);
     void triggerNote(int index, int octave, NoteState state, bool blinkLED=false);
+    void setGlobalGate(NoteState state);
     void freeze(bool enable);
     void reset();
     void generateDacVoltageMap();

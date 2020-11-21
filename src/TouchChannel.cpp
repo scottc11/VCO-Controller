@@ -240,6 +240,7 @@ void TouchChannel::handleTouchInterupt() {
           switch (mode) {
             case MONO:
               triggerNote(i, currOctave, ON);
+              setGlobalGate(ON);
               break;
             case QUANTIZE:
               /**
@@ -279,6 +280,7 @@ void TouchChannel::handleTouchInterupt() {
           switch (mode) {
             case MONO:
               triggerNote(i, currOctave, OFF);
+              setGlobalGate(OFF);
               break;
             case QUANTIZE:
               // set end time
@@ -769,5 +771,16 @@ void TouchChannel::generateDacVoltageMap()
       index += 2;
     }
     multiplier += 1;
+  }
+}
+
+void TouchChannel::setGlobalGate(NoteState state) {
+  switch (state) {
+  case ON:
+    globalGateOut->write(1);
+    break;
+  case OFF:
+    globalGateOut->write(0);
+    break;
   }
 }
