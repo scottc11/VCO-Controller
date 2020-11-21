@@ -19,7 +19,7 @@ void TouchChannel::init() {
 
   pb_dac->init();
   calibratePitchBend();
-  setPitchBendRange(2);  // default to a minor 3rd
+  setPitchBendRange(1);  // default to a whole tone
   updatePitchBendDAC(0);
 
   initSequencer(); // must be done after pb calibration
