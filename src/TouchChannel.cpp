@@ -242,7 +242,6 @@ void TouchChannel::handleTouchInterupt() {
           switch (mode) {
             case MONO:
               triggerNote(i, currOctave, ON);
-              setGlobalGate(HIGH);
               break;
             case QUANTIZE:
               /**
@@ -282,7 +281,6 @@ void TouchChannel::handleTouchInterupt() {
           switch (mode) {
             case MONO:
               triggerNote(i, currOctave, OFF);
-              setGlobalGate(LOW);
               break;
             case QUANTIZE:
               // set end time
@@ -554,6 +552,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
       currNoteIndex = index;
       currOctave = octave;
       setGate(HIGH);
+      setGlobalGate(HIGH);
       dac->write(dacChannel, calculateDACNoteValue(index, octave));
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
@@ -568,6 +567,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
       break;
     case OFF:
       setGate(LOW);
+      setGlobalGate(LOW);
       midi->sendNoteOff(channel, calculateMIDINoteValue(index, octave), 100);
       // wait_us(1);
       break;
