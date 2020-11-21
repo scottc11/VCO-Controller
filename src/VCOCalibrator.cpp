@@ -8,6 +8,16 @@ void VCOCalibrator::setChannel(TouchChannel *chan)
 void VCOCalibrator::enableCalibrationMode()
 {
     calibrationFinished = false;
+    calibrationAttemps = 0;
+    readyToCalibrate = true;
+    pitchIndex = 0;
+    initialPitchIndex = 0;
+    freqSampleIndex = 0;
+    numSamplesTaken = 0;
+    avgFreq = 0;
+    prevAvgFreq = 0;
+    calLedIndex = 0;
+    adjustment = DEFAULT_VOLTAGE_ADJMNT;
 
     channel->setAllLeds(TouchChannel::HIGH);
     wait_us(5000);
@@ -19,6 +29,11 @@ void VCOCalibrator::enableCalibrationMode()
     wait_us(5000);
     channel->setLed(0, TouchChannel::HIGH);
 
+    for (int i = 0; i < CALIBRATION_LENGTH; i++) {  // reset values to default
+        channel->dacVoltageValues[i] = DAC_VOLTAGE_VALUES[i];
+    }
+
+    channel->setOctaveLed(0, TouchChannel::LOW);
     channel->dac->write(channel->dacChannel, channel->dacVoltageValues[0]); // start at bottom most note.
 
     ticker.attach_us(callback(this, &VCOCalibrator::sampleVCOFrequency), VCO_SAMPLE_RATE_US);
@@ -28,11 +43,11 @@ void VCOCalibrator::disableCalibrationMode()
 {
     ticker.detach();  // disable ticker
     channel->setAllLeds(TouchChannel::HIGH);
-    wait_us(100000);
+    wait_us(500000);
     channel->setAllLeds(TouchChannel::LOW);
-    wait_us(100000);
+    wait_us(500000);
     channel->setAllLeds(TouchChannel::HIGH);
-    wait_us(100000);
+    wait_us(500000);
     channel->setAllLeds(TouchChannel::LOW);
 
     // deactivate calibration mode
@@ -67,7 +82,29 @@ void VCOCalibrator::calibrateVCO()
             // move to next pitch to be calibrated
             if (pitchIndex < CALIBRATION_LENGTH + initialPitchIndex)
             {
-                // reset leds LOW every octave
+                switch (dacIndex)
+                {
+                case 12:
+                    channel->setOctaveLed(0, TouchChannel::HIGH);
+                    break;
+                case 24:
+                    channel->setOctaveLed(1, TouchChannel::HIGH);
+                    break;
+                case 36:
+                    channel->setOctaveLed(2, TouchChannel::HIGH);
+                    break;
+                case 48:
+                    channel->setOctaveLed(3, TouchChannel::HIGH);
+                    break;
+                case 60:
+                    channel->setOctaveLed(0, TouchChannel::BLINK_ON);
+                    channel->setOctaveLed(1, TouchChannel::BLINK_ON);
+                    channel->setOctaveLed(2, TouchChannel::BLINK_ON);
+                    channel->setOctaveLed(3, TouchChannel::BLINK_ON);
+                    break;
+                default:
+                    break;
+                }
                 channel->setLed(CALIBRATION_LED_MAP[dacIndex == 0 ? 0 : dacIndex - 1], TouchChannel::LOW);
                 adjustment = DEFAULT_VOLTAGE_ADJMNT; // reset to default
                 calibrationAttemps = 0;
@@ -158,7 +195,7 @@ void VCOCalibrator::sampleVCOFrequency()
         else if (currVCOInputVal <= (VCO_ZERO_CROSSING - VCO_ZERO_CROSS_THRESHOLD) && prevVCOInputVal > (VCO_ZERO_CROSSING - VCO_ZERO_CROSS_THRESHOLD) && !slopeIsPositive)
         {
             vcoPeriod = numSamplesTaken;                   // how many samples have occurred between positive zero crossings
-            vcoFrequency = 8000.00 / vcoPeriod;            // sample rate divided by period of input signal
+            vcoFrequency = VCO_SAMPLE_RATE_HZ / vcoPeriod; // sample rate divided by period of input signal
             freqSamples[freqSampleIndex] = vcoFrequency;   // store sample in array
             numSamplesTaken = 0;                           // reset sample count to zero for the next sampling routine
 
