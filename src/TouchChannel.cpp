@@ -36,7 +36,7 @@ void TouchChannel::init() {
   uiMode = DEFAULT_UI;
 
   this->setOctave(currOctave);
-  gateOut.write(LOW);
+  setGate(LOW);
 }
 
 
@@ -106,6 +106,8 @@ void TouchChannel::poll() {
       if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer)    // HANDLE CV QUANTIZATION
       {
         currCVInputValue = cvInput.read_u16();
+        if (gateState == HIGH) setGate(LOW);   // We only want trigger events in quantizer mode, so if the gate gets set HIGH, make sure to set it back to low the very next tick
+
         if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER)
         {
           handleCVInput(currCVInputValue);
@@ -240,7 +242,7 @@ void TouchChannel::handleTouchInterupt() {
           switch (mode) {
             case MONO:
               triggerNote(i, currOctave, ON);
-              setGlobalGate(ON);
+              setGlobalGate(HIGH);
               break;
             case QUANTIZE:
               /**
@@ -280,7 +282,7 @@ void TouchChannel::handleTouchInterupt() {
           switch (mode) {
             case MONO:
               triggerNote(i, currOctave, OFF);
-              setGlobalGate(OFF);
+              setGlobalGate(LOW);
               break;
             case QUANTIZE:
               // set end time
@@ -403,7 +405,7 @@ void TouchChannel::setOctave(int value) {
 void TouchChannel::handleDegreeChange() {
   switch (mode) {
     case MONO:
-      triggerNote(currNoteIndex, currOctave, ON);
+      triggerNote(currNoteIndex, currOctave, SUSTAIN);
       break;
     case QUANTIZE:
       break;
@@ -551,7 +553,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
       prevNoteIndex = currNoteIndex;
       currNoteIndex = index;
       currOctave = octave;
-      gateOut.write(HIGH);
+      setGate(HIGH);
       dac->write(dacChannel, calculateDACNoteValue(index, octave));
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
@@ -565,7 +567,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
     case OFF:
-      gateOut.write(LOW);
+      setGate(LOW);
       midi->sendNoteOff(channel, calculateMIDINoteValue(index, octave), 100);
       // wait_us(1);
       break;
@@ -774,13 +776,12 @@ void TouchChannel::generateDacVoltageMap()
   }
 }
 
-void TouchChannel::setGlobalGate(NoteState state) {
-  switch (state) {
-  case ON:
-    globalGateOut->write(1);
-    break;
-  case OFF:
-    globalGateOut->write(0);
-    break;
-  }
+void TouchChannel::setGlobalGate(bool state) {
+  globalGateOut->write(state);
+}
+
+void TouchChannel::setGate(bool state)
+{
+  gateState = state;
+  gateOut.write(state);
 }

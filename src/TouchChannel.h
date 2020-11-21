@@ -89,6 +89,7 @@ class TouchChannel {
 
     int channel;                    // 0 based index to represent channel
     bool isSelected;
+    bool gateState;                 // the current state of the gate output pin
     Mode mode;                      // which mode channel is currently in
     Mode prevMode;                  // used for reverting to previous mode when toggling between UI modes
     UIMode uiMode;                  // for settings and alt LED uis
@@ -261,7 +262,8 @@ class TouchChannel {
 
     void setOctave(int value);
     void triggerNote(int index, int octave, NoteState state, bool blinkLED=false);
-    void setGlobalGate(NoteState state);
+    void setGate(bool state);
+    void setGlobalGate(bool state);
     void freeze(bool enable);
     void reset();
     void generateDacVoltageMap();
