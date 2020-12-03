@@ -357,7 +357,7 @@ void GlobalControl::saveCalibrationToFlash(bool reset /* false */)
       buffer[index] = reset ? DAC_VOLTAGE_VALUES[i] : channels[chan]->dacVoltageValues[i]; // either reset values to default, or using existing values saved to class
     }
   }
-  
+  FlashIAP flash;
   flash.init();
   flash.erase(flashAddr, flash.get_sector_size(flashAddr));     // must erase all data before a write
   flash.program(buffer, flashAddr, 512);                        // number of bytes = CALIBRATION_LENGTH * number of channels * 16 bits / 8 bits
@@ -366,7 +366,7 @@ void GlobalControl::saveCalibrationToFlash(bool reset /* false */)
 
 void GlobalControl::loadCalibrationDataFromFlash() {
   volatile uint16_t buffer[CALIBRATION_LENGTH * 4];
-
+  FlashIAP flash;
   flash.init();
   flash.read((void *)buffer, flashAddr, 512);
   flash.deinit();

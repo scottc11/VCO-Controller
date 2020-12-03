@@ -30,7 +30,6 @@ public:
   InterruptIn ctrl2Interupt;
   InterruptIn octaveInteruptAB;
   InterruptIn octaveInteruptCD;
-  FlashIAP flash;
   uint32_t flashAddr = 0x08060000;   // should be 'sector 7', program memory address starts @ 0x08000000
 
   Mode mode;
