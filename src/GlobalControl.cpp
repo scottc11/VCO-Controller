@@ -1,16 +1,24 @@
 #include "GlobalControl.h"
 
 void GlobalControl::init() {
-  touchCtrl->init();
+
+  metronome->init();
+
+  metronome->attachTickCallback(callback(this, &GlobalControl::tickChannels));
+
+  touchCtrl1->init();
+  touchCtrl2->init();
   touchOctAB->init();
   touchOctCD->init();
 
-  if (!touchOctAB->isConnected()) {
-    channels[2]->ctrlLed.write(HIGH);
-  }
+  selectChannel(0);  // select a default channel
+}
 
-  channels[0]->ctrlLed.write(HIGH);
-  selectChannel(0);
+void GlobalControl::tickChannels() {
+  channels[0]->tickClock();
+  channels[1]->tickClock();
+  channels[2]->tickClock();
+  channels[3]->tickClock();
 }
 
 
@@ -20,7 +28,10 @@ void GlobalControl::poll() {
     touchDetected = false;
   }
   
-  handleOctaveTouched();
+  if (octaveTouchDetected) {
+    handleOctaveTouched();
+    octaveTouchDetected = false;
+  }
 
   if (timer.read() > 2) {
     calibrateChannel(selectedChannel);
@@ -38,27 +49,30 @@ void GlobalControl::poll() {
 void GlobalControl::selectChannel(int channel) {
   for (int i = 0; i < 4; i++) {
     if (i != channel) {
-      channels[i]->ctrlLed.write(LOW);
       channels[i]->isSelected = false;
     }
   }
   
   selectedChannel = channel;
   channels[selectedChannel]->isSelected = true;
-  channels[selectedChannel]->ctrlLed.write(HIGH);
 }
 
 /**
  * HANDLE TOUCH EVENT
 */
 void GlobalControl::handleTouchEvent() {
-  currTouched = touchCtrl->touched();
+  // put both touch ICs data into a 16 bit int
+
+  uint8_t touched1 = touchCtrl1->touched();
+  uint8_t touched2 = touchCtrl2->touched();
+  currTouched = two8sTo16(touched2, touched1);
   if (currTouched != prevTouched) {
-    for (int i=0; i<8; i++) {
-      if (touchCtrl->padIsTouched(i, currTouched, prevTouched)) {
+    for (int i=0; i<16; i++) {
+      if (touchCtrl1->padIsTouched(i, currTouched, prevTouched)) {
         handleTouch(i);
+        // may be able to break here
       }
-      if (touchCtrl->padWasTouched(i, currTouched, prevTouched)) {
+      if (touchCtrl1->padWasTouched(i, currTouched, prevTouched)) {
         handleRelease(i);
       }
     }
@@ -74,7 +88,7 @@ void GlobalControl::handleOctaveTouched() {
   
   if (currOctavesTouched != prevOctavesTouched) {
     for (int i=0; i<16; i++) {
-      if (touchCtrl->padIsTouched(i, currOctavesTouched, prevOctavesTouched)) {
+      if (touchOctAB->padIsTouched(i, currOctavesTouched, prevOctavesTouched)) {
         switch (currTouched) {
           case 0b00000001: // loop length is currenttly being touched
             setChannelLoopMultiplier(i);
@@ -84,7 +98,7 @@ void GlobalControl::handleOctaveTouched() {
             break;
         }
       }
-      if (touchCtrl->padWasTouched(i, currOctavesTouched, prevOctavesTouched)) {
+      if (touchOctAB->padWasTouched(i, currOctavesTouched, prevOctavesTouched)) {
         
       }
     }
@@ -150,22 +164,40 @@ void GlobalControl::handleTouch(int pad) {
       handleFreeze(true);
       break;
     case RESET:
-      channels[selectedChannel]->clearLoop();
+      break;
+    case CALIBRATE:
+      timer.start();
+      break;
+    case PB_RANGE:
+      channels[0]->enableUIMode(TouchChannel::PB_RANGE_UI);
+      channels[1]->enableUIMode(TouchChannel::PB_RANGE_UI);
+      channels[2]->enableUIMode(TouchChannel::PB_RANGE_UI);
+      channels[3]->enableUIMode(TouchChannel::PB_RANGE_UI);
       break;
     case LOOP_LENGTH:
-      channels[0]->enableLoopLengthUI();
-      channels[1]->enableLoopLengthUI();
-      channels[2]->enableLoopLengthUI();
-      channels[3]->enableLoopLengthUI();
+      channels[0]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
+      channels[1]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
+      channels[2]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
+      channels[3]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
       break;
     case RECORD:
-      channels[0]->enableLoopMode();
-      channels[1]->enableLoopMode();
-      channels[2]->enableLoopMode();
-      channels[3]->enableLoopMode();
+      if (!recordEnabled) {
+        rec_led.write(1);
+        channels[0]->enableLoopMode();
+        channels[1]->enableLoopMode();
+        channels[2]->enableLoopMode();
+        channels[3]->enableLoopMode();
+        recordEnabled = true;
+      } else {
+        rec_led.write(0);
+        channels[0]->disableLoopMode();
+        channels[1]->disableLoopMode();
+        channels[2]->disableLoopMode();
+        channels[3]->disableLoopMode();
+        recordEnabled = false;
+      }
       break;
     case CTRL_A:
-      timer.start();
       selectChannel(0);
       break;
     case CTRL_B:
@@ -190,17 +222,27 @@ void GlobalControl::handleRelease(int pad) {
       break;
     case RESET:
       break;
+    case CALIBRATE:
+      timer.stop();
+      timer.reset();
+      break;
+    case PB_RANGE:
+      channels[0]->disableUIMode();
+      channels[1]->disableUIMode();
+      channels[2]->disableUIMode();
+      channels[3]->disableUIMode();
+      break;
     case LOOP_LENGTH:
-      channels[0]->disableLoopLengthUI();
-      channels[1]->disableLoopLengthUI();
-      channels[2]->disableLoopLengthUI();
-      channels[3]->disableLoopLengthUI();
+      channels[0]->disableUIMode();
+      channels[1]->disableUIMode();
+      channels[2]->disableUIMode();
+      channels[3]->disableUIMode();
       break;
     case RECORD:
-      channels[0]->disableLoopMode();
-      channels[1]->disableLoopMode();
-      channels[2]->disableLoopMode();
-      channels[3]->disableLoopMode();
+      // channels[0]->disableLoopMode();
+      // channels[1]->disableLoopMode();
+      // channels[2]->disableLoopMode();
+      // channels[3]->disableLoopMode();
       break;
     case CTRL_A:
       timer.stop();
@@ -216,7 +258,10 @@ void GlobalControl::handleRelease(int pad) {
 
 bool GlobalControl::handleGesture() {
   switch (currTouched) {
-    case _FREEZE:
+    case RESET_CALIBRATION:
+      // TODO: there should be some kind of UI signaling successful clear
+      saveCalibrationToFlash(true);   // reset calibration to default values
+      loadCalibrationDataFromFlash(); // then load the 'new' values into all the channel instances
       return true;
     case RESET_LOOP_A:
       channels[0]->reset();
@@ -230,15 +275,35 @@ bool GlobalControl::handleGesture() {
     case RESET_LOOP_D:
       channels[3]->reset();
       return true;
-    case CALIBRATE:
-      return true;
     case CLEAR_CH_A_LOOP:
+      channels[0]->clearLoop();
       return true;
     case CLEAR_CH_B_LOOP:
+      channels[1]->clearLoop();
       return true;
     case CLEAR_CH_C_LOOP:
+      channels[2]->clearLoop();
       return true;
     case CLEAR_CH_D_LOOP:
+      channels[3]->clearLoop();
+      return true;
+    case CLEAR_CH_A_PB:
+      channels[0]->clearPitchBendSequence();
+      return true;
+    case CLEAR_CH_B_PB:
+      channels[1]->clearPitchBendSequence();
+      return true;
+    case CLEAR_CH_C_PB:
+      channels[2]->clearPitchBendSequence();
+      return true;
+    case CLEAR_CH_D_PB:
+      channels[3]->clearPitchBendSequence();
+      return true;
+    case CLEAR_SEQ_ALL:
+      channels[0]->clearLoop();
+      channels[1]->clearLoop();
+      channels[2]->clearLoop();
+      channels[3]->clearLoop();
       return true;
     default:
       return false;
@@ -272,5 +337,54 @@ void GlobalControl::handleClockReset() {
 
 void GlobalControl::calibrateChannel(int chan) {
   this->mode = Mode::CALIBRATING;
-  channels[0]->enableCalibrationMode();
+  calibrator.setChannel(channels[chan]);
+  calibrator.enableCalibrationMode();
+}
+
+/**
+ * every time we calibrate a channel, we need to save all 4 channels data due to the fact 
+ * that we must delete/clear an entire sector of data first.
+*/ 
+void GlobalControl::saveCalibrationToFlash(bool reset /* false */)
+{
+  
+  char16_t buffer[CALIBRATION_LENGTH * 4]; // create array of 16 bit chars to hold ALL 4 channels data
+
+  for (int chan = 0; chan < 4; chan++) {                                                   // iterate through each channel
+    for (int i = 0; i < CALIBRATION_LENGTH; i++)
+    {
+      int index = i + CALIBRATION_LENGTH * chan;                                           // determine falshData index position based on channel
+      buffer[index] = reset ? DAC_VOLTAGE_VALUES[i] : channels[chan]->dacVoltageValues[i]; // either reset values to default, or using existing values saved to class
+    }
+  }
+  FlashIAP flash;
+  flash.init();
+  flash.erase(flashAddr, flash.get_sector_size(flashAddr));     // must erase all data before a write
+  flash.program(buffer, flashAddr, 512);                        // number of bytes = CALIBRATION_LENGTH * number of channels * 16 bits / 8 bits
+  flash.deinit();
+}
+
+void GlobalControl::loadCalibrationDataFromFlash() {
+  volatile uint16_t buffer[CALIBRATION_LENGTH * 4];
+  FlashIAP flash;
+  flash.init();
+  flash.read((void *)buffer, flashAddr, 512);
+  flash.deinit();
+  for (int chan = 0; chan < 4; chan++) {
+    for (int i = 0; i < CALIBRATION_LENGTH; i++)
+    {
+      int index = i + CALIBRATION_LENGTH * chan; // determine falshData index position based on channel
+      channels[chan]->dacVoltageValues[i] = buffer[index];
+    }
+    channels[chan]->generateDacVoltageMap(); // must call this to map, once again, the above values to the 2 dimensional array
+  }
+
+}
+
+void GlobalControl::enablePitchBendRangeUI() {
+  // disable all channels LED control
+  
+}
+void GlobalControl::disablePitchBendRangeUI() {
+  // re-enable channel LED control after
 }

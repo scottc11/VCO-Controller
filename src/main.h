@@ -2,14 +2,9 @@
 #define __MAIN_H
 
 #include <mbed.h>
+#include <arm_math.h> // ARM DSP functions
 
-enum LedState: int {
-  LOW = 0,
-  HIGH = 1,
-  BLINK = 2,
-};
-
-#define PPQN                 4
+#define PPQN                 96
 
 #define MIDI_BAUD            31250
 #define MIDI_TX              PA_2
@@ -24,55 +19,59 @@ enum LedState: int {
 #define SPI2_MISO            PB_14
 #define SPI2_SCK             PB_13
 
-#define DAC_CS               PC_8
-
-#define EXT_CLOCK_INPUT      PB_10
-
-#define MODE_PIN_A           PA_9
-#define MODE_PIN_B           PA_10
-#define MODE_PIN_C           PA_11
-#define MODE_PIN_D           PA_12
+#define TEMPO_LED            PA_1
+#define TEMPO_POT            PA_2
+#define EXT_CLOCK_INPUT      PA_3
+#define INT_CLOCK_OUTPUT     PB_10
 
 #define ADC_A                PA_6
 #define ADC_B                PA_7
-#define ADC_C                PC_4
-#define ADC_D                PC_5
+#define ADC_C                PC_5
+#define ADC_D                PC_4
 
-#define SLEW_ADC_A           PA_4
-#define SLEW_ADC_B           PA_5
-#define SLEW_ADC_C           PB_0
-#define SLEW_ADC_D           PB_1
+#define PB_ADC_A             PA_4
+#define PB_ADC_B             PA_5
+#define PB_ADC_C             PB_0
+#define PB_ADC_D             PB_1
+
+#define GLOBAL_GATE_OUT      PB_2
 
 #define GATE_OUT_A           PC_2
 #define GATE_OUT_B           PC_3
-#define GATE_OUT_C           PA_0
-#define GATE_OUT_D           PA_1
-
-#define CTRL_LED_A           PB_7
-#define CTRL_LED_B           PB_6
-#define CTRL_LED_C           PB_5
-#define CTRL_LED_D           PB_4
+#define GATE_OUT_C           PC_7
+#define GATE_OUT_D           PC_6
 
 #define TOUCH_INT_A          PC_1
 #define TOUCH_INT_B          PC_0
 #define TOUCH_INT_C          PC_15
 #define TOUCH_INT_D          PC_14
-#define TOUCH_INT_CTRL       PC_13
-#define TOUCH_INT_OCT        PC_7
+#define TOUCH_INT_CTRL_1     PC_13
+#define TOUCH_INT_CTRL_2     PB_7
+#define TOUCH_INT_OCT_AB     PB_6
+#define TOUCH_INT_OCT_CD     PB_5
 
-#define DEGREES_INT          PB_2
+#define DEGREES_INT          PB_4
 
-#define MCP4461_ADDR             0x58 // 8-bit
+#define REC_LED              PA_15
+
+#define DAC1_CS              PB_12
+#define DAC2_CS              PC_8
+
 #define TCA9548A_ADDR            0x70 // 1110000
 #define CAP1208_ADDR             0x50 // 0010100  via mux
 #define CAP1208_CTRL_ADDR        0x50 // 0010100
 
 #define MCP23017_DEGREES_ADDR    0x20 // 0100000
-#define TLC59116_CHAN_A_ADDR     0x60 // 1100000
-#define TLC59116_CHAN_B_ADDR     0x61 // 1100001
-#define TLC59116_CHAN_C_ADDR     0x62 // 1100010
-#define TLC59116_CHAN_D_ADDR     0x64 // 1100100
-#define TLC59116_OCT_LEDS_ADDR   0x68 // 1101000
+
+#define IO_INT_PIN_A             PA_12
+#define IO_INT_PIN_B             PA_11
+#define IO_INT_PIN_C             PA_10
+#define IO_INT_PIN_D             PA_9
+
+#define SX1509_CHAN_A_ADDR       0x3E
+#define SX1509_CHAN_B_ADDR       0x70
+#define SX1509_CHAN_C_ADDR       0x3F
+#define SX1509_CHAN_D_ADDR       0x71
 
 
 // DEFAULT INITIALIZATION VALUES
@@ -82,13 +81,13 @@ enum LedState: int {
 #define EVENT_END_BUFFER               4
 #define CV_QUANT_BUFFER                1000
 #define SLEW_CV_BUFFER                 1000
-#define MAX_LOOP_STEPS                 32
+#define MAX_SEQ_STEPS                 32
 
 #define DEFAULT_VOLTAGE_ADJMNT      200
 #define MAX_CALIB_ATTEMPTS          20
 #define MAX_FREQ_SAMPLES            25    // how many frequency calculations we want to use to obtain our average frequency prediction of the input. The higher the number, the more accurate the result
 #define VCO_SAMPLE_RATE_US          125     // 8000hz is equal to 125us (microseconds)
-#define VCO_ZERO_CROSSING           32767   // ADC range is 0v - 3.3v, so the midpoint of the sine wave should be 1.65v (ie. 65535 / 2 32767)
+#define VCO_ZERO_CROSSING           60000   // The zero crossing is erelivant as the pre-opamp ADC is not bi-polar. Any value close to the ADC ceiling seems to work
 #define VCO_ZERO_CROSS_THRESHOLD    500     // for handling hysterisis at zero crossing point
 
 // 83.333, 166.666, 249.999, 333.332, 416.66499999999996, 499.99799999999993, 583.3309999999999, 666.6639999999999, 749.9969999999998, 833.3299999999998, 916.6629999999998, 999.9959999999998
@@ -133,15 +132,15 @@ const int DAC_NOTE_MAP[8][3] = {
   { 13160, 14256, 15291 }
 };
 
-const int DAC_VOLTAGE_VALUES[59] = {
-// A     A#     B      C      C#     D      D#     E      F      F#     G      G#
-  1097,  2193,  3290,  4387,  5461,  6553,  7646,  8738,  9830,  10922, 12015, 13160,
-  14256, 15353, 16450, 17546, 18643, 19739, 20836, 21933, 23029, 24126, 25223, 26319,
-  27416, 28513, 29609, 30706, 31802, 32899, 33996, 35092, 36189, 37286, 38382, 39479, 
-  40576, 41672, 42769, 43865, 44962, 46059, 47155, 48252, 49349, 50445, 51542, 52639, 
-  53735, 54832, 55928, 57025, 58122, 59218, 60315, 61412, 62508, 63605, 64702
-//                             END
-};
+// const int DAC_VOLTAGE_VALUES[59] = {
+// // A     A#     B      C      C#     D      D#     E      F      F#     G      G#
+//   1097,  2193,  3290,  4387,  5461,  6553,  7646,  8738,  9830,  10922, 12015, 13160,
+//   14256, 15353, 16450, 17546, 18643, 19739, 20836, 21933, 23029, 24126, 25223, 26319,
+//   27416, 28513, 29609, 30706, 31802, 32899, 33996, 35092, 36189, 37286, 38382, 39479, 
+//   40576, 41672, 42769, 43865, 44962, 46059, 47155, 48252, 49349, 50445, 51542, 52639, 
+//   53735, 54832, 55928, 57025, 58122, 59218, 60315, 61412, 62508, 63605, 64702
+// //                             END
+// };
 
 const int MIDI_NOTE_MAP[8][3] = {
   { 11, 12, 13 },
@@ -158,13 +157,25 @@ const int MIDI_NOTE_MAP[8][3] = {
 const int DAC_OCTAVE_MAP[4] = { 0, 8, 16, 24 };
 const int MIDI_OCTAVE_MAP[4] = { 36, 48, 60, 72 };
 
-const int CALIBRATION_LED_MAP[60] = {
+#define CALIBRATION_LENGTH   64
+
+const int CALIBRATION_LED_MAP[CALIBRATION_LENGTH] = {
   0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7,
   0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7,
   0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7,
   0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7,
   0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7,
+  0, 1, 2, 4
 };
 
+const int DAC_VOLTAGE_VALUES[CALIBRATION_LENGTH] = {
+// A     A#     B      C      C#     D      D#     E      F      F#     G      G#
+  5630,  6568,  7506,   8445,  9383,  10321, 11260, 12198, 13137, 14075, 15013, 15952,
+  16890, 17828, 18767,  19705, 20643, 21582, 22520, 23458, 24397, 25335, 26274, 27212,
+  28150, 29089, 30027,  30965, 31904, 32842, 33780, 34719, 35657, 36596, 37534, 38472,
+  39411, 40349, 41287,  42226, 43164, 44102, 45041, 45979, 46917, 47856, 48794, 49733,
+  50671, 51609, 52548,  53486, 54424, 55363, 56301, 57239, 58178, 59116, 60054, 60993,
+  61931, 62870, 63808, 64746
+};
 
 #endif

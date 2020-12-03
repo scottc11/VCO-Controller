@@ -19,7 +19,7 @@ void TouchChannel::initQuantizerMode() {
   this->activeDegrees = 0xFF;
   this->activeOctaves = 0xF;
   this->numActiveDegrees = DEGREE_COUNT;
-  this->numActiveOctaves = 3; // there is a bug requiring this to be set in initialization, even though it should be set when turning on the octave leds via setActiveOctaves fn
+  this->numActiveOctaves = OCTAVE_COUNT; // there is a bug requiring this to be set in initialization, even though it should be set when turning on the octave leds via setActiveOctaves fn
 
   this->setActiveOctaves(3);
 
@@ -61,7 +61,7 @@ void TouchChannel::handleCVInput(int value) {
         if (bitRead(activeOctaves, prevOctave)) {
           this->setOctaveLed(prevOctave, LedState::HIGH);
         }
-        this->setOctaveLed(octave, LedState::BLINK);
+        this->setOctaveLed(octave, LedState::BLINK_ON);
       }
       break;
     }
@@ -102,12 +102,14 @@ void TouchChannel::setActiveDegrees(int degrees) {
   }
 }
 
-void TouchChannel::setActiveOctaves(int octave) {
-  // take the newly touched octave, and either add it or remove it from the activeOctaves list
-  int newActiveOctaves = bitFlip(activeOctaves, octave);
-  
-  if (newActiveOctaves != 0) { // one octave must always remain active.
-    activeOctaves = newActiveOctaves;
+/**
+ * take the newly touched octave, and either add it or remove it from the activeOctaves list
+*/
+void TouchChannel::setActiveOctaves(int octave)
+{  
+  if (bitFlip(activeOctaves, octave) != 0) // one octave must always remain active.
+  {
+    activeOctaves = bitFlip(activeOctaves, octave);
     this->updateOctaveLeds(activeOctaves); // fn also sets numActiveOctaves
     this->setActiveDegrees(activeDegrees);
   }
