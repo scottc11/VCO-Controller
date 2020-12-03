@@ -9,7 +9,7 @@ void VCOCalibrator::enableCalibrationMode()
 {
     calibrationFinished = false;
     calibrationAttemps = 0;
-    readyToCalibrate = true;
+    readyToCalibrate = false;
     pitchIndex = 0;
     initialPitchIndex = 0;
     freqSampleIndex = 0;
@@ -185,17 +185,15 @@ void VCOCalibrator::sampleVCOFrequency()
         currVCOInputVal = channel->cvInput.read_u16();  // sample the ADC
 
         // NEGATIVE SLOPE
-        // TODO: maybe plus threshold zero crossing
         if (currVCOInputVal >= (VCO_ZERO_CROSSING + VCO_ZERO_CROSS_THRESHOLD) && prevVCOInputVal < (VCO_ZERO_CROSSING + VCO_ZERO_CROSS_THRESHOLD) && slopeIsPositive)
         {
             slopeIsPositive = false;
         }
         // POSITIVE SLOPE
-        // TODO: maybe negative threshold zero crossing
         else if (currVCOInputVal <= (VCO_ZERO_CROSSING - VCO_ZERO_CROSS_THRESHOLD) && prevVCOInputVal > (VCO_ZERO_CROSSING - VCO_ZERO_CROSS_THRESHOLD) && !slopeIsPositive)
         {
-            vcoPeriod = numSamplesTaken;                   // how many samples have occurred between positive zero crossings
-            vcoFrequency = VCO_SAMPLE_RATE_HZ / vcoPeriod; // sample rate divided by period of input signal
+            float vcoPeriod = numSamplesTaken;             // how many samples have occurred between positive zero crossings
+            vcoFrequency = 8000.0 / vcoPeriod;             // sample rate divided by period of input signal
             freqSamples[freqSampleIndex] = vcoFrequency;   // store sample in array
             numSamplesTaken = 0;                           // reset sample count to zero for the next sampling routine
 
@@ -205,8 +203,8 @@ void VCOCalibrator::sampleVCOFrequency()
             }
             else
             {
-                readyToCalibrate = true;
-                freqSampleIndex = 0;
+                readyToCalibrate = true;          // set flag to enable calibrateVCO() in main() loop
+                freqSampleIndex = 0;              // reset sample index
             }
             slopeIsPositive = true;
         }

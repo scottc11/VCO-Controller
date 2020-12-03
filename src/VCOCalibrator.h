@@ -4,12 +4,14 @@
 #include "main.h"
 #include "TouchChannel.h"
 
+const float VCO_SAMPLE_RATE_HZ = 1 / VCO_SAMPLE_RATE_US * 1000000; // may need to cast all these values to floats
+
 class VCOCalibrator {
 public:
 
     VCOCalibrator(){};
     
-    Ticker ticker;                               // for sampling frequence at a given sample rate
+    Ticker ticker;                                // for sampling frequence at a given sample rate
     TouchChannel *channel;                        // pointer to channel to be calibrated
 
     int currVCOInputVal;                          // the current sampled value of sinewave input
@@ -19,7 +21,6 @@ public:
     float avgFreq;
     int adjustment = DEFAULT_VOLTAGE_ADJMNT;
     volatile float vcoFrequency;                  // latest frequency sample of VCO
-    volatile float vcoPeriod;
     volatile int numSamplesTaken;                 // How many times we have sampled the zero crossing (used in frequency calculation formula)
     float initialPitchIndex;                      // before calibration, sample the oscillator frequency then find the nearest value in PITCH_FREQ array (to start with / root note)
     int pitchIndex;                               // 0..31 --> when calibrating, increment this value to step each voltage representation of a semi-tone via dacVoltageValues[]
