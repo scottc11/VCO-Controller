@@ -107,6 +107,7 @@ class TouchChannel {
     AD525X *digiPot;                // digipot for pitch bend calibration
     AD525X::Channels digiPotChan;   // which channel to use for the digipot
     Degrees *degrees;
+    EventQueue *queue;
     InterruptIn touchInterupt;
     InterruptIn ioInterupt;         // for SC1509 3-stage toggle switch + tactile mode button
     AnalogIn cvInput;               // CV input pin for quantizer mode
@@ -189,6 +190,7 @@ class TouchChannel {
 
     TouchChannel(
         int _channel,
+        EventQueue *queue_ptr,
         Timer *timer_ptr,
         Ticker *ticker_ptr,
         DigitalOut *globalGateOut_ptr,
@@ -208,6 +210,7 @@ class TouchChannel {
         AD525X *digiPot_ptr,
         AD525X::Channels _digiPotChannel) : gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), ioInterupt(ioIntPin, PullUp), cvInput(cvInputPin), pbInput(pbInputPin)
     {
+      queue = queue_ptr;
       globalGateOut = globalGateOut_ptr;
       timer = timer_ptr;
       ticker = ticker_ptr;
@@ -228,7 +231,16 @@ class TouchChannel {
 
     void init();
     void poll();
-    void touchInteruptFn() { touchDetected = true; }
+
+    // ideally you create two threads
+    // one thread to handle all IO interupts, and another thread to handle the sequencer / metronome steps
+    // every metronome interupt, execute all the events in the EventQueue via dispatch()
+    // the below two functions should be refractored to create an event in the EventQueue which executes handleTouchInterupt()
+    void touchInteruptFn()
+    {
+      touchDetected = true;
+      queue->event(callback(this, &TouchChannel::handleTouchInterupt));
+    }
     void ioInteruptFn() { modeChangeDetected = true; }
 
     void initIOExpander();

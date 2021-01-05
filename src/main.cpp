@@ -49,10 +49,12 @@ CAP1208 touchCTRL2(&i2c1, &i2cMux, TCA9548A::CH7);
 
 Degrees degrees(DEGREES_INT, &io);
 
-TouchChannel channelA(0, &timer, &ticker, &globalGate, GATE_OUT_A, TOUCH_INT_A, IO_INT_PIN_A, ADC_A, PB_ADC_A, &touchA, &ioA, &degrees, &midi, &dac1, DAC8554::CHAN_A, &dac2, DAC8554::CHAN_A, &digiPot, AD525X::CHAN_A);
-TouchChannel channelB(1, &timer, &ticker, &globalGate, GATE_OUT_B, TOUCH_INT_B, IO_INT_PIN_B, ADC_B, PB_ADC_B, &touchB, &ioB, &degrees, &midi, &dac1, DAC8554::CHAN_B, &dac2, DAC8554::CHAN_B, &digiPot, AD525X::CHAN_B);
-TouchChannel channelC(2, &timer, &ticker, &globalGate, GATE_OUT_C, TOUCH_INT_C, IO_INT_PIN_C, ADC_C, PB_ADC_C, &touchC, &ioC, &degrees, &midi, &dac1, DAC8554::CHAN_C, &dac2, DAC8554::CHAN_C, &digiPot, AD525X::CHAN_C);
-TouchChannel channelD(3, &timer, &ticker, &globalGate, GATE_OUT_D, TOUCH_INT_D, IO_INT_PIN_D, ADC_D, PB_ADC_D, &touchD, &ioD, &degrees, &midi, &dac1, DAC8554::CHAN_D, &dac2, DAC8554::CHAN_D, &digiPot, AD525X::CHAN_D);
+EventQueue queue;
+
+TouchChannel channelA(0, &queue, &timer, &ticker, &globalGate, GATE_OUT_A, TOUCH_INT_A, IO_INT_PIN_A, ADC_A, PB_ADC_A, &touchA, &ioA, &degrees, &midi, &dac1, DAC8554::CHAN_A, &dac2, DAC8554::CHAN_A, &digiPot, AD525X::CHAN_A);
+TouchChannel channelB(1, &queue, &timer, &ticker, &globalGate, GATE_OUT_B, TOUCH_INT_B, IO_INT_PIN_B, ADC_B, PB_ADC_B, &touchB, &ioB, &degrees, &midi, &dac1, DAC8554::CHAN_B, &dac2, DAC8554::CHAN_B, &digiPot, AD525X::CHAN_B);
+TouchChannel channelC(2, &queue, &timer, &ticker, &globalGate, GATE_OUT_C, TOUCH_INT_C, IO_INT_PIN_C, ADC_C, PB_ADC_C, &touchC, &ioC, &degrees, &midi, &dac1, DAC8554::CHAN_C, &dac2, DAC8554::CHAN_C, &digiPot, AD525X::CHAN_C);
+TouchChannel channelD(3, &queue, &timer, &ticker, &globalGate, GATE_OUT_D, TOUCH_INT_D, IO_INT_PIN_D, ADC_D, PB_ADC_D, &touchD, &ioD, &degrees, &midi, &dac1, DAC8554::CHAN_D, &dac2, DAC8554::CHAN_D, &digiPot, AD525X::CHAN_D);
 
 Metronome metronome(TEMPO_LED, TEMPO_POT, INT_CLOCK_OUTPUT, PPQN, DEFAULT_CHANNEL_LOOP_STEPS);
 
@@ -63,28 +65,8 @@ int lastClockTimeStamp;
 int clockPeriod;
 
 
-void extTick() {
-  // you need to advance every quarter note when an external clock signal is detected
-  // additionally, set the ticker timer to a division of the input pulse duration / PPQN
-  // the ticker will handle precise timing between quarter notes, and this interupt will advance each channels step
 
-  // lastClockTimeStamp = newClockTimeStamp;
-  // newClockTimeStamp = timer.read_us();
-  // clockPeriod = newClockTimeStamp - lastClockTimeStamp;
-
-  // channelA.stepClock();
-  // channelB.stepClock();
-  // channelC.stepClock();
-  // channelD.stepClock();
-
-  // channelA.tickClock();
-  // channelB.tickClock();
-  // channelC.tickClock();
-  // channelD.tickClock();
-
-  // ticker.attach_us(&tick, clockPeriod / PPQN);  // potentially write this as a flag and update in main loop
-}
-
+Thread thread;
 
 int main() {
   i2c1.frequency(400000);
@@ -102,28 +84,42 @@ int main() {
   globalCTRL.init();
   globalCTRL.loadCalibrationDataFromFlash();
 
-  extClockInput.rise(&extTick);
+  thread.start(callback(&queue, &EventQueue::dispatch_forever));
 
-  while(1) {
+  while (1)
+  {
 
-    if (globalCTRL.mode == GlobalControl::CALIBRATING) {
-      if (globalCTRL.calibrator.calibrationFinished == false) {
-        globalCTRL.calibrator.calibrateVCO();
-      } else {
-        globalCTRL.saveCalibrationToFlash();
-        globalCTRL.mode = GlobalControl::DEFAULT;
-      }
-    } else {
-      metronome.poll();
-      globalCTRL.poll();
-      degrees.poll();
-      channelA.poll();
-      channelB.poll();
-      channelC.poll();
-      channelD.poll();
-    }
-    
-    
+    // if (globalCTRL.mode == GlobalControl::CALIBRATING) {
+    //   if (globalCTRL.calibrator.calibrationFinished == false) {
+    //     globalCTRL.calibrator.calibrateVCO();
+    //   } else {
+    //     globalCTRL.saveCalibrationToFlash();
+    //     globalCTRL.mode = GlobalControl::DEFAULT;
+    //   }
+    // } else {
+    //   metronome.poll();
+    //   globalCTRL.poll();
+    //   degrees.poll();
+    //   channelA.poll();
+    //   channelB.poll();
+    //   channelC.poll();
+    //   channelD.poll();
+    // }
+
+    /**
+     * 
+     * EventQueue
+     * create an event queue and post events to this queue every time an interupt occurs from a touch IC.
+     * 
+     * Should you have an EventQueue for each channel? Posting events to that queue an then "chaining" those events to a main queue?
+     * 
+     * create 4 threads - one for each channel.
+     * everytime there is an interupt via the touch channels, activate a flag for the corrosponding channels thread to exectute
+     * in this thread, you would execute the handleTouch() method.
+     * All other functions in the poll() method should be handled by the main() thread
+     * 
+     * For the metronome, this 
+    */
   }
 }
 

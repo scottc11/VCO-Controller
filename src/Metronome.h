@@ -59,7 +59,6 @@ public:
   void step();
   void reset();
   void setNumberOfSteps(int num);
-  void handleEncoder();
   void pollTempoPot();
   void updateTempo(int us);
   void attachTickCallback(Callback<void()> func);
