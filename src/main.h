@@ -45,14 +45,13 @@
 #define TOUCH_INT_B          PC_0
 #define TOUCH_INT_C          PC_15
 #define TOUCH_INT_D          PC_14
-#define TOUCH_INT_CTRL_1     PC_13
-#define TOUCH_INT_CTRL_2     PB_7
-#define TOUCH_INT_OCT_AB     PB_6
-#define TOUCH_INT_OCT_CD     PB_5
 
 #define DEGREES_INT          PB_4
 
+#define CTRL_INT             PB_5
+
 #define REC_LED              PA_15
+#define FREEZE_LED           PB_7
 
 #define DAC1_CS              PB_12
 #define DAC2_CS              PC_8

@@ -6,11 +6,6 @@ void GlobalControl::init() {
 
   metronome->attachTickCallback(callback(this, &GlobalControl::tickChannels));
 
-  touchCtrl1->init();
-  touchCtrl2->init();
-  touchOctAB->init();
-  touchOctCD->init();
-
   selectChannel(0);  // select a default channel
 }
 
@@ -23,15 +18,10 @@ void GlobalControl::tickChannels() {
 
 
 void GlobalControl::poll() {
-  if (touchDetected) {
-    handleTouchEvent();
-    touchDetected = false;
-  }
-  
-  if (octaveTouchDetected) {
-    handleOctaveTouched();
-    octaveTouchDetected = false;
-  }
+  // if (touchDetected) {
+  //   handleTouchEvent();
+  //   touchDetected = false;
+  // }
 
   if (timer.read() > 2) {
     calibrateChannel(selectedChannel);
@@ -61,49 +51,7 @@ void GlobalControl::selectChannel(int channel) {
  * HANDLE TOUCH EVENT
 */
 void GlobalControl::handleTouchEvent() {
-  // put both touch ICs data into a 16 bit int
-
-  uint8_t touched1 = touchCtrl1->touched();
-  uint8_t touched2 = touchCtrl2->touched();
-  currTouched = two8sTo16(touched2, touched1);
-  if (currTouched != prevTouched) {
-    for (int i=0; i<16; i++) {
-      if (touchCtrl1->padIsTouched(i, currTouched, prevTouched)) {
-        handleTouch(i);
-        // may be able to break here
-      }
-      if (touchCtrl1->padWasTouched(i, currTouched, prevTouched)) {
-        handleRelease(i);
-      }
-    }
-    prevTouched = currTouched;
-  }
-}
-
-void GlobalControl::handleOctaveTouched() {
-  // put both touch ICs data into a 16 bit int
-  uint8_t touchedAB = touchOctAB->touched();
-  uint8_t touchedCD = touchOctCD->touched();
-  currOctavesTouched = two8sTo16(touchedCD, touchedAB);
   
-  if (currOctavesTouched != prevOctavesTouched) {
-    for (int i=0; i<16; i++) {
-      if (touchOctAB->padIsTouched(i, currOctavesTouched, prevOctavesTouched)) {
-        switch (currTouched) {
-          case 0b00000001: // loop length is currenttly being touched
-            setChannelLoopMultiplier(i);
-            break;
-          case 0b00000000:
-            setChannelOctave(i);
-            break;
-        }
-      }
-      if (touchOctAB->padWasTouched(i, currOctavesTouched, prevOctavesTouched)) {
-        
-      }
-    }
-    prevOctavesTouched = currOctavesTouched;
-  }
 }
 
 
@@ -125,27 +73,6 @@ void GlobalControl::setChannelLoopMultiplier(int pad) {
     case 13: channels[1]->setLoopMultiplier(2); break;
     case 14: channels[1]->setLoopMultiplier(3); break;
     case 15: channels[1]->setLoopMultiplier(4); break;
-  }
-}
-
-void GlobalControl::setChannelOctave(int pad) {
-  switch (pad) {
-    case 0:  channels[2]->setOctave(0); break;
-    case 1:  channels[2]->setOctave(1); break;
-    case 2:  channels[2]->setOctave(2); break;
-    case 3:  channels[2]->setOctave(3); break;
-    case 4:  channels[3]->setOctave(0); break;
-    case 5:  channels[3]->setOctave(1); break;
-    case 6:  channels[3]->setOctave(2); break;
-    case 7:  channels[3]->setOctave(3); break;
-    case 8:  channels[0]->setOctave(0); break;
-    case 9:  channels[0]->setOctave(1); break;
-    case 10: channels[0]->setOctave(2); break;
-    case 11: channels[0]->setOctave(3); break;
-    case 12: channels[1]->setOctave(0); break;
-    case 13: channels[1]->setOctave(1); break;
-    case 14: channels[1]->setOctave(2); break;
-    case 15: channels[1]->setOctave(3); break;
   }
 }
 
@@ -182,14 +109,14 @@ void GlobalControl::handleTouch(int pad) {
       break;
     case RECORD:
       if (!recordEnabled) {
-        rec_led.write(1);
+        // rec_led.write(1);
         channels[0]->enableLoopMode();
         channels[1]->enableLoopMode();
         channels[2]->enableLoopMode();
         channels[3]->enableLoopMode();
         recordEnabled = true;
       } else {
-        rec_led.write(0);
+        // rec_led.write(0);
         channels[0]->disableLoopMode();
         channels[1]->disableLoopMode();
         channels[2]->disableLoopMode();
@@ -257,57 +184,57 @@ void GlobalControl::handleRelease(int pad) {
 }
 
 bool GlobalControl::handleGesture() {
-  switch (currTouched) {
-    case RESET_CALIBRATION:
-      // TODO: there should be some kind of UI signaling successful clear
-      saveCalibrationToFlash(true);   // reset calibration to default values
-      loadCalibrationDataFromFlash(); // then load the 'new' values into all the channel instances
-      return true;
-    case RESET_LOOP_A:
-      channels[0]->reset();
-      return true;
-    case RESET_LOOP_B:
-      channels[1]->reset();
-      return true;
-    case RESET_LOOP_C:
-      channels[2]->reset();
-      return true;
-    case RESET_LOOP_D:
-      channels[3]->reset();
-      return true;
-    case CLEAR_CH_A_LOOP:
-      channels[0]->clearLoop();
-      return true;
-    case CLEAR_CH_B_LOOP:
-      channels[1]->clearLoop();
-      return true;
-    case CLEAR_CH_C_LOOP:
-      channels[2]->clearLoop();
-      return true;
-    case CLEAR_CH_D_LOOP:
-      channels[3]->clearLoop();
-      return true;
-    case CLEAR_CH_A_PB:
-      channels[0]->clearPitchBendSequence();
-      return true;
-    case CLEAR_CH_B_PB:
-      channels[1]->clearPitchBendSequence();
-      return true;
-    case CLEAR_CH_C_PB:
-      channels[2]->clearPitchBendSequence();
-      return true;
-    case CLEAR_CH_D_PB:
-      channels[3]->clearPitchBendSequence();
-      return true;
-    case CLEAR_SEQ_ALL:
-      channels[0]->clearLoop();
-      channels[1]->clearLoop();
-      channels[2]->clearLoop();
-      channels[3]->clearLoop();
-      return true;
-    default:
-      return false;
-  }
+  // switch (currTouched) {
+  //   case RESET_CALIBRATION:
+  //     // TODO: there should be some kind of UI signaling successful clear
+  //     saveCalibrationToFlash(true);   // reset calibration to default values
+  //     loadCalibrationDataFromFlash(); // then load the 'new' values into all the channel instances
+  //     return true;
+  //   case RESET_LOOP_A:
+  //     channels[0]->reset();
+  //     return true;
+  //   case RESET_LOOP_B:
+  //     channels[1]->reset();
+  //     return true;
+  //   case RESET_LOOP_C:
+  //     channels[2]->reset();
+  //     return true;
+  //   case RESET_LOOP_D:
+  //     channels[3]->reset();
+  //     return true;
+  //   case CLEAR_CH_A_LOOP:
+  //     channels[0]->clearLoop();
+  //     return true;
+  //   case CLEAR_CH_B_LOOP:
+  //     channels[1]->clearLoop();
+  //     return true;
+  //   case CLEAR_CH_C_LOOP:
+  //     channels[2]->clearLoop();
+  //     return true;
+  //   case CLEAR_CH_D_LOOP:
+  //     channels[3]->clearLoop();
+  //     return true;
+  //   case CLEAR_CH_A_PB:
+  //     channels[0]->clearPitchBendSequence();
+  //     return true;
+  //   case CLEAR_CH_B_PB:
+  //     channels[1]->clearPitchBendSequence();
+  //     return true;
+  //   case CLEAR_CH_C_PB:
+  //     channels[2]->clearPitchBendSequence();
+  //     return true;
+  //   case CLEAR_CH_D_PB:
+  //     channels[3]->clearPitchBendSequence();
+  //     return true;
+  //   case CLEAR_SEQ_ALL:
+  //     channels[0]->clearLoop();
+  //     channels[1]->clearLoop();
+  //     channels[2]->clearLoop();
+  //     channels[3]->clearLoop();
+  //     return true;
+  //   default:
+  //     return false;
+  // }
   return false;
 }
 

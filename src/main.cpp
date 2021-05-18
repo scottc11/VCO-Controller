@@ -56,7 +56,7 @@ TouchChannel channelD(3, &timer, &ticker, &globalGate, GATE_OUT_D, TOUCH_INT_D, 
 
 Metronome metronome(TEMPO_LED, TEMPO_POT, INT_CLOCK_OUTPUT, PPQN, DEFAULT_CHANNEL_LOOP_STEPS);
 
-GlobalControl globalCTRL(&metronome, &touchCTRL1, &touchCTRL2, &touchOctAB, &touchOctCD, TOUCH_INT_CTRL_1, TOUCH_INT_CTRL_2, TOUCH_INT_OCT_AB, TOUCH_INT_OCT_CD, REC_LED, &channelA, &channelB, &channelC, &channelD);
+GlobalControl globalCTRL(&metronome, CTRL_INT, FREEZE_LED, &channelA, &channelB, &channelC, &channelD);
 
 int newClockTimeStamp;
 int lastClockTimeStamp;
@@ -94,34 +94,36 @@ int main() {
 
   degrees.init();
 
-  channelA.init();
-  channelB.init();
-  channelC.init();
-  channelD.init();
+
+
+  // channelA.init();
+  // channelB.init();
+  // channelC.init();
+  // channelD.init();
 
   globalCTRL.init();
-  globalCTRL.loadCalibrationDataFromFlash();
-
-  extClockInput.rise(&extTick);
+  // globalCTRL.loadCalibrationDataFromFlash();
 
   while(1) {
 
-    if (globalCTRL.mode == GlobalControl::CALIBRATING) {
-      if (globalCTRL.calibrator.calibrationFinished == false) {
-        globalCTRL.calibrator.calibrateVCO();
-      } else {
-        globalCTRL.saveCalibrationToFlash();
-        globalCTRL.mode = GlobalControl::DEFAULT;
-      }
-    } else {
-      metronome.poll();
-      globalCTRL.poll();
-      degrees.poll();
-      channelA.poll();
-      channelB.poll();
-      channelC.poll();
-      channelD.poll();
-    }
+
+
+    // if (globalCTRL.mode == GlobalControl::CALIBRATING) {
+    //   if (globalCTRL.calibrator.calibrationFinished == false) {
+    //     globalCTRL.calibrator.calibrateVCO();
+    //   } else {
+    //     globalCTRL.saveCalibrationToFlash();
+    //     globalCTRL.mode = GlobalControl::DEFAULT;
+    //   }
+    // } else {
+    //   metronome.poll();
+    //   globalCTRL.poll();
+    //   degrees.poll();
+    //   channelA.poll();
+    //   channelB.poll();
+    //   channelC.poll();
+    //   channelD.poll();
+    // }
     
     
   }
