@@ -58,33 +58,6 @@ Metronome metronome(TEMPO_LED, TEMPO_POT, INT_CLOCK_OUTPUT, PPQN, DEFAULT_CHANNE
 
 GlobalControl globalCTRL(&metronome, CTRL_INT, FREEZE_LED, &channelA, &channelB, &channelC, &channelD);
 
-int newClockTimeStamp;
-int lastClockTimeStamp;
-int clockPeriod;
-
-
-void extTick() {
-  // you need to advance every quarter note when an external clock signal is detected
-  // additionally, set the ticker timer to a division of the input pulse duration / PPQN
-  // the ticker will handle precise timing between quarter notes, and this interupt will advance each channels step
-
-  // lastClockTimeStamp = newClockTimeStamp;
-  // newClockTimeStamp = timer.read_us();
-  // clockPeriod = newClockTimeStamp - lastClockTimeStamp;
-
-  // channelA.stepClock();
-  // channelB.stepClock();
-  // channelC.stepClock();
-  // channelD.stepClock();
-
-  // channelA.tickClock();
-  // channelB.tickClock();
-  // channelC.tickClock();
-  // channelD.tickClock();
-
-  // ticker.attach_us(&tick, clockPeriod / PPQN);  // potentially write this as a flag and update in main loop
-}
-
 
 int main() {
   i2c1.frequency(400000);
@@ -96,7 +69,7 @@ int main() {
 
 
 
-  // channelA.init();
+  channelA.init();
   // channelB.init();
   // channelC.init();
   // channelD.init();
