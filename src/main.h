@@ -7,8 +7,8 @@
 #define PPQN                 96
 
 #define MIDI_BAUD            31250
-#define MIDI_TX              PA_2
-#define MIDI_RX              PA_3
+#define MIDI_TX              PA_2 // not up to date
+#define MIDI_RX              PA_3 // not up to date
 
 #define I2C3_SDA             PC_9
 #define I2C3_SCL             PA_8
@@ -22,7 +22,7 @@
 #define TEMPO_LED            PA_1
 #define TEMPO_POT            PA_2
 #define EXT_CLOCK_INPUT      PA_3
-#define INT_CLOCK_OUTPUT     PB_10
+#define INT_CLOCK_OUTPUT     PB_2
 
 #define ADC_A                PA_6
 #define ADC_B                PA_7
@@ -34,7 +34,7 @@
 #define PB_ADC_C             PB_0
 #define PB_ADC_D             PB_1
 
-#define GLOBAL_GATE_OUT      PB_2
+#define GLOBAL_GATE_OUT      PB_10
 
 #define GATE_OUT_A           PC_2
 #define GATE_OUT_B           PC_3
