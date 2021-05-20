@@ -6,6 +6,7 @@
 #include "Degrees.h"
 #include "DAC8554.h"
 #include "CAP1208.h"
+#include "MPR121.h"
 #include "TCA9544A.h"
 #include "SX1509.h"
 #include "AD525X.h"
@@ -14,15 +15,16 @@
 #include "BitwiseMethods.h"
 #include "ArrayMethods.h"
 
-#define CHANNEL_IO_MODE_PIN 5
-#define CHANNEL_IO_TOGGLE_PIN_1 6
-#define CHANNEL_IO_TOGGLE_PIN_2 7
+#define CHANNEL_IO_MODE_PIN 9
+#define CHANNEL_LED_MUX_SEL 8
+#define CHANNEL_MODE_LED 10
+#define CHANNEL_GATE_LED 11
 #define NULL_NOTE_INDEX 99  // used to identify a 'null' or 'deleted' sequence event
 #define PB_CALIBRATION_RANGE 64
 const int PB_RANGE_MAP[8] = { 1, 2, 3, 4, 5, 7, 10, 12 };
 
-static const int OCTAVE_LED_PINS[4] = { 0, 1, 2, 3 };                 // io pin map for octave LEDs
-static const int CHAN_LED_PINS[8] = { 15, 14, 13, 12, 11, 10, 9, 8 }; // io pin map for channel LEDs
+static const int OCTAVE_LED_PINS[4] = { 3, 2, 1, 0 };                 // io pin map for octave LEDs
+static const int CHAN_LED_PINS[8] = { 4, 5, 6, 7, 12, 13, 14, 15 }; // io pin map for channel LEDs
 
 typedef struct QuantDegree {
   int threshold;
@@ -97,8 +99,10 @@ class TouchChannel {
     DigitalOut *globalGateOut;      // 
     Timer *timer;                   // timer for handling duration based touch events
     Ticker *ticker;                 // for handling time based callbacks
+    EventQueue *queue;              // event queue for executing touch events
     MIDI *midi;                     // pointer to mbed midi instance
     CAP1208 *touch;                 // i2c touch IC
+    MPR121 *touchPads;
     DAC8554 *dac;                   // pointer to 1vo DAC
     DAC8554::Channels dacChannel;   // which dac to address
     DAC8554 *pb_dac;                // pointer to Pitch Bends DAC
@@ -107,7 +111,6 @@ class TouchChannel {
     AD525X *digiPot;                // digipot for pitch bend calibration
     AD525X::Channels digiPotChan;   // which channel to use for the digipot
     Degrees *degrees;
-    InterruptIn touchInterupt;
     InterruptIn ioInterupt;         // for SC1509 3-stage toggle switch + tactile mode button
     AnalogIn cvInput;               // CV input pin for quantizer mode
     AnalogIn pbInput;               // CV input for Pitch Bend
@@ -191,13 +194,13 @@ class TouchChannel {
         int _channel,
         Timer *timer_ptr,
         Ticker *ticker_ptr,
+        EventQueue *queue_ptr,
         DigitalOut *globalGateOut_ptr,
         PinName gateOutPin,
-        PinName tchIntPin,
         PinName ioIntPin,
         PinName cvInputPin,
         PinName pbInputPin,
-        CAP1208 *touch_ptr,
+        MPR121 *touch_ptr,
         SX1509 *io_ptr,
         Degrees *degrees_ptr,
         MIDI *midi_p,
@@ -206,12 +209,13 @@ class TouchChannel {
         DAC8554 *pb_dac_ptr,
         DAC8554::Channels pb_dac_channel,
         AD525X *digiPot_ptr,
-        AD525X::Channels _digiPotChannel) : gateOut(gateOutPin), touchInterupt(tchIntPin, PullUp), ioInterupt(ioIntPin, PullUp), cvInput(cvInputPin), pbInput(pbInputPin)
+        AD525X::Channels _digiPotChannel) : gateOut(gateOutPin), ioInterupt(ioIntPin, PullUp), cvInput(cvInputPin), pbInput(pbInputPin)
     {
       globalGateOut = globalGateOut_ptr;
       timer = timer_ptr;
       ticker = ticker_ptr;
-      touch = touch_ptr;
+      queue = queue_ptr;
+      touchPads = touch_ptr;
       io = io_ptr;
       degrees = degrees_ptr;
       dac = dac_ptr;
@@ -221,14 +225,15 @@ class TouchChannel {
       digiPot = digiPot_ptr;
       digiPotChan = _digiPotChannel;
       midi = midi_p;
-      touchInterupt.fall(callback(this, &TouchChannel::touchInteruptFn));
       ioInterupt.fall(callback(this, &TouchChannel::ioInteruptFn));
       channel = _channel;
     };
 
     void init();
     void poll();
-    void touchInteruptFn() { touchDetected = true; }
+    void onTouch(uint8_t pad);
+    void onRelease(uint8_t pad);
+
     void ioInteruptFn() { modeChangeDetected = true; }
 
     void initIOExpander();
@@ -247,7 +252,6 @@ class TouchChannel {
     void setPitchBendRange(int touchedIndex);
     void setPitchBendOffset(uint16_t pitchBend);
 
-    void handleTouchInterupt();
     void handleDegreeChange();
     void handleIOInterupt();
     void setMode(Mode targetMode);

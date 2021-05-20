@@ -8,13 +8,14 @@ void TouchChannel::init() {
 
   this->generateDacVoltageMap();
 
-  touch->init();
-
   this->initIOExpander();
 
-  if (!touch->isConnected()) { this->updateOctaveLeds(3); return; }
-  touch->calibrate();
-  touch->clearInterupt();
+  touchPads->init();
+  touchPads->attachInteruptCallback(queue->event(callback(touchPads, &MPR121::handleTouch)));
+  touchPads->attachCallbackTouched(callback(this, &TouchChannel::onTouch));
+  touchPads->attachCallbackReleased(callback(this, &TouchChannel::onRelease));
+  touchPads->enable();
+
   dac->init();
 
   pb_dac->init();
@@ -46,10 +47,14 @@ void TouchChannel::initIOExpander() {
   io->pinMode(CHANNEL_IO_MODE_PIN, SX1509::INPUT, true);
   io->enableInterupt(CHANNEL_IO_MODE_PIN, SX1509::RISING);
 
-  io->pinMode(CHANNEL_IO_TOGGLE_PIN_1, SX1509::INPUT);
-  io->pinMode(CHANNEL_IO_TOGGLE_PIN_2, SX1509::INPUT);
-  io->enableInterupt(CHANNEL_IO_TOGGLE_PIN_1, SX1509::RISE_FALL);
-  io->enableInterupt(CHANNEL_IO_TOGGLE_PIN_2, SX1509::RISE_FALL);
+  io->pinMode(CHANNEL_LED_MUX_SEL, SX1509::OUTPUT);
+  io->digitalWrite(CHANNEL_LED_MUX_SEL, 1);
+  io->pinMode(CHANNEL_MODE_LED, SX1509::ANALOG_OUTPUT);
+  io->pinMode(CHANNEL_GATE_LED, SX1509::ANALOG_OUTPUT);
+  io->setPWM(CHANNEL_MODE_LED, 127);
+  io->setPWM(CHANNEL_GATE_LED, 127);
+  io->digitalWrite(CHANNEL_MODE_LED, 1);
+  io->digitalWrite(CHANNEL_GATE_LED, 1);
 
   // initialize IO Led Driver pins
   for (int i = 0; i < 8; i++)
@@ -83,12 +88,6 @@ void TouchChannel::poll() {
     if (uiMode == LOOP_LENGTH_UI) {
       handleLoopLengthUI();
     }
-
-    if (touchDetected) {
-      handleTouchInterupt();
-      touchDetected = false;
-    }
-
 
     if (modeChangeDetected) {
       this->handleIOInterupt();
@@ -231,75 +230,74 @@ void TouchChannel::resetClock() {
 
 // NOTE: you need a way to trigger events after a series of touches have happened, and the channel is now not being touched
 
-void TouchChannel::handleTouchInterupt() {
-  touched = touch->touched();
-  if (touched != prevTouched) {
-    for (int i=0; i<8; i++) {
-      // if it *is* touched and *wasnt* touched before, alert!
-      if (touch->getBitStatus(touched, i) && !touch->getBitStatus(prevTouched, i)) {
-        
-        if (uiMode == DEFAULT_UI) {
-          switch (mode) {
-            case MONO:
-              triggerNote(i, currOctave, ON);
-              break;
-            case QUANTIZE:
-              /**
-               * TODO: start timer for setting max active degrees
-               * RESET will now reset activeDegreeLimit to its max value of 8
-              */
-              setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
-              break;
-            case QUANTIZE_LOOP:
-              // every touch detected, take a snapshot of all active degree values and apply them to a EventNode
-              setActiveDegrees(bitWrite(activeDegrees, i, !bitRead(activeDegrees, i)));
-              createChordEvent(currPosition, activeDegrees);
-              break;
-            case MONO_LOOP:
-              clearExistingNodes = true;
-              createEvent(currPosition, i, HIGH);
-              triggerNote(i, currOctave, ON);
-              break;
-          }
-        }
-        else { // LOOP_LENGTH_UI mode
-          switch (uiMode) {
-            case LOOP_LENGTH_UI:
-              setLoopLength(i + 1); // loop length is not zero indexed
-              break;
-            case PB_RANGE_UI:
-              setPitchBendRange(i);
-              updatePitchBendRangeUI();
-              break;
-          }
-        }
-      }
-      // if it *was* touched and now *isnt*, alert!
-      if (!touch->getBitStatus(touched, i) && touch->getBitStatus(prevTouched, i)) {
-        
-        if (uiMode == DEFAULT_UI) {
-          switch (mode) {
-            case MONO:
-              triggerNote(i, currOctave, OFF);
-              break;
-            case QUANTIZE:
-              // set end time
-              // if (endTime - startTime > gestureThreshold) do something fancy
-              break;
-            case QUANTIZE_LOOP:
-              break;
-            case MONO_LOOP:
-              createEvent(currPosition, i, LOW);
-              triggerNote(i, currOctave, OFF);
-              clearExistingNodes = false;
-              // create note OFF event
-              // enableLoop = true;
-              break;
-          }
-        }
+void TouchChannel::onTouch(uint8_t pad) {
+  if (pad < 8) {
+    if (uiMode == DEFAULT_UI)
+    {
+      switch (mode)
+      {
+      case MONO:
+        triggerNote(pad, currOctave, ON);
+        break;
+      case QUANTIZE:
+        /**
+       * TODO: start timer for setting max active degrees
+       * RESET will now reset activeDegreeLimit to its max value of 8
+      */
+        setActiveDegrees(bitWrite(activeDegrees, pad, !bitRead(activeDegrees, pad)));
+        break;
+      case QUANTIZE_LOOP:
+        // every touch detected, take a snapshot of all active degree values and apply them to a EventNode
+        setActiveDegrees(bitWrite(activeDegrees, pad, !bitRead(activeDegrees, pad)));
+        createChordEvent(currPosition, activeDegrees);
+        break;
+      case MONO_LOOP:
+        clearExistingNodes = true;
+        createEvent(currPosition, pad, HIGH);
+        triggerNote(pad, currOctave, ON);
+        break;
       }
     }
-    prevTouched = touched;
+    else
+    { // LOOP_LENGTH_UI mode
+      switch (uiMode)
+      {
+      case LOOP_LENGTH_UI:
+        setLoopLength(pad + 1); // loop length is not zero indexed
+        break;
+      case PB_RANGE_UI:
+        setPitchBendRange(pad);
+        updatePitchBendRangeUI();
+        break;
+      }
+    }
+  } else {
+    setOctave(pad - 8); // octave pads are 9, 10, 11, 12 but should be 0, 1, 2, 3
+  }
+}
+
+void TouchChannel::onRelease(uint8_t pad) {
+  if (uiMode == DEFAULT_UI)
+  {
+    switch (mode)
+    {
+    case MONO:
+      triggerNote(pad, currOctave, OFF);
+      break;
+    case QUANTIZE:
+      // set end time
+      // if (endTime - startTime > gestureThreshold) do something fancy
+      break;
+    case QUANTIZE_LOOP:
+      break;
+    case MONO_LOOP:
+      createEvent(currPosition, pad, LOW);
+      triggerNote(pad, currOctave, OFF);
+      clearExistingNodes = false;
+      // create note OFF event
+      // enableLoop = true;
+      break;
+    }
   }
 }
 
