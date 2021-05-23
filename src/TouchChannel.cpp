@@ -35,7 +35,7 @@ void TouchChannel::init() {
   enableQuantizer = false;
   mode = MONO;
   uiMode = DEFAULT_UI;
-
+  setModeLed(LOW);
   this->setOctave(currOctave);
   setGate(LOW);
 }
@@ -48,13 +48,10 @@ void TouchChannel::initIOExpander() {
   io->enableInterupt(CHANNEL_IO_MODE_PIN, SX1509::RISING);
 
   io->pinMode(CHANNEL_LED_MUX_SEL, SX1509::OUTPUT);
+  io->enablePullup(CHANNEL_LED_MUX_SEL);
   io->digitalWrite(CHANNEL_LED_MUX_SEL, 1);
-  io->pinMode(CHANNEL_MODE_LED, SX1509::ANALOG_OUTPUT);
-  io->pinMode(CHANNEL_GATE_LED, SX1509::ANALOG_OUTPUT);
-  io->setPWM(CHANNEL_MODE_LED, 127);
-  io->setPWM(CHANNEL_GATE_LED, 127);
-  io->digitalWrite(CHANNEL_MODE_LED, 1);
-  io->digitalWrite(CHANNEL_GATE_LED, 1);
+  io->ledConfig(CHANNEL_MODE_LED);
+  io->ledConfig(CHANNEL_GATE_LED);
 
   // initialize IO Led Driver pins
   for (int i = 0; i < 8; i++)
@@ -337,6 +334,7 @@ void TouchChannel::setMode(Mode targetMode) {
       setAllLeds(LOW);               // I think this is just a "start from a clean slate" kinda thing
       setAllLeds(DIM_HIGH);
       updateOctaveLeds(currOctave);
+      setModeLed(LOW);
       triggerNote(currNoteIndex, currOctave, SUSTAIN);
       break;
     case MONO_LOOP:
@@ -346,6 +344,7 @@ void TouchChannel::setMode(Mode targetMode) {
       setAllLeds(LOW);
       setAllLeds(DIM_LOW);
       updateOctaveLeds(currOctave);
+      setModeLed(HIGH);
       triggerNote(currNoteIndex, currOctave, SUSTAIN);
       break;
     case QUANTIZE:
@@ -357,6 +356,7 @@ void TouchChannel::setMode(Mode targetMode) {
       setAllLeds(DIM_HIGH);
       updateActiveDegreeLeds();
       updateOctaveLeds(activeOctaves);
+      setModeLed(LOW);
       triggerNote(currNoteIndex, currOctave, OFF);
       break;
     case QUANTIZE_LOOP:
@@ -366,6 +366,7 @@ void TouchChannel::setMode(Mode targetMode) {
       setAllLeds(LOW);
       setAllLeds(DIM_LOW);
       updateActiveDegreeLeds();
+      setModeLed(HIGH);
       triggerNote(currNoteIndex, currOctave, OFF);
       break;
   }
@@ -782,4 +783,26 @@ void TouchChannel::setGate(bool state)
 {
   gateState = state;
   gateOut.write(state);
+  setGateLed(state ? HIGH : LOW);
+}
+
+void TouchChannel::setModeLed(LedState state) {
+  if (state == HIGH)
+  {
+    io->analogWrite(CHANNEL_MODE_LED, 20);
+  }
+  else
+  {
+    io->analogWrite(CHANNEL_MODE_LED, 0);
+  }
+}
+void TouchChannel::setGateLed(LedState state) {
+  if (state == HIGH)
+  {
+    io->analogWrite(CHANNEL_GATE_LED, 255);
+  }
+  else
+  {
+    io->analogWrite(CHANNEL_GATE_LED, 0);
+  }
 }

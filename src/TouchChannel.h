@@ -239,6 +239,8 @@ class TouchChannel {
     void initIOExpander();
     void setLed(int index, LedState state, bool settingUILed=false);
     void setOctaveLed(int octave, LedState state, bool settingUILed=false);
+    void setModeLed(LedState state);
+    void setGateLed(LedState state);
     void setAllLeds(int state);
     void updateOctaveLeds(int octave);
     void updateLoopMultiplierLeds();
