@@ -10,7 +10,7 @@
 #include "MCP23017.h"
 #include "AD525X.h"
 #include "SX1509.h"
-
+#include "MCP23008.h"
 
 int OCTAVE_LED_PINS_A[4] = { 0, 1, 2, 3 };     // via TLC59116
 int OCTAVE_LED_PINS_B[4] = { 4, 5, 6, 7 };     // via TLC59116
@@ -33,6 +33,7 @@ AD525X digiPot(&i2c1);
 DAC8554 dac1(SPI2_MOSI, SPI2_SCK, DAC1_CS);
 DAC8554 dac2(SPI2_MOSI, SPI2_SCK, DAC2_CS);
 MCP23017 io(&i2c3, MCP23017_DEGREES_ADDR);
+MCP23008 io8(&i2c1, 0x22);
 
 SX1509 ioA(&i2c3, SX1509_CHAN_A_ADDR);
 SX1509 ioB(&i2c3, SX1509_CHAN_B_ADDR);
@@ -53,6 +54,7 @@ TouchChannel channelD(3, &timer, &ticker, &queue, &globalGate, GATE_OUT_D, IO_IN
 
 Metronome metronome(TEMPO_LED, TEMPO_POT, INT_CLOCK_OUTPUT, PPQN, DEFAULT_CHANNEL_LOOP_STEPS);
 
+DigitalOut recLED(PC_13);
 GlobalControl globalCTRL(&metronome, CTRL_INT, FREEZE_LED, &channelA, &channelB, &channelC, &channelD);
 
 
@@ -66,7 +68,11 @@ int main() {
 
   degrees.init();
 
+  // queue.event(callback(&io8, &MCP23008::init));
+  // io8.setDirection(0x00);
+  // io8.writePins(0xFF);
 
+  recLED = 1;
 
   channelA.init();
   channelB.init();
@@ -80,22 +86,22 @@ int main() {
 
 
 
-    // if (globalCTRL.mode == GlobalControl::CALIBRATING) {
-    //   if (globalCTRL.calibrator.calibrationFinished == false) {
-    //     globalCTRL.calibrator.calibrateVCO();
-    //   } else {
-    //     globalCTRL.saveCalibrationToFlash();
-    //     globalCTRL.mode = GlobalControl::DEFAULT;
-    //   }
-    // } else {
-    //   metronome.poll();
-    //   globalCTRL.poll();
-    //   degrees.poll();
-    //   channelA.poll();
-    //   channelB.poll();
-    //   channelC.poll();
-    //   channelD.poll();
-    // }
+    if (globalCTRL.mode == GlobalControl::CALIBRATING) {
+      if (globalCTRL.calibrator.calibrationFinished == false) {
+        globalCTRL.calibrator.calibrateVCO();
+      } else {
+        globalCTRL.saveCalibrationToFlash();
+        globalCTRL.mode = GlobalControl::DEFAULT;
+      }
+    } else {
+      metronome.poll();
+      globalCTRL.poll();
+      degrees.poll();
+      channelA.poll();
+      channelB.poll();
+      channelC.poll();
+      channelD.poll();
+    }
     
     
   }
