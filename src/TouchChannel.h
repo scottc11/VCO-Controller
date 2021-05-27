@@ -23,8 +23,9 @@
 #define PB_CALIBRATION_RANGE 64
 const int PB_RANGE_MAP[8] = { 1, 2, 3, 4, 5, 7, 10, 12 };
 
-static const int OCTAVE_LED_PINS[4] = { 3, 2, 1, 0 };                 // io pin map for octave LEDs
-static const int CHAN_LED_PINS[8] = { 4, 5, 6, 7, 12, 13, 14, 15 }; // io pin map for channel LEDs
+static const int OCTAVE_LED_PINS[4] = { 3, 2, 1, 0 };               // io pin map for octave LEDs
+static const int CHAN_LED_PINS[8] = { 15, 14, 13, 12, 7, 6, 5, 4 }; // io pin map for channel LEDs
+static const int CHAN_TOUCH_PADS[12] = { 7, 6, 5, 4, 3, 2, 1, 0, 3, 2, 1, 0 };
 
 typedef struct QuantDegree {
   int threshold;
@@ -38,7 +39,7 @@ typedef struct QuantOctave {
 
 typedef struct SequenceNode {
   uint8_t activeNotes; // byte for holding active/inactive notes for a chord
-  uint8_t noteIndex;   // note index between 0 and 7
+  uint8_t noteIndex;   // note index between 0 and 7 NOTE: you could tag on some extra data in the bottom most bits, like gate on / off for example
   uint16_t pitchBend;  // raw ADC value from pitch bend
   bool gate;           // set gate HIGH or LOW
   bool active;         // this will tell the loop whether to trigger an event or not

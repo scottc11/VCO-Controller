@@ -228,7 +228,9 @@ void TouchChannel::resetClock() {
 // NOTE: you need a way to trigger events after a series of touches have happened, and the channel is now not being touched
 
 void TouchChannel::onTouch(uint8_t pad) {
+  
   if (pad < 8) {
+    pad = CHAN_TOUCH_PADS[pad];
     if (uiMode == DEFAULT_UI)
     {
       switch (mode)
@@ -269,31 +271,38 @@ void TouchChannel::onTouch(uint8_t pad) {
       }
     }
   } else {
-    setOctave(pad - 8); // octave pads are 9, 10, 11, 12 but should be 0, 1, 2, 3
+    pad = CHAN_TOUCH_PADS[pad];
+    setOctave(pad);
   }
 }
 
 void TouchChannel::onRelease(uint8_t pad) {
+  
   if (uiMode == DEFAULT_UI)
   {
-    switch (mode)
-    {
-    case MONO:
-      triggerNote(pad, currOctave, OFF);
-      break;
-    case QUANTIZE:
-      // set end time
-      // if (endTime - startTime > gestureThreshold) do something fancy
-      break;
-    case QUANTIZE_LOOP:
-      break;
-    case MONO_LOOP:
-      createEvent(currPosition, pad, LOW);
-      triggerNote(pad, currOctave, OFF);
-      clearExistingNodes = false;
-      // create note OFF event
-      // enableLoop = true;
-      break;
+    if (pad < 8) {
+      pad = CHAN_TOUCH_PADS[pad];
+      switch (mode)
+      {
+      case MONO:
+        triggerNote(pad, currOctave, OFF);
+        break;
+      case QUANTIZE:
+        // set end time
+        // if (endTime - startTime > gestureThreshold) do something fancy
+        break;
+      case QUANTIZE_LOOP:
+        break;
+      case MONO_LOOP:
+        createEvent(currPosition, pad, LOW);
+        triggerNote(pad, currOctave, OFF);
+        clearExistingNodes = false;
+        // create note OFF event
+        // enableLoop = true;
+        break;
+      }
+    } else {
+      setGate(LOW);
     }
   }
 }
