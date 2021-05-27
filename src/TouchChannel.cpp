@@ -634,19 +634,11 @@ void TouchChannel::reset() {
 }
 
 void TouchChannel::calibratePitchBend() {
-
-  // apply op-amp gain via digi pot
-  digiPot->setWiper(digiPotChan, 255); // max gain
-  wait_us(1000); // wait for things to settle
-
   // NOTE: this calibration process is currently flawed, because in the off chance there is an erratic
   // sensor ready in the positive or negative direction, the min / max values used to determine the debounce 
   // value would be too far apart, giving a poor debounce value. Additionally, pbZero would also not be very accurate due to these
   // readings. I actually think some DSP smoothing is necessary here, to remove the "noise". Or perhaps just adding debounce caps
   // on the hardware will help this problem.
-
-
-  
 
   // populate calibration array
   for (int i = 0; i < PB_CALIBRATION_RANGE; i++)

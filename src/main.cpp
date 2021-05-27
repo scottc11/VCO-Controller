@@ -6,9 +6,7 @@
 #include "MPR121.h"
 #include "MIDI.h"
 #include "DAC8554.h"
-#include "TCA9548A.h"
 #include "MCP23017.h"
-#include "AD525X.h"
 #include "SX1509.h"
 #include "MCP23008.h"
 
@@ -29,7 +27,6 @@ Timer timer;
 MIDI midi(MIDI_TX, MIDI_RX);
 InterruptIn extClockInput(EXT_CLOCK_INPUT);
 
-AD525X digiPot(&i2c1);
 DAC8554 dac1(SPI2_MOSI, SPI2_SCK, DAC1_CS);
 DAC8554 dac2(SPI2_MOSI, SPI2_SCK, DAC2_CS);
 MCP23017 io(&i2c3, MCP23017_DEGREES_ADDR);
@@ -47,10 +44,10 @@ MPR121 touchPadD(&i2c1, TOUCH_INT_D, MPR121::ADDR_SDA);
 
 Degrees degrees(DEGREES_INT, &io);
 
-TouchChannel channelA(0, &timer, &ticker, &queue, &globalGate, GATE_OUT_A, IO_INT_PIN_A, ADC_A, PB_ADC_A, &touchPadA, &ioA, &degrees, &midi, &dac1, DAC8554::CHAN_A, &dac2, DAC8554::CHAN_A, &digiPot, AD525X::CHAN_A);
-TouchChannel channelB(1, &timer, &ticker, &queue, &globalGate, GATE_OUT_B, IO_INT_PIN_B, ADC_B, PB_ADC_B, &touchPadB, &ioB, &degrees, &midi, &dac1, DAC8554::CHAN_B, &dac2, DAC8554::CHAN_B, &digiPot, AD525X::CHAN_B);
-TouchChannel channelC(2, &timer, &ticker, &queue, &globalGate, GATE_OUT_C, IO_INT_PIN_C, ADC_C, PB_ADC_C, &touchPadC, &ioC, &degrees, &midi, &dac1, DAC8554::CHAN_C, &dac2, DAC8554::CHAN_C, &digiPot, AD525X::CHAN_C);
-TouchChannel channelD(3, &timer, &ticker, &queue, &globalGate, GATE_OUT_D, IO_INT_PIN_D, ADC_D, PB_ADC_D, &touchPadD, &ioD, &degrees, &midi, &dac1, DAC8554::CHAN_D, &dac2, DAC8554::CHAN_D, &digiPot, AD525X::CHAN_D);
+TouchChannel channelA(0, &timer, &ticker, &queue, &globalGate, GATE_OUT_A, IO_INT_PIN_A, ADC_A, PB_ADC_A, &touchPadA, &ioA, &degrees, &midi, &dac1, DAC8554::CHAN_A, &dac2, DAC8554::CHAN_A);
+TouchChannel channelB(1, &timer, &ticker, &queue, &globalGate, GATE_OUT_B, IO_INT_PIN_B, ADC_B, PB_ADC_B, &touchPadB, &ioB, &degrees, &midi, &dac1, DAC8554::CHAN_B, &dac2, DAC8554::CHAN_B);
+TouchChannel channelC(2, &timer, &ticker, &queue, &globalGate, GATE_OUT_C, IO_INT_PIN_C, ADC_C, PB_ADC_C, &touchPadC, &ioC, &degrees, &midi, &dac1, DAC8554::CHAN_C, &dac2, DAC8554::CHAN_C);
+TouchChannel channelD(3, &timer, &ticker, &queue, &globalGate, GATE_OUT_D, IO_INT_PIN_D, ADC_D, PB_ADC_D, &touchPadD, &ioD, &degrees, &midi, &dac1, DAC8554::CHAN_D, &dac2, DAC8554::CHAN_D);
 
 Metronome metronome(TEMPO_LED, TEMPO_POT, INT_CLOCK_OUTPUT, PPQN, DEFAULT_CHANNEL_LOOP_STEPS);
 
@@ -64,14 +61,21 @@ int main() {
   
   timer.start();
 
+  // queue.event(callback(&io8, &MCP23008::init));
+
   thread.start(callback(&queue, &EventQueue::dispatch_forever));
 
   degrees.init();
 
-  // queue.event(callback(&io8, &MCP23008::init));
+  
+  // queue.event(&io8, &MCP23008::setDirection, 0x00);
+  // queue.event(&io8, &MCP23008::writePins, 0xFF);
+  io8.init();
   // io8.setDirection(0x00);
-  // io8.writePins(0xFF);
-
+  wait_ms(1000);
+  io8.writePins(0b00110011);
+  wait_ms(1000);
+  io8.writePins(0b11001100);
   recLED = 1;
 
   channelA.init();
@@ -79,29 +83,27 @@ int main() {
   channelC.init();
   channelD.init();
 
-  globalCTRL.init();
+  // globalCTRL.init();
   // globalCTRL.loadCalibrationDataFromFlash();
 
   while(1) {
 
-
-
-    if (globalCTRL.mode == GlobalControl::CALIBRATING) {
-      if (globalCTRL.calibrator.calibrationFinished == false) {
-        globalCTRL.calibrator.calibrateVCO();
-      } else {
-        globalCTRL.saveCalibrationToFlash();
-        globalCTRL.mode = GlobalControl::DEFAULT;
-      }
-    } else {
-      metronome.poll();
-      globalCTRL.poll();
-      degrees.poll();
-      channelA.poll();
-      channelB.poll();
-      channelC.poll();
-      channelD.poll();
-    }
+    // if (globalCTRL.mode == GlobalControl::CALIBRATING) {
+    //   if (globalCTRL.calibrator.calibrationFinished == false) {
+    //     globalCTRL.calibrator.calibrateVCO();
+    //   } else {
+    //     globalCTRL.saveCalibrationToFlash();
+    //     globalCTRL.mode = GlobalControl::DEFAULT;
+    //   }
+    // } else {
+    //   metronome.poll();
+    //   globalCTRL.poll();
+    //   degrees.poll();
+    //   channelA.poll();
+    //   channelB.poll();
+    //   channelC.poll();
+    //   channelD.poll();
+    // }
     
     
   }

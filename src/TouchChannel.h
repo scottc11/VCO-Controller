@@ -9,7 +9,6 @@
 #include "MPR121.h"
 #include "TCA9544A.h"
 #include "SX1509.h"
-#include "AD525X.h"
 #include "MIDI.h"
 #include "QuantizeMethods.h"
 #include "BitwiseMethods.h"
@@ -109,8 +108,6 @@ class TouchChannel {
     DAC8554 *pb_dac;                // pointer to Pitch Bends DAC
     DAC8554::Channels pb_dac_chan;  // which dac to address
     SX1509 *io;                     // IO Expander
-    AD525X *digiPot;                // digipot for pitch bend calibration
-    AD525X::Channels digiPotChan;   // which channel to use for the digipot
     Degrees *degrees;
     InterruptIn ioInterupt;         // for SC1509 3-stage toggle switch + tactile mode button
     AnalogIn cvInput;               // CV input pin for quantizer mode
@@ -208,9 +205,8 @@ class TouchChannel {
         DAC8554 *dac_ptr,
         DAC8554::Channels _dacChannel,
         DAC8554 *pb_dac_ptr,
-        DAC8554::Channels pb_dac_channel,
-        AD525X *digiPot_ptr,
-        AD525X::Channels _digiPotChannel) : gateOut(gateOutPin), ioInterupt(ioIntPin, PullUp), cvInput(cvInputPin), pbInput(pbInputPin)
+        DAC8554::Channels pb_dac_channel
+        ) : gateOut(gateOutPin), ioInterupt(ioIntPin, PullUp), cvInput(cvInputPin), pbInput(pbInputPin)
     {
       globalGateOut = globalGateOut_ptr;
       timer = timer_ptr;
@@ -223,8 +219,6 @@ class TouchChannel {
       dacChannel = _dacChannel;
       pb_dac = pb_dac_ptr;
       pb_dac_chan = pb_dac_channel;
-      digiPot = digiPot_ptr;
-      digiPotChan = _digiPotChannel;
       midi = midi_p;
       ioInterupt.fall(callback(this, &TouchChannel::ioInteruptFn));
       channel = _channel;
