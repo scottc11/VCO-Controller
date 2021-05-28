@@ -3,11 +3,11 @@
 
 #include "main.h"
 #include "BitwiseMethods.h"
-#include "CAP1208.h"
 #include "TouchChannel.h"
 #include "VCOCalibrator.h"
 #include "DualDigitDisplay.h"
 #include "Metronome.h"
+#include "MCP23017.h"
 
 
 class GlobalControl {
@@ -17,26 +17,29 @@ public:
     CALIBRATING
   };
 
+  MCP23017 io;
   Metronome *metronome;
   VCOCalibrator calibrator;
   TouchChannel *channels[4];
   Timer timer;
-  DigitalOut freezeLED;
   InterruptIn ctrlInterupt;
+  DigitalOut freezeLED;
+  DigitalOut recLED;
   uint32_t flashAddr = 0x08060000;   // should be 'sector 7', program memory address starts @ 0x08000000
 
   Mode mode;
   bool recordEnabled;                // used for toggling REC led among other things...
   int selectedChannel;
+  bool buttonPressed;
 
   GlobalControl(
       Metronome *metronome_ptr,
-      PinName ctrl_int,
-      PinName freezeLedPin,
+      I2C *i2c_ptr,
       TouchChannel *chanA_ptr,
       TouchChannel *chanB_ptr,
       TouchChannel *chanC_ptr,
-      TouchChannel *chanD_ptr) : ctrlInterupt(ctrl_int, PullUp), freezeLED(freezeLedPin)
+      TouchChannel *chanD_ptr
+      ) : io(i2c_ptr, MCP23017_CTRL_ADDR), ctrlInterupt(CTRL_INT), freezeLED(FREEZE_LED), recLED(REC_LED)
   {
     mode = Mode::DEFAULT;
     metronome = metronome_ptr;
@@ -45,7 +48,8 @@ public:
     channels[2] = chanC_ptr;
     channels[3] = chanD_ptr;
     ctrlInterupt.fall(callback(this, &GlobalControl::handleControlInterupt));
-    freezeLED.write(1);
+    freezeLED.write(0);
+    recLED.write(0);
   }
 
   void init();
@@ -73,7 +77,7 @@ public:
   void tickChannels();
 
   void handleControlInterupt() {
-    // touchDetected = true;
+    buttonPressed = true;
   }
 
 private:

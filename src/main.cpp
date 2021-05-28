@@ -51,8 +51,7 @@ TouchChannel channelD(3, &timer, &ticker, &queue, &globalGate, GATE_OUT_D, IO_IN
 
 Metronome metronome(TEMPO_LED, TEMPO_POT, INT_CLOCK_OUTPUT, PPQN, DEFAULT_CHANNEL_LOOP_STEPS);
 
-DigitalOut recLED(PC_13);
-GlobalControl globalCTRL(&metronome, CTRL_INT, FREEZE_LED, &channelA, &channelB, &channelC, &channelD);
+GlobalControl globalCTRL(&metronome, &i2c1, &channelA, &channelB, &channelC, &channelD);
 
 
 int main() {
@@ -71,22 +70,18 @@ int main() {
   // queue.event(&io8, &MCP23008::setDirection, 0x00);
   // queue.event(&io8, &MCP23008::writePins, 0xFF);
   io8.init();
-  // io8.setDirection(0x00);
-  wait_ms(1000);
-  io8.writePins(0b00110011);
-  wait_ms(1000);
-  io8.writePins(0b11001100);
-  recLED = 1;
 
   channelA.init();
   channelB.init();
   channelC.init();
   channelD.init();
 
-  // globalCTRL.init();
+  globalCTRL.init();
   // globalCTRL.loadCalibrationDataFromFlash();
 
   while(1) {
+
+    globalCTRL.poll();
 
     // if (globalCTRL.mode == GlobalControl::CALIBRATING) {
     //   if (globalCTRL.calibrator.calibrationFinished == false) {

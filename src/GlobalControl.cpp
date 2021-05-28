@@ -6,6 +6,14 @@ void GlobalControl::init() {
 
   metronome->attachTickCallback(callback(this, &GlobalControl::tickChannels));
 
+  io.init();
+  io.setDirection(MCP23017_PORTA, 0xff);
+  io.setDirection(MCP23017_PORTB, 0xff);
+  io.setInterupt(MCP23017_PORTA, 0xff);
+  io.setInterupt(MCP23017_PORTB, 0xff);
+  io.setPullUp(MCP23017_PORTA, 0xff);
+  io.setPullUp(MCP23017_PORTB, 0xff);
+
   selectChannel(0);  // select a default channel
 }
 
@@ -18,10 +26,11 @@ void GlobalControl::tickChannels() {
 
 
 void GlobalControl::poll() {
-  // if (touchDetected) {
-  //   handleTouchEvent();
-  //   touchDetected = false;
-  // }
+  if (buttonPressed) {
+    wait_us(10);
+    handleTouchEvent();
+    buttonPressed = false;
+  }
 
   if (timer.read() > 2) {
     calibrateChannel(selectedChannel);
@@ -51,7 +60,8 @@ void GlobalControl::selectChannel(int channel) {
  * HANDLE TOUCH EVENT
 */
 void GlobalControl::handleTouchEvent() {
-  
+  recLED = !recLED.read();
+  io.digitalReadAB();
 }
 
 

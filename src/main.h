@@ -50,7 +50,7 @@
 
 #define CTRL_INT             PB_5
 
-#define REC_LED              PA_15
+#define REC_LED              PC_13
 #define FREEZE_LED           PB_7
 
 #define DAC1_CS              PB_12
@@ -61,6 +61,7 @@
 #define CAP1208_CTRL_ADDR        0x50 // 0010100
 
 #define MCP23017_DEGREES_ADDR    0x20 // 0100000
+#define MCP23017_CTRL_ADDR       0x24 // 0100100
 
 #define IO_INT_PIN_A             PA_12
 #define IO_INT_PIN_B             PA_11
