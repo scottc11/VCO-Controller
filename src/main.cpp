@@ -51,8 +51,7 @@ TouchChannel channelD(3, &timer, &ticker, &queue, &globalGate, GATE_OUT_D, IO_IN
 
 Metronome metronome(TEMPO_LED, TEMPO_POT, INT_CLOCK_OUTPUT, PPQN, DEFAULT_CHANNEL_LOOP_STEPS);
 
-GlobalControl globalCTRL(&metronome, &i2c1, &channelA, &channelB, &channelC, &channelD);
-
+GlobalControl globalCTRL(&queue, &metronome, &i2c1, &channelA, &channelB, &channelC, &channelD);
 
 int main() {
   i2c1.frequency(400000);

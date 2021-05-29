@@ -17,6 +17,7 @@ public:
     CALIBRATING
   };
 
+  EventQueue *eventQueue;
   MCP23017 io;
   Metronome *metronome;
   VCOCalibrator calibrator;
@@ -31,8 +32,10 @@ public:
   bool recordEnabled;                // used for toggling REC led among other things...
   int selectedChannel;
   bool buttonPressed;
+  uint16_t buttonsState;
 
   GlobalControl(
+      EventQueue *queue_ptr,
       Metronome *metronome_ptr,
       I2C *i2c_ptr,
       TouchChannel *chanA_ptr,
@@ -42,6 +45,7 @@ public:
       ) : io(i2c_ptr, MCP23017_CTRL_ADDR), ctrlInterupt(CTRL_INT), freezeLED(FREEZE_LED), recLED(REC_LED)
   {
     mode = Mode::DEFAULT;
+    eventQueue = queue_ptr;
     metronome = metronome_ptr;
     channels[0] = chanA_ptr;
     channels[1] = chanB_ptr;
@@ -69,7 +73,7 @@ public:
   void handleTouch(int pad);
   void handleRelease(int pad);
   bool handleGesture();
-  void handleTouchEvent();
+  void handleButtonPress();
   void handleOctaveTouched();
   void setChannelOctave(int pad);
   void setChannelLoopMultiplier(int pad);
@@ -83,37 +87,43 @@ public:
 private:
   enum PadNames
   {                  // integers correlate to 8-bit index position
-    LOOP_LENGTH = 0, // 0b00000001
-    PB_RANGE = 1,
-    CALIBRATE = 3,   // 0b00001000
-    RECORD = 5,      // 0b00100000
-    CLEAR_SEQ = 6,   // 0b01000000
-    CLEAR_BEND = 7,  // 0b10000000
-    RESET = 9,       
-    FREEZE = 10,     
-    CTRL_ALL = 11,   // 0b00001000
-    CTRL_A = 12,     // 0b00010000
-    CTRL_B = 13,     // 0b00100000
-    CTRL_C = 14,     // 0b01000000
-    CTRL_D = 15,     // 0b10000000
+    SEQ_LENGTH = 0xFFBF,
+    PB_RANGE =   0xFFDF,
+    RECORD =     0xEFFF,
+    CLEAR_SEQ =  0xBFFF,
+    CLEAR_BEND = 0xDFFF,
+    BEND_MODE =  0x7FFF,
+    RESET =      0xFEFF,
+    FREEZE =     0xFBFF,
+    QUANTIZE_SEQ = 0xFDFF,
+    QUANTIZE_AMOUNT = 0xFFEF,
+    SHIFT =      0xFF7F,
+    CTRL_A =     0xFFF7,
+    CTRL_B =     0xFFFB,
+    CTRL_C =     0xFFFD,
+    CTRL_D =     0xFFFE
   };
 
   enum Gestures
   {
+    CALIBRATE_A = 0xFF77,
+    CALIBRATE_B = 0xFF7B,
+    CALIBRATE_C = 0xFF7D,
+    CALIBRATE_D = 0xFF7E,
     RESET_LOOP_A = 0b10100000,            // CHANNEL + RESET
     RESET_LOOP_B = 0b10010000,            // CHANNEL + RESET
     RESET_LOOP_C = 0b10001000,            // CHANNEL + RESET
     RESET_LOOP_D = 0b10000100,            // CHANNEL + RESET
-    CLEAR_CH_A_LOOP   = 0b0001000001000000, // CLEAR_SEQ + CHANNEL
-    CLEAR_CH_B_LOOP   = 0b0010000001000000,
-    CLEAR_CH_C_LOOP   = 0b0100000001000000,
-    CLEAR_CH_D_LOOP   = 0b1000000001000000,
-    CLEAR_CH_A_PB     = 0b0001000010000000, // CLEAR_BEND + CHANNEL
-    CLEAR_CH_B_PB     = 0b0010000010000000,
-    CLEAR_CH_C_PB     = 0b0100000010000000,
-    CLEAR_CH_D_PB     = 0b1000000010000000,
-    CLEAR_SEQ_ALL     = 0b0000100001000000,
-    RESET_CALIBRATION = 0b0000100000001000  // CTRL_ALL + CALIBRATE
+    CLEAR_CH_A_LOOP = 0b0001000001000000, // CLEAR_SEQ + CHANNEL
+    CLEAR_CH_B_LOOP = 0b0010000001000000,
+    CLEAR_CH_C_LOOP = 0b0100000001000000,
+    CLEAR_CH_D_LOOP = 0b1000000001000000,
+    CLEAR_CH_A_PB = 0b0001000010000000, // CLEAR_BEND + CHANNEL
+    CLEAR_CH_B_PB = 0b0010000010000000,
+    CLEAR_CH_C_PB = 0b0100000010000000,
+    CLEAR_CH_D_PB = 0b1000000010000000,
+    CLEAR_SEQ_ALL = 0b0000100001000000,
+    RESET_CALIBRATION = 0b0000100000001000 // CTRL_ALL + CALIBRATE
   };
 };
 

@@ -13,7 +13,7 @@ void GlobalControl::init() {
   io.setInterupt(MCP23017_PORTB, 0xff);
   io.setPullUp(MCP23017_PORTA, 0xff);
   io.setPullUp(MCP23017_PORTB, 0xff);
-
+  io.digitalReadAB(); // clear any stray interupts
   selectChannel(0);  // select a default channel
 }
 
@@ -28,16 +28,9 @@ void GlobalControl::tickChannels() {
 void GlobalControl::poll() {
   if (buttonPressed) {
     wait_us(10);
-    handleTouchEvent();
+    handleButtonPress();
     buttonPressed = false;
-  }
-
-  if (timer.read() > 2) {
-    calibrateChannel(selectedChannel);
-    timer.stop();
-    timer.reset();
-  }
-  
+  }  
 }
 
 
@@ -59,9 +52,10 @@ void GlobalControl::selectChannel(int channel) {
 /**
  * HANDLE TOUCH EVENT
 */
-void GlobalControl::handleTouchEvent() {
+void GlobalControl::handleButtonPress() {
   recLED = !recLED.read();
-  io.digitalReadAB();
+  uint16_t state = io.digitalReadAB();
+  buttonsState = state;
 }
 
 
@@ -102,8 +96,8 @@ void GlobalControl::handleTouch(int pad) {
       break;
     case RESET:
       break;
-    case CALIBRATE:
-      timer.start();
+    case BEND_MODE:
+      
       break;
     case PB_RANGE:
       channels[0]->enableUIMode(TouchChannel::PB_RANGE_UI);
@@ -111,7 +105,7 @@ void GlobalControl::handleTouch(int pad) {
       channels[2]->enableUIMode(TouchChannel::PB_RANGE_UI);
       channels[3]->enableUIMode(TouchChannel::PB_RANGE_UI);
       break;
-    case LOOP_LENGTH:
+    case SEQ_LENGTH:
       channels[0]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
       channels[1]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
       channels[2]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
@@ -119,14 +113,14 @@ void GlobalControl::handleTouch(int pad) {
       break;
     case RECORD:
       if (!recordEnabled) {
-        // rec_led.write(1);
+        recLED.write(1);
         channels[0]->enableLoopMode();
         channels[1]->enableLoopMode();
         channels[2]->enableLoopMode();
         channels[3]->enableLoopMode();
         recordEnabled = true;
       } else {
-        // rec_led.write(0);
+        recLED.write(0);
         channels[0]->disableLoopMode();
         channels[1]->disableLoopMode();
         channels[2]->disableLoopMode();
@@ -159,17 +153,13 @@ void GlobalControl::handleRelease(int pad) {
       break;
     case RESET:
       break;
-    case CALIBRATE:
-      timer.stop();
-      timer.reset();
-      break;
     case PB_RANGE:
       channels[0]->disableUIMode();
       channels[1]->disableUIMode();
       channels[2]->disableUIMode();
       channels[3]->disableUIMode();
       break;
-    case LOOP_LENGTH:
+    case SEQ_LENGTH:
       channels[0]->disableUIMode();
       channels[1]->disableUIMode();
       channels[2]->disableUIMode();
