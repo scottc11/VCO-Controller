@@ -56,7 +56,7 @@ class TouchChannel {
       OFF,
       SUSTAIN,
       PREV,
-      PITCH_BEND
+      BEND_PITCH
     };
 
     enum LedColor {
@@ -76,11 +76,18 @@ class TouchChannel {
       DIM_HIGH = 6
     };
 
-    enum Mode {
+    enum ChannelMode {
       MONO = 0,
       MONO_LOOP = 1,
       QUANTIZE = 2,
       QUANTIZE_LOOP = 3,
+    };
+
+    enum BenderMode {
+      RATCHET = 0,
+      PITCH_BEND = 1,
+      RATCHET_PITCH_BEND = 2,
+      BEND_OFF = 3
     };
 
     enum UIMode { // not yet implemented
@@ -92,8 +99,8 @@ class TouchChannel {
     int channel;                    // 0 based index to represent channel
     bool isSelected;
     bool gateState;                 // the current state of the gate output pin
-    Mode mode;                      // which mode channel is currently in
-    Mode prevMode;                  // used for reverting to previous mode when toggling between UI modes
+    ChannelMode mode;               // which mode channel is currently in
+    ChannelMode prevMode;           // used for reverting to previous mode when toggling between UI modes
     UIMode uiMode;                  // for settings and alt LED uis
     DigitalOut gateOut;             // gate output pin
     DigitalOut *globalGateOut;      // 
@@ -251,8 +258,8 @@ class TouchChannel {
 
     void handleDegreeChange();
     void handleIOInterupt();
-    void setMode(Mode targetMode);
-    
+    void setMode(ChannelMode targetMode);
+
     void tickClock();
     void stepClock();
     void resetClock();

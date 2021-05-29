@@ -68,7 +68,7 @@ void TouchChannel::handleSequence(int position)
             break;
     }
 
-    triggerNote(currNoteIndex, currOctave, PITCH_BEND); // always handle pitch bend value
+    triggerNote(currNoteIndex, currOctave, BEND_PITCH); // always handle pitch bend value
 }
 
 void TouchChannel::clearEventSequence()

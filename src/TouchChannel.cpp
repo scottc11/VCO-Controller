@@ -97,7 +97,7 @@ void TouchChannel::poll() {
 
     if (tickerFlag) {                                                        // every PPQN, read ADCs and update
 
-      triggerNote(currNoteIndex, currOctave, PITCH_BEND);                    // HANDLE PITCH BEND
+      triggerNote(currNoteIndex, currOctave, BEND_PITCH);                    // HANDLE PITCH BEND
 
       if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer)    // HANDLE CV QUANTIZATION
       {
@@ -333,7 +333,8 @@ void TouchChannel::handleIOInterupt() {
   }
 }
 
-void TouchChannel::setMode(Mode targetMode) {
+void TouchChannel::setMode(ChannelMode targetMode)
+{
   prevMode = mode;
   switch (targetMode) {
     case MONO:
@@ -584,7 +585,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
       dac->write(dacChannel, calculateDACNoteValue(index, octave));
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
-    case PITCH_BEND:
+    case BEND_PITCH:
       dac->write(dacChannel, calculateDACNoteValue(index, octave));
       break;
   }
