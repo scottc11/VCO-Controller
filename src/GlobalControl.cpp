@@ -6,6 +6,8 @@ void GlobalControl::init() {
 
   metronome->attachTickCallback(callback(this, &GlobalControl::tickChannels));
 
+  leds.init();
+
   io.init();
   io.setDirection(MCP23017_PORTA, 0xff);
   io.setDirection(MCP23017_PORTB, 0xff);
@@ -27,7 +29,7 @@ void GlobalControl::tickChannels() {
 
 void GlobalControl::poll() {
   if (buttonPressed) {
-    wait_us(10);
+    wait_us(1000);
     handleButtonPress();
     buttonPressed = false;
   }  

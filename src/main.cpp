@@ -30,7 +30,6 @@ InterruptIn extClockInput(EXT_CLOCK_INPUT);
 DAC8554 dac1(SPI2_MOSI, SPI2_SCK, DAC1_CS);
 DAC8554 dac2(SPI2_MOSI, SPI2_SCK, DAC2_CS);
 MCP23017 io(&i2c3, MCP23017_DEGREES_ADDR);
-MCP23008 io8(&i2c1, 0x22);
 
 SX1509 ioA(&i2c3, SX1509_CHAN_A_ADDR);
 SX1509 ioB(&i2c3, SX1509_CHAN_B_ADDR);
@@ -64,11 +63,6 @@ int main() {
   thread.start(callback(&queue, &EventQueue::dispatch_forever));
 
   degrees.init();
-
-  
-  // queue.event(&io8, &MCP23008::setDirection, 0x00);
-  // queue.event(&io8, &MCP23008::writePins, 0xFF);
-  io8.init();
 
   channelA.init();
   channelB.init();

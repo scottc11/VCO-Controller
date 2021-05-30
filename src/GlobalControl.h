@@ -8,7 +8,7 @@
 #include "DualDigitDisplay.h"
 #include "Metronome.h"
 #include "MCP23017.h"
-
+#include "MCP23008.h"
 
 class GlobalControl {
 public:
@@ -19,6 +19,7 @@ public:
 
   EventQueue *eventQueue;
   MCP23017 io;
+  MCP23008 leds;
   Metronome *metronome;
   VCOCalibrator calibrator;
   TouchChannel *channels[4];
@@ -42,7 +43,7 @@ public:
       TouchChannel *chanB_ptr,
       TouchChannel *chanC_ptr,
       TouchChannel *chanD_ptr
-      ) : io(i2c_ptr, MCP23017_CTRL_ADDR), ctrlInterupt(CTRL_INT), freezeLED(FREEZE_LED), recLED(REC_LED)
+      ) : io(i2c_ptr, MCP23017_CTRL_ADDR), leds(i2c_ptr, MCP23008_IO_ADDR), ctrlInterupt(CTRL_INT), freezeLED(FREEZE_LED), recLED(REC_LED)
   {
     mode = Mode::DEFAULT;
     eventQueue = queue_ptr;
