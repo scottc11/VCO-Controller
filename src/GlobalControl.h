@@ -20,6 +20,7 @@ public:
   EventQueue *eventQueue;
   MCP23017 io;
   MCP23008 leds;
+  uint8_t ledStates = 0x00;          // || chan D || chan C || chan B || chan A ||
   Metronome *metronome;
   VCOCalibrator calibrator;
   TouchChannel *channels[4];
@@ -53,8 +54,6 @@ public:
     channels[2] = chanC_ptr;
     channels[3] = chanD_ptr;
     ctrlInterupt.fall(callback(this, &GlobalControl::handleControlInterupt));
-    freezeLED.write(0);
-    recLED.write(0);
   }
 
   void init();
@@ -78,7 +77,8 @@ public:
   void handleOctaveTouched();
   void setChannelOctave(int pad);
   void setChannelLoopMultiplier(int pad);
-
+  void setChannelBenderMode();
+  void setChannelBenderMode(int chan);
   void tickChannels();
 
   void handleControlInterupt() {
@@ -111,6 +111,10 @@ private:
     CALIBRATE_B = 0xFF7B,
     CALIBRATE_C = 0xFF7D,
     CALIBRATE_D = 0xFF7E,
+    BEND_MODE_A = 0x7FF7,
+    BEND_MODE_B = 0x7FFB,
+    BEND_MODE_C = 0x7FFD,
+    BEND_MODE_D = 0x7FFE,
     RESET_LOOP_A = 0b10100000,            // CHANNEL + RESET
     RESET_LOOP_B = 0b10010000,            // CHANNEL + RESET
     RESET_LOOP_C = 0b10001000,            // CHANNEL + RESET

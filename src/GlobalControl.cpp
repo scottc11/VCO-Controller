@@ -6,8 +6,6 @@ void GlobalControl::init() {
 
   metronome->attachTickCallback(callback(this, &GlobalControl::tickChannels));
 
-  leds.init();
-
   io.init();
   io.setDirection(MCP23017_PORTA, 0xff);
   io.setDirection(MCP23017_PORTB, 0xff);
@@ -16,8 +14,24 @@ void GlobalControl::init() {
   io.setPullUp(MCP23017_PORTA, 0xff);
   io.setPullUp(MCP23017_PORTB, 0xff);
   io.digitalReadAB(); // clear any stray interupts
+  
+  leds.init();
+  leds.setPullUp(0x00);
+  leds.setConfig(0b00100000); // disable address auto-increment
+  leds.setDirection(0x00);
+  leds.setInterupt(0x00);
+  leds.writePins(0x00);
+  leds.readPins(); // clear strat interputs
+  
+  freezeLED.write(0);
+  recLED.write(0);
+
   selectChannel(0);  // select a default channel
+
+  setChannelBenderMode();
 }
+
+
 
 void GlobalControl::tickChannels() {
   channels[0]->tickClock();
@@ -29,10 +43,10 @@ void GlobalControl::tickChannels() {
 
 void GlobalControl::poll() {
   if (buttonPressed) {
-    wait_us(1000);
+    wait_us(2000);
     handleButtonPress();
     buttonPressed = false;
-  }  
+  }
 }
 
 
@@ -55,9 +69,8 @@ void GlobalControl::selectChannel(int channel) {
  * HANDLE TOUCH EVENT
 */
 void GlobalControl::handleButtonPress() {
-  recLED = !recLED.read();
   uint16_t state = io.digitalReadAB();
-  buttonsState = state;
+  this->handleTouch(state);
 }
 
 
@@ -82,16 +95,28 @@ void GlobalControl::setChannelLoopMultiplier(int pad) {
   }
 }
 
+void GlobalControl::setChannelBenderMode(int chan)
+{
+  ledStates &= ~(0x3 << (2 * chan));                          // clear previous value of target bits
+  ledStates |= channels[chan]->setBenderMode() << (2 * chan); // set target bits to new value
+  leds.writePins(ledStates);
+}
+
+void GlobalControl::setChannelBenderMode() {
+  for (int i = 0; i < 4; i++)
+  {
+    ledStates &= ~(0x3 << (2 * i));                       // clear previous value of target bits
+    ledStates |= channels[i]->setBenderMode() << (2 * i); // set target bits to new value
+  }
+  leds.writePins(ledStates);
+}
+
 /**
  * HANDLE TOUCH TOUCHED
  * 
 */
 void GlobalControl::handleTouch(int pad) {
-  
-  if (handleGesture()) {
-    return;
-  }
-  
+    
   switch (pad) {
     case FREEZE:
       handleFreeze(true);
@@ -99,7 +124,18 @@ void GlobalControl::handleTouch(int pad) {
     case RESET:
       break;
     case BEND_MODE:
-      
+      break;
+    case BEND_MODE_A:
+      setChannelBenderMode(0);
+      break;
+    case BEND_MODE_B:
+      setChannelBenderMode(1);
+      break;
+    case BEND_MODE_C:
+      setChannelBenderMode(2);
+      break;
+    case BEND_MODE_D:
+      setChannelBenderMode(3);
       break;
     case PB_RANGE:
       channels[0]->enableUIMode(TouchChannel::PB_RANGE_UI);
@@ -129,18 +165,6 @@ void GlobalControl::handleTouch(int pad) {
         channels[3]->disableLoopMode();
         recordEnabled = false;
       }
-      break;
-    case CTRL_A:
-      selectChannel(0);
-      break;
-    case CTRL_B:
-      selectChannel(1);
-      break;
-    case CTRL_C:
-      selectChannel(2);
-      break;
-    case CTRL_D:
-      selectChannel(3);
       break;
   }
 }
@@ -173,15 +197,6 @@ void GlobalControl::handleRelease(int pad) {
       // channels[2]->disableLoopMode();
       // channels[3]->disableLoopMode();
       break;
-    case CTRL_A:
-      timer.stop();
-      break;
-    case CTRL_B:
-      break;
-    case CTRL_C:
-      break;
-    case CTRL_D:
-      break;
   }
 }
 
@@ -192,51 +207,6 @@ bool GlobalControl::handleGesture() {
   //     saveCalibrationToFlash(true);   // reset calibration to default values
   //     loadCalibrationDataFromFlash(); // then load the 'new' values into all the channel instances
   //     return true;
-  //   case RESET_LOOP_A:
-  //     channels[0]->reset();
-  //     return true;
-  //   case RESET_LOOP_B:
-  //     channels[1]->reset();
-  //     return true;
-  //   case RESET_LOOP_C:
-  //     channels[2]->reset();
-  //     return true;
-  //   case RESET_LOOP_D:
-  //     channels[3]->reset();
-  //     return true;
-  //   case CLEAR_CH_A_LOOP:
-  //     channels[0]->clearLoop();
-  //     return true;
-  //   case CLEAR_CH_B_LOOP:
-  //     channels[1]->clearLoop();
-  //     return true;
-  //   case CLEAR_CH_C_LOOP:
-  //     channels[2]->clearLoop();
-  //     return true;
-  //   case CLEAR_CH_D_LOOP:
-  //     channels[3]->clearLoop();
-  //     return true;
-  //   case CLEAR_CH_A_PB:
-  //     channels[0]->clearPitchBendSequence();
-  //     return true;
-  //   case CLEAR_CH_B_PB:
-  //     channels[1]->clearPitchBendSequence();
-  //     return true;
-  //   case CLEAR_CH_C_PB:
-  //     channels[2]->clearPitchBendSequence();
-  //     return true;
-  //   case CLEAR_CH_D_PB:
-  //     channels[3]->clearPitchBendSequence();
-  //     return true;
-  //   case CLEAR_SEQ_ALL:
-  //     channels[0]->clearLoop();
-  //     channels[1]->clearLoop();
-  //     channels[2]->clearLoop();
-  //     channels[3]->clearLoop();
-  //     return true;
-  //   default:
-  //     return false;
-  // }
   return false;
 }
 

@@ -84,10 +84,10 @@ class TouchChannel {
     };
 
     enum BenderMode {
-      RATCHET = 0,
+      BEND_OFF = 0,
       PITCH_BEND = 1,
-      RATCHET_PITCH_BEND = 2,
-      BEND_OFF = 3
+      RATCHET = 2,
+      RATCHET_PITCH_BEND = 3
     };
 
     enum UIMode { // not yet implemented
@@ -101,6 +101,7 @@ class TouchChannel {
     bool gateState;                 // the current state of the gate output pin
     ChannelMode mode;               // which mode channel is currently in
     ChannelMode prevMode;           // used for reverting to previous mode when toggling between UI modes
+    int benderMode;                 // which mode the bender component is in
     UIMode uiMode;                  // for settings and alt LED uis
     DigitalOut gateOut;             // gate output pin
     DigitalOut *globalGateOut;      // 
@@ -253,6 +254,7 @@ class TouchChannel {
     void calibratePitchBend();
     void updatePitchBendDAC(uint16_t value);
     void handlePitchBend();
+    int setBenderMode(int targetMode = 0);
     void setPitchBendRange(int touchedIndex);
     void setPitchBendOffset(uint16_t pitchBend);
 
