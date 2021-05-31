@@ -18,8 +18,8 @@ const int usTempoMap[BPM_MAX - BPM_MIN] = { 10416, 10245, 10080, 9920, 9765, 961
 
 class Metronome {
 public:
-  AnalogIn tempoPot;
   DigitalOut tempoLed;
+  AnalogIn tempoPot;
   DigitalOut tempoOutput;
   Ticker ticker; //
 
