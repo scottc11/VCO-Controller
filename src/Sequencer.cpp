@@ -86,7 +86,7 @@ void TouchChannel::clearPitchBendSequence()
     // deactivate all events in list
     for (int i = 0; i < PPQN * MAX_SEQ_STEPS; i++)
     {
-        events[i].pitchBend = pbZero;
+        // events[i].pitchBend = pbZero;
     }
 };
 
@@ -110,7 +110,7 @@ void TouchChannel::clearEvent(int position)
     events[position].noteIndex = NULL_NOTE_INDEX;
     events[position].active = false;
     events[position].gate = LOW;
-    events[position].pitchBend = pbZero;
+    // events[position].pitchBend = pbZero;
 }
 
 void TouchChannel::createChordEvent(int position, uint8_t notes)

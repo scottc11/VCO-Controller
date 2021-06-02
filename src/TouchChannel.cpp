@@ -18,10 +18,9 @@ void TouchChannel::init() {
 
   dac->init();
 
-  pb_dac->init();
-  calibratePitchBend();
-  setPitchBendRange(1);  // default to a whole tone
-  updatePitchBendDAC(0);
+  bender.init();
+  
+  setPitchBendRange(1); // default to a whole tone
 
   initSequencer(); // must be done after pb calibration
 
@@ -82,40 +81,42 @@ void TouchChannel::poll() {
     // after 3 seconds, call a function which takes the currTouched variable and applies it to the activeDegreeLimit.
     // then disable timer poll flag.
 
-    if (uiMode == LOOP_LENGTH_UI) {
-      handleLoopLengthUI();
-    }
+    // if (uiMode == LOOP_LENGTH_UI) {
+    //   handleLoopLengthUI();
+    // }
 
-    if (modeChangeDetected) {
-      this->handleIOInterupt();
-      modeChangeDetected = false;
-    }
+    // if (modeChangeDetected) {
+    //   this->handleIOInterupt();
+    //   modeChangeDetected = false;
+    // }
 
-    if (degrees->hasChanged[channel]) {
-      handleDegreeChange();
-    }
+    // if (degrees->hasChanged[channel]) {
+    //   handleDegreeChange();
+    // }
 
     if (tickerFlag) {                                                        // every PPQN, read ADCs and update
 
-      triggerNote(currNoteIndex, currOctave, BEND_PITCH);                    // HANDLE PITCH BEND
+      bender.poll();
 
-      if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer)    // HANDLE CV QUANTIZATION
-      {
-        currCVInputValue = cvInput.read_u16();
-        if (gateState == HIGH) setGate(LOW);   // We only want trigger events in quantizer mode, so if the gate gets set HIGH, make sure to set it back to low the very next tick
+      // triggerNote(currNoteIndex, currOctave, BEND_PITCH);                    // HANDLE PITCH BEND
 
-        if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER)
-        {
-          handleCVInput(currCVInputValue);
-          prevCVInputValue = currCVInputValue;
-        }
-      }
+      // if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer)    // HANDLE CV QUANTIZATION
+      // {
+      //   currCVInputValue = cvInput.read_u16();
+      //   if (gateState == HIGH) setGate(LOW);   // We only want trigger events in quantizer mode, so if the gate gets set HIGH, make sure to set it back to low the very next tick
+
+      //   if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER)
+      //   {
+      //     handleCVInput(currCVInputValue);
+      //     prevCVInputValue = currCVInputValue;
+      //   }
+      // }
 
       
-      if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && enableLoop)        // HANDLE SEQUENCE
-      {
-        handleSequence(currPosition);
-      }
+      // if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && enableLoop)        // HANDLE SEQUENCE
+      // {
+      //   handleSequence(currPosition);
+      // }
 
       tickerFlag = false;
     }
@@ -191,6 +192,7 @@ void TouchChannel::disableLoopMode() {
 */
 
 void TouchChannel::tickClock() {
+  // queue->event(&bender, &Bender::poll);
   currTick += 1;
   currPosition += 1;
   
@@ -323,13 +325,6 @@ void TouchChannel::handleIOInterupt() {
     else {
       setMode(MONO);
     }
-  }
-  uint8_t state = io->readBankA();
-  state = (state & 0b11000000) >> 6;
-  if (state == 2) {
-    pbEnabled = true;
-  } else {
-    pbEnabled = false;
   }
 }
 
@@ -596,9 +591,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
 
 int TouchChannel::calculateDACNoteValue(int index, int octave)
 {
-  handlePitchBend();
-  updatePitchBendDAC(cvOffset);
-  return dacVoltageMap[index + DAC_OCTAVE_MAP[octave]][degrees->switchStates[index]] + (pbEnabled ? pbNoteOffset : 0);
+  return dacVoltageMap[index + DAC_OCTAVE_MAP[octave]][degrees->switchStates[index]] + (bender.mode == PITCH_BEND ? pbNoteOffset : 0);
 }
 
 
@@ -634,124 +627,6 @@ void TouchChannel::reset() {
   }
 }
 
-void TouchChannel::calibratePitchBend() {
-  // NOTE: this calibration process is currently flawed, because in the off chance there is an erratic
-  // sensor ready in the positive or negative direction, the min / max values used to determine the debounce 
-  // value would be too far apart, giving a poor debounce value. Additionally, pbZero would also not be very accurate due to these
-  // readings. I actually think some DSP smoothing is necessary here, to remove the "noise". Or perhaps just adding debounce caps
-  // on the hardware will help this problem.
-
-  // populate calibration array
-  for (int i = 0; i < PB_CALIBRATION_RANGE; i++)
-  {
-    pbCalibration[i] = pbInput.read_u16();
-    wait_us(100);
-  }
-
-  // RUNNING-MEAN time series filter
-  // the start and end of the filtered signal is always going to look weird, and you will not want to include it in your final output
-  int filteredSignal[PB_CALIBRATION_RANGE];
-  int sampleWindow = 2; // how many samples to use both forwards and backwards in the array
-
-  for (int i = sampleWindow + 1; i < PB_CALIBRATION_RANGE - sampleWindow - 1; i++)
-  {
-    int sum = 0;
-    int mean = 0;
-    
-    for (int x = i - sampleWindow; x < i + sampleWindow; x++)  // calulate the mean of sample window
-    {
-      sum += pbCalibration[x];
-    }
-    
-    mean = sum / (sampleWindow * 2);
-
-    filteredSignal[i] = mean;
-  }
-
-
-  // find min/max value from calibration results
-  int max = arr_max(pbCalibration, PB_CALIBRATION_RANGE);
-  int min = arr_min(pbCalibration, PB_CALIBRATION_RANGE);
-  // int max = arr_max(filteredSignal + sampleWindow + 1, PB_CALIBRATION_RANGE - (sampleWindow * 2) - 2);
-  // int min = arr_min(filteredSignal + sampleWindow + 1, PB_CALIBRATION_RANGE - (sampleWindow * 2) - 2);
-  pbDebounce = (max - min);
-
-  // zero the sensor
-  pbZero = arr_average(filteredSignal + sampleWindow + 1, PB_CALIBRATION_RANGE - (sampleWindow * 2) - 2); // use the mean filtered signal
-
-  int minMaxOffset = 10000;
-  pbMax = pbZero + minMaxOffset < 65000 ? pbZero + minMaxOffset : 65000;
-  pbMin = pbZero - minMaxOffset < 500 ? pbZero - minMaxOffset: 500;
-
-}
-
-
-/**
- * apply the pitch bend by mapping the ADC value to a value between PB Range value and the current note being outputted
-*/
-void TouchChannel::handlePitchBend()
-{
-  prevPitchBend = currPitchBend; // still need to use this value for debouncing
-  currPitchBend = pbInput.read_u16();
-
-  if (mode == MONO_LOOP || mode == QUANTIZE_LOOP) 
-  {
-    if (currPitchBend > pbZero + pbDebounce || currPitchBend < pbZero - pbDebounce) { // record pitch bend and use new value
-      if (recordEnabled) {
-        createPitchBendEvent(currPosition, currPitchBend);
-        setPitchBendOffset(events[currPosition].pitchBend);
-      } else {
-        setPitchBendOffset(currPitchBend);
-      }
-    } else {
-      setPitchBendOffset(events[currPosition].pitchBend);
-    }
-    
-  }
-  else {
-    setPitchBendOffset(currPitchBend);
-  }
-}
-
-void TouchChannel::setPitchBendOffset(uint16_t pitchBend)
-{
-  if (pitchBend > pbZero + pbDebounce || pitchBend < pbZero - pbDebounce) // may be able to move this line into handlePitchBend()
-  {
-    if (pitchBend > pbZero && pitchBend < pbMax)
-    {
-      pbNoteOffset = ((pbOffsetRange / (pbMax - pbZero)) * (pitchBend - pbZero)) * -1; // inverted
-      cvOffset = ((cvOffsetRange / (pbMax - pbZero)) * (pitchBend - pbZero)) * 1;     // non-inverted
-    }
-    else if (pitchBend < pbZero && pitchBend > pbMin)
-    {
-      pbNoteOffset = ((pbOffsetRange / (pbMin - pbZero)) * (pitchBend - pbZero)) * 1; // non-inverted
-      cvOffset = ((cvOffsetRange / (pbMin - pbZero)) * (pitchBend - pbZero)) * -1;    // inverted
-    }
-  }
-  else
-  {
-    pbNoteOffset = 0;
-    cvOffset = 0;
-  }
-}
-
-
-void TouchChannel::updatePitchBendDAC(uint16_t value)
-{
-  int zero = 32767;
-  pb_dac->write(pb_dac_chan, zero + value);
-}
-
-/**
- * Set the pitch bend range to be applied to 1v/o output
- * NOTE: There are 12 notes, but only 8 possible PB range options, meaning there are preset values for each PB range option via PB_RANGE_MAP global
- * value: num with range 0..7
-*/
-void TouchChannel::setPitchBendRange(int touchedIndex)
-{
-  pbOffsetIndex = touchedIndex;
-  pbOffsetRange = dacSemitone * PB_RANGE_MAP[pbOffsetIndex]; // map 0..7 ranged value to preset pitch bend ranges
-}
 
 /**
  * this function takes a 1D array and converts it into a 2D array formatted as [[0, 1, 2], ...]
@@ -807,4 +682,81 @@ void TouchChannel::setGateLed(LedState state) {
   {
     io->analogWrite(CHANNEL_GATE_LED, 0);
   }
+}
+
+/**
+ * apply the pitch bend by mapping the ADC value to a value between PB Range value and the current note being outputted
+*/
+void TouchChannel::benderActiveCallback()
+{
+  // if (mode == MONO_LOOP || mode == QUANTIZE_LOOP)
+  // {
+  //   if (currReading > adcZero + this->debounceRange || currReading < adcZero - this->debounceRange)
+  //   {
+  //     if (recordEnabled) // record pitch bend and use new value
+  //     {
+  //       createPitchBendEvent(currPosition, currReading);
+  //       setPitchBendOffset(events[currPosition].pitchBend);
+  //     }
+  //     else
+  //     {
+  //       setPitchBendOffset(currReading);
+  //     }
+  //   }
+  //   else
+  //   {
+  //     setPitchBendOffset(events[currPosition].pitchBend);
+  //   }
+  // }
+  // else
+  // {
+  //   setPitchBendOffset(currReading);
+  // }
+}
+
+void TouchChannel::benderIdleCallback() {
+  
+}
+
+/**
+ * Set the pitch bend range to be applied to 1v/o output
+ * NOTE: There are 12 notes, but only 8 possible PB range options, meaning there are preset values for each PB range option via PB_RANGE_MAP global
+ * value: num with range 0..7
+*/
+void TouchChannel::setPitchBendRange(int touchedIndex)
+{
+  // pbRangeIndex = touchedIndex;
+  // pbOffsetRange = dacSemitone * PB_RANGE_MAP[pbRangeIndex]; // map 0..7 ranged value to preset pitch bend ranges
+}
+
+void TouchChannel::setPitchBendOffset(uint16_t value)
+{
+  if (bender.isIdle()) // may be able to move this line into handlevalue()
+  {
+    if (value > bender.idleValue && value < bender.maxBend)
+    {
+      pbNoteOffset = ((pbOffsetRange / (bender.maxBend - bender.idleValue)) * (value - bender.idleValue)) * -1; // inverted
+    }
+    else if (value < bender.idleValue && value > bender.minBend)
+    {
+      pbNoteOffset = ((pbOffsetRange / (bender.minBend - bender.idleValue)) * (value - bender.idleValue)) * 1; // non-inverted
+    }
+  }
+  else
+  {
+    pbNoteOffset = 0;
+  }
+}
+
+int TouchChannel::setBenderMode(int targetMode /*0*/)
+{
+  if (bender.mode < 3)
+  {
+    bender.mode += 1;
+  }
+  else
+  {
+    bender.mode = 0;
+  }
+  return bender.mode;
 }

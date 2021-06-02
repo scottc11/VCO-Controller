@@ -75,6 +75,10 @@ int main() {
   while(1) {
 
     globalCTRL.poll();
+    channelA.poll();
+    channelB.poll();
+    channelC.poll();
+    channelD.poll();
 
     // if (globalCTRL.mode == GlobalControl::CALIBRATING) {
     //   if (globalCTRL.calibrator.calibrationFinished == false) {
@@ -92,9 +96,7 @@ int main() {
     //   channelC.poll();
     //   channelD.poll();
     // }
-    
-    
-  }
+    }
 }
 
 

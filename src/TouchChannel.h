@@ -2,6 +2,7 @@
 #define __TOUCH_CHANNEL_H
 
 #include "main.h"
+#include "Bender.h"
 #include "Metronome.h"
 #include "Degrees.h"
 #include "DAC8554.h"
@@ -19,9 +20,8 @@
 #define CHANNEL_MODE_LED 10
 #define CHANNEL_GATE_LED 11
 #define NULL_NOTE_INDEX 99  // used to identify a 'null' or 'deleted' sequence event
-#define PB_CALIBRATION_RANGE 64
-const int PB_RANGE_MAP[8] = { 1, 2, 3, 4, 5, 7, 10, 12 };
 
+const int PB_RANGE_MAP[8] = {1, 2, 3, 4, 5, 7, 10, 12};
 static const int OCTAVE_LED_PINS[4] = { 3, 2, 1, 0 };               // io pin map for octave LEDs
 static const int CHAN_LED_PINS[8] = { 15, 14, 13, 12, 7, 6, 5, 4 }; // io pin map for channel LEDs
 static const int CHAN_TOUCH_PADS[12] = { 7, 6, 5, 4, 3, 2, 1, 0, 3, 2, 1, 0 };
@@ -101,7 +101,6 @@ class TouchChannel {
     bool gateState;                 // the current state of the gate output pin
     ChannelMode mode;               // which mode channel is currently in
     ChannelMode prevMode;           // used for reverting to previous mode when toggling between UI modes
-    int benderMode;                 // which mode the bender component is in
     UIMode uiMode;                  // for settings and alt LED uis
     DigitalOut gateOut;             // gate output pin
     DigitalOut *globalGateOut;      // 
@@ -113,18 +112,20 @@ class TouchChannel {
     MPR121 *touchPads;
     DAC8554 *dac;                   // pointer to 1vo DAC
     DAC8554::Channels dacChannel;   // which dac to address
-    DAC8554 *pb_dac;                // pointer to Pitch Bends DAC
-    DAC8554::Channels pb_dac_chan;  // which dac to address
     SX1509 *io;                     // IO Expander
     Degrees *degrees;
     InterruptIn ioInterupt;         // for SC1509 3-stage toggle switch + tactile mode button
     AnalogIn cvInput;               // CV input pin for quantizer mode
-    AnalogIn pbInput;               // CV input for Pitch Bend
 
     volatile bool tickerFlag;        // each time the clock gets ticked, this flag gets set to true - then false in polling loop
     volatile bool switchHasChanged;  // toggle switches interupt flag
     volatile bool touchDetected;
     volatile bool modeChangeDetected;
+
+    Bender bender;
+    int pbRangeIndex = 4; // an index value which gets mapped to PB_RANGE_MAP
+    float pbOffsetRange;  // must be a float!
+    int pbNoteOffset;     // the amount of pitch bend to apply to the 1v/o DAC output. Can be positive/negative centered @ 0
 
     // SEQUENCER variables
     SequenceNode events[PPQN * MAX_SEQ_STEPS];
@@ -154,21 +155,6 @@ class TouchChannel {
     int activeDegreeLimit;                // the max number of degrees allowed to be enabled at one time.
     QuantDegree activeDegreeValues[8];    // array which holds noteIndex values and their associated DAC/1vo values
     QuantOctave activeOctaveValues[OCTAVE_COUNT];
-
-    // Pitch Bend
-    int currPitchBend;                       // 16 bit value (0..65,536)
-    int prevPitchBend;                       // 16 bit value (0..65,536)
-    int pbOffsetIndex = 4;                   // an index value which gets mapped to PB_RANGE_MAP
-    float pbOffsetRange;                     // must be a float!
-    float cvOffsetRange = 32767;             // +- 8.1v DAC range (must be a float!)
-    int pbNoteOffset;                        // the amount of pitch bend to apply to the 1v/o DAC output. Can be positive/negative centered @ 0
-    int cvOffset;                            // the amount of Control Voltage to apply Pitch Bend DAC
-    int pbCalibration[PB_CALIBRATION_RANGE]; // an array which gets populated during initialization phase to determine a debounce value + zeroing
-    uint16_t pbZero;                         // the average ADC value when pitch bend is idle
-    uint16_t pbMax;                          // the minimum value the ADC can achieve when Pitch Bend fully pulled
-    uint16_t pbMin;                          // the maximum value the ADC can achieve when Pitch Bend fully pressed
-    int pbDebounce;                          // for debouncing the ADC when Pitch Bend is idle
-    bool pbEnabled;                          // for toggleing on/off the pitch bend effect to JUST the 1vo output
     
 
     float dacSemitone = 938.0;               // must be a float, as it gets divided down to a num between 0..1
@@ -214,7 +200,7 @@ class TouchChannel {
         DAC8554::Channels _dacChannel,
         DAC8554 *pb_dac_ptr,
         DAC8554::Channels pb_dac_channel
-        ) : gateOut(gateOutPin), ioInterupt(ioIntPin, PullUp), cvInput(cvInputPin), pbInput(pbInputPin)
+        ) : gateOut(gateOutPin), ioInterupt(ioIntPin, PullUp), cvInput(cvInputPin), bender(pb_dac_ptr, pb_dac_channel, pbInputPin)
     {
       globalGateOut = globalGateOut_ptr;
       timer = timer_ptr;
@@ -225,8 +211,6 @@ class TouchChannel {
       degrees = degrees_ptr;
       dac = dac_ptr;
       dacChannel = _dacChannel;
-      pb_dac = pb_dac_ptr;
-      pb_dac_chan = pb_dac_channel;
       midi = midi_p;
       ioInterupt.fall(callback(this, &TouchChannel::ioInteruptFn));
       channel = _channel;
@@ -249,14 +233,13 @@ class TouchChannel {
     void updateLoopMultiplierLeds();
     void updateActiveDegreeLeds();
     void updateLeds(uint8_t touched);  // could be obsolete
-    
-    // Pitch Bend
-    void calibratePitchBend();
-    void updatePitchBendDAC(uint16_t value);
-    void handlePitchBend();
+
+    // BENDER
+    void benderActiveCallback();
+    void benderIdleCallback();
     int setBenderMode(int targetMode = 0);
     void setPitchBendRange(int touchedIndex);
-    void setPitchBendOffset(uint16_t pitchBend);
+    void setPitchBendOffset(uint16_t value);
 
     void handleDegreeChange();
     void handleIOInterupt();
