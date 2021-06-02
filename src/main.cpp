@@ -50,7 +50,7 @@ TouchChannel channelD(3, &timer, &ticker, &queue, &globalGate, GATE_OUT_D, IO_IN
 
 Metronome metronome(TEMPO_LED, TEMPO_POT, INT_CLOCK_OUTPUT, PPQN, DEFAULT_CHANNEL_LOOP_STEPS);
 
-GlobalControl globalCTRL(&queue, &metronome, &i2c1, &channelA, &channelB, &channelC, &channelD);
+GlobalControl globalCTRL(&queue, &metronome, &degrees, &i2c1, &channelA, &channelB, &channelC, &channelD);
 
 int main() {
   i2c1.frequency(400000);
@@ -61,8 +61,6 @@ int main() {
   // queue.event(callback(&io8, &MCP23008::init));
 
   thread.start(callback(&queue, &EventQueue::dispatch_forever));
-
-  degrees.init();
 
   channelA.init();
   channelB.init();
@@ -88,9 +86,7 @@ int main() {
     //     globalCTRL.mode = GlobalControl::DEFAULT;
     //   }
     // } else {
-    //   metronome.poll();
     //   globalCTRL.poll();
-    //   degrees.poll();
     //   channelA.poll();
     //   channelB.poll();
     //   channelC.poll();

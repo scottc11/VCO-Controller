@@ -6,6 +6,9 @@ void GlobalControl::init() {
 
   metronome->attachTickCallback(callback(this, &GlobalControl::tickChannels));
 
+  degrees->init();
+  degrees->attachCallback(callback(this, &GlobalControl::handleDegreeChange));
+
   io.init();
   io.setDirection(MCP23017_PORTA, 0xff);
   io.setDirection(MCP23017_PORTB, 0xff);
@@ -42,6 +45,10 @@ void GlobalControl::tickChannels() {
 
 
 void GlobalControl::poll() {
+  
+  metronome->poll();
+  degrees->poll();
+  
   if (buttonPressed) {
     wait_us(2000);
     handleButtonPress();
@@ -50,6 +57,12 @@ void GlobalControl::poll() {
 }
 
 
+void GlobalControl::handleDegreeChange() {
+  channels[0]->updateDegrees();
+  channels[1]->updateDegrees();
+  channels[2]->updateDegrees();
+  channels[3]->updateDegrees();
+}
 
 /**
  * CHANNEL SELECT

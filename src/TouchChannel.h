@@ -241,7 +241,7 @@ class TouchChannel {
     void setPitchBendRange(int touchedIndex);
     void setPitchBendOffset(uint16_t value);
 
-    void handleDegreeChange();
+    void updateDegrees();
     void handleIOInterupt();
     void setMode(ChannelMode targetMode);
 

@@ -4,6 +4,7 @@
 #include "main.h"
 #include "BitwiseMethods.h"
 #include "TouchChannel.h"
+#include "Degrees.h"
 #include "VCOCalibrator.h"
 #include "DualDigitDisplay.h"
 #include "Metronome.h"
@@ -22,6 +23,7 @@ public:
   MCP23008 leds;
   uint8_t ledStates = 0x00;          // || chan D || chan C || chan B || chan A ||
   Metronome *metronome;
+  Degrees *degrees;
   VCOCalibrator calibrator;
   TouchChannel *channels[4];
   Timer timer;
@@ -39,6 +41,7 @@ public:
   GlobalControl(
       EventQueue *queue_ptr,
       Metronome *metronome_ptr,
+      Degrees *degrees_ptr,
       I2C *i2c_ptr,
       TouchChannel *chanA_ptr,
       TouchChannel *chanB_ptr,
@@ -49,6 +52,7 @@ public:
     mode = Mode::DEFAULT;
     eventQueue = queue_ptr;
     metronome = metronome_ptr;
+    degrees = degrees_ptr;
     channels[0] = chanA_ptr;
     channels[1] = chanB_ptr;
     channels[2] = chanC_ptr;
@@ -64,6 +68,7 @@ public:
   void saveCalibrationToFlash(bool reset=false);
   void loadCalibrationDataFromFlash();
 
+  void handleDegreeChange();
   void handleFreeze(bool enable);
   void handleClockReset();
   void enableLoopLengthUI();

@@ -90,10 +90,6 @@ void TouchChannel::poll() {
     //   modeChangeDetected = false;
     // }
 
-    // if (degrees->hasChanged[channel]) {
-    //   handleDegreeChange();
-    // }
-
     if (tickerFlag) {                                                        // every PPQN, read ADCs and update
 
       bender.poll();
@@ -404,7 +400,7 @@ void TouchChannel::setOctave(int value) {
   prevOctave = currOctave;
 }
 
-void TouchChannel::handleDegreeChange() {
+void TouchChannel::updateDegrees() {
   switch (mode) {
     case MONO:
       triggerNote(currNoteIndex, currOctave, SUSTAIN);
@@ -414,7 +410,6 @@ void TouchChannel::handleDegreeChange() {
     case MONO_LOOP:
       break;
   }
-  degrees->hasChanged[channel] = false;
 }
 
 
