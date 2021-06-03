@@ -11,7 +11,6 @@ void TouchChannel::init() {
   this->initIOExpander();
 
   touchPads->init();
-  touchPads->attachInteruptCallback(queue->event(callback(touchPads, &MPR121::handleTouch)));
   touchPads->attachCallbackTouched(callback(this, &TouchChannel::onTouch));
   touchPads->attachCallbackReleased(callback(this, &TouchChannel::onRelease));
   touchPads->enable();
@@ -89,6 +88,8 @@ void TouchChannel::poll() {
     //   this->handleIOInterupt();
     //   modeChangeDetected = false;
     // }
+
+    touchPads->poll();
 
     if (tickerFlag) {                                                        // every PPQN, read ADCs and update
 
@@ -188,7 +189,7 @@ void TouchChannel::disableLoopMode() {
 */
 
 void TouchChannel::tickClock() {
-  // queue->event(&bender, &Bender::poll);
+
   currTick += 1;
   currPosition += 1;
   

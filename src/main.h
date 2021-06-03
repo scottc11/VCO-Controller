@@ -2,7 +2,7 @@
 #define __MAIN_H
 
 #include <mbed.h>
-#include <arm_math.h> // ARM DSP functions
+// #include <arm_math.h> // ARM DSP functions
 
 #define PPQN                 96
 

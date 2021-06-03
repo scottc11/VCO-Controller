@@ -18,7 +18,6 @@ public:
     CALIBRATING
   };
 
-  EventQueue *eventQueue;
   MCP23017 io;
   MCP23008 leds;
   uint8_t ledStates = 0x00;          // || chan D || chan C || chan B || chan A ||
@@ -39,7 +38,6 @@ public:
   uint16_t buttonsState;
 
   GlobalControl(
-      EventQueue *queue_ptr,
       Metronome *metronome_ptr,
       Degrees *degrees_ptr,
       I2C *i2c_ptr,
@@ -50,7 +48,6 @@ public:
       ) : io(i2c_ptr, MCP23017_CTRL_ADDR), leds(i2c_ptr, MCP23008_IO_ADDR), ctrlInterupt(CTRL_INT), freezeLED(FREEZE_LED), recLED(REC_LED)
   {
     mode = Mode::DEFAULT;
-    eventQueue = queue_ptr;
     metronome = metronome_ptr;
     degrees = degrees_ptr;
     channels[0] = chanA_ptr;

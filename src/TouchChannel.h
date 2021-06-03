@@ -6,7 +6,6 @@
 #include "Metronome.h"
 #include "Degrees.h"
 #include "DAC8554.h"
-#include "CAP1208.h"
 #include "MPR121.h"
 #include "TCA9544A.h"
 #include "SX1509.h"
@@ -106,9 +105,7 @@ class TouchChannel {
     DigitalOut *globalGateOut;      // 
     Timer *timer;                   // timer for handling duration based touch events
     Ticker *ticker;                 // for handling time based callbacks
-    EventQueue *queue;              // event queue for executing touch events
     MIDI *midi;                     // pointer to mbed midi instance
-    CAP1208 *touch;                 // i2c touch IC
     MPR121 *touchPads;
     DAC8554 *dac;                   // pointer to 1vo DAC
     DAC8554::Channels dacChannel;   // which dac to address
@@ -186,7 +183,6 @@ class TouchChannel {
         int _channel,
         Timer *timer_ptr,
         Ticker *ticker_ptr,
-        EventQueue *queue_ptr,
         DigitalOut *globalGateOut_ptr,
         PinName gateOutPin,
         PinName ioIntPin,
@@ -205,7 +201,6 @@ class TouchChannel {
       globalGateOut = globalGateOut_ptr;
       timer = timer_ptr;
       ticker = ticker_ptr;
-      queue = queue_ptr;
       touchPads = touch_ptr;
       io = io_ptr;
       degrees = degrees_ptr;

@@ -9,14 +9,12 @@
 #include "MCP23017.h"
 #include "SX1509.h"
 #include "MCP23008.h"
+#include "VCOCalibrator.h"
 
 int OCTAVE_LED_PINS_A[4] = { 0, 1, 2, 3 };     // via TLC59116
 int OCTAVE_LED_PINS_B[4] = { 4, 5, 6, 7 };     // via TLC59116
 int OCTAVE_LED_PINS_C[4] = { 8, 9, 10, 11 };   // via TLC59116
 int OCTAVE_LED_PINS_D[4] = { 12, 13, 14, 15 }; // via TLC59116
-
-EventQueue queue(64 * EVENTS_EVENT_SIZE);
-Thread thread;
 
 I2C i2c1(I2C1_SDA, I2C1_SCL);
 I2C i2c3(I2C3_SDA, I2C3_SCL);
@@ -43,24 +41,20 @@ MPR121 touchPadD(&i2c1, TOUCH_INT_D, MPR121::ADDR_SDA);
 
 Degrees degrees(DEGREES_INT, &io);
 
-TouchChannel channelA(0, &timer, &ticker, &queue, &globalGate, GATE_OUT_A, IO_INT_PIN_A, ADC_A, PB_ADC_A, &touchPadA, &ioA, &degrees, &midi, &dac1, DAC8554::CHAN_A, &dac2, DAC8554::CHAN_A);
-TouchChannel channelB(1, &timer, &ticker, &queue, &globalGate, GATE_OUT_B, IO_INT_PIN_B, ADC_B, PB_ADC_B, &touchPadB, &ioB, &degrees, &midi, &dac1, DAC8554::CHAN_B, &dac2, DAC8554::CHAN_B);
-TouchChannel channelC(2, &timer, &ticker, &queue, &globalGate, GATE_OUT_C, IO_INT_PIN_C, ADC_C, PB_ADC_C, &touchPadC, &ioC, &degrees, &midi, &dac1, DAC8554::CHAN_C, &dac2, DAC8554::CHAN_C);
-TouchChannel channelD(3, &timer, &ticker, &queue, &globalGate, GATE_OUT_D, IO_INT_PIN_D, ADC_D, PB_ADC_D, &touchPadD, &ioD, &degrees, &midi, &dac1, DAC8554::CHAN_D, &dac2, DAC8554::CHAN_D);
+TouchChannel channelA(0, &timer, &ticker, &globalGate, GATE_OUT_A, IO_INT_PIN_A, ADC_A, PB_ADC_A, &touchPadA, &ioA, &degrees, &midi, &dac1, DAC8554::CHAN_A, &dac2, DAC8554::CHAN_A);
+TouchChannel channelB(1, &timer, &ticker, &globalGate, GATE_OUT_B, IO_INT_PIN_B, ADC_B, PB_ADC_B, &touchPadB, &ioB, &degrees, &midi, &dac1, DAC8554::CHAN_B, &dac2, DAC8554::CHAN_B);
+TouchChannel channelC(2, &timer, &ticker, &globalGate, GATE_OUT_C, IO_INT_PIN_C, ADC_C, PB_ADC_C, &touchPadC, &ioC, &degrees, &midi, &dac1, DAC8554::CHAN_C, &dac2, DAC8554::CHAN_C);
+TouchChannel channelD(3, &timer, &ticker, &globalGate, GATE_OUT_D, IO_INT_PIN_D, ADC_D, PB_ADC_D, &touchPadD, &ioD, &degrees, &midi, &dac1, DAC8554::CHAN_D, &dac2, DAC8554::CHAN_D);
 
 Metronome metronome(TEMPO_LED, TEMPO_POT, INT_CLOCK_OUTPUT, PPQN, DEFAULT_CHANNEL_LOOP_STEPS);
 
-GlobalControl globalCTRL(&queue, &metronome, &degrees, &i2c1, &channelA, &channelB, &channelC, &channelD);
+GlobalControl globalCTRL(&metronome, &degrees, &i2c1, &channelA, &channelB, &channelC, &channelD);
 
 int main() {
   i2c1.frequency(400000);
   i2c3.frequency(400000);
   
   timer.start();
-
-  // queue.event(callback(&io8, &MCP23008::init));
-
-  thread.start(callback(&queue, &EventQueue::dispatch_forever));
 
   channelA.init();
   channelB.init();
