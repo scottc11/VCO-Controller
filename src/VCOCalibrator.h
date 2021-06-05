@@ -3,16 +3,31 @@
 
 #include "main.h"
 #include "TouchChannel.h"
+#include "VoltToFreqPredictor.h"
+
+#define DAC_FLOOR_INDEX 0
+#define DAC_MID_INDEX 24
+#define DAC_CEIL_INDEX 60
 
 const float VCO_SAMPLE_RATE_HZ = 1 / VCO_SAMPLE_RATE_US * 1000000; // may need to cast all these values to floats
 
 class VCOCalibrator {
 public:
+    enum State {
+        SAMPLING,
+        SAMPLING_LOW,
+        SAMPLING_MID,
+        SAMPLING_HIGH,
+        CALIBRATING
+    };
 
     VCOCalibrator(){};
     
     Ticker ticker;                                // for sampling frequence at a given sample rate
     TouchChannel *channel;                        // pointer to channel to be calibrated
+    VoltToFreqPredictor samples;
+    State currState;
+    volatile bool sampleVCO;
 
     int currVCOInputVal;                          // the current sampled value of sinewave input
     int prevVCOInputVal;                          // the previous sampled value of sinewave input
@@ -28,9 +43,9 @@ public:
     bool overshoot;                               // a flag to determine if the new voltage adjustment overshot/undershot the target frequency
     int calibrationAttemps;                       // when this num exceeds MAX_CALIB_ATTEMPTS, accept your failure and move on.
     bool calibrationFinished;                     // flag to tell program when calibration process is finished
-    volatile bool readyToCalibrate;               // flag telling polling loop when enough freq average samples have been taken to accurately calibrate
     volatile int freqSampleIndex = 0;             // incrementing value to place current frequency sample into array
     volatile float freqSamples[MAX_FREQ_SAMPLES]; // array of frequency samples for obtaining the running average of the VCO
+    
 
     void setChannel(TouchChannel *chan);
     void enableCalibrationMode();

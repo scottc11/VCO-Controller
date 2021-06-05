@@ -9,7 +9,6 @@ void VCOCalibrator::enableCalibrationMode()
 {
     calibrationFinished = false;
     calibrationAttemps = 0;
-    readyToCalibrate = false;
     pitchIndex = 0;
     initialPitchIndex = 0;
     freqSampleIndex = 0;
@@ -17,6 +16,8 @@ void VCOCalibrator::enableCalibrationMode()
     avgFreq = 0;
     prevAvgFreq = 0;
     calLedIndex = 0;
+    sampleVCO = true;
+    currState = SAMPLING_LOW;
     adjustment = DEFAULT_VOLTAGE_ADJMNT;
 
     channel->setAllLeds(TouchChannel::HIGH);
@@ -34,127 +35,62 @@ void VCOCalibrator::enableCalibrationMode()
     }
 
     channel->setOctaveLed(0, TouchChannel::LOW);
-    channel->dac->write(channel->dacChannel, channel->dacVoltageValues[0]); // start at bottom most note.
+    channel->dac->write(channel->dacChannel, channel->dacVoltageValues[0]); // start at bottom most voltage.
 
     ticker.attach_us(callback(this, &VCOCalibrator::sampleVCOFrequency), VCO_SAMPLE_RATE_US);
 }
 
-void VCOCalibrator::disableCalibrationMode()
-{
-    ticker.detach();  // disable ticker
-    channel->setAllLeds(TouchChannel::HIGH);
-    wait_us(500000);
-    channel->setAllLeds(TouchChannel::LOW);
-    wait_us(500000);
-    channel->setAllLeds(TouchChannel::HIGH);
-    wait_us(500000);
-    channel->setAllLeds(TouchChannel::LOW);
-
-    // deactivate calibration mode
-    pitchIndex = 0;            // ?
-    calibrationFinished = true;
-    channel->setMode(TouchChannel::MONO);
-}
 
 void VCOCalibrator::calibrateVCO()
 {
     // wait till MAX_FREQ_SAMPLES has been obtained
-    if (readyToCalibrate)
+    if (!sampleVCO)
     {
+        switch (currState) {
+            
+            case SAMPLING_LOW:
+                channel->setOctaveLed(0, TouchChannel::LedState::HIGH);
+                samples.s1.frequency = this->calculateAverageFreq(); // determine the average frequency of all frewuency samples
+                samples.s1.voltage = channel->dacVoltageValues[0];
+                // prepare sample s2
+                channel->dac->write(channel->dacChannel, channel->dacVoltageValues[24]);
+                wait_us(100);
+                freqSampleIndex = 0;
+                currState = State::SAMPLING_MID;
+                sampleVCO = true;
+                break;
 
-        avgFreq = this->calculateAverageFreq(); // determine the average frequency of all frewuency samples
+            case SAMPLING_MID:
+                channel->setOctaveLed(1, TouchChannel::LedState::HIGH);
+                samples.s2.frequency = this->calculateAverageFreq(); // determine the average frequency of all frewuency samples
+                samples.s2.voltage = channel->dacVoltageValues[24];
+                // prepare sample s3
+                channel->dac->write(channel->dacChannel, channel->dacVoltageValues[60]);
+                wait_us(100);
+                freqSampleIndex = 0;
+                currState = State::SAMPLING_HIGH;
+                sampleVCO = true;
+                break;
+            
+            case SAMPLING_HIGH:
+                channel->setOctaveLed(2, TouchChannel::LedState::HIGH);
+                samples.s3.frequency = this->calculateAverageFreq(); // determine the average frequency of all frewuency samples
+                samples.s3.voltage = channel->dacVoltageValues[60];
+                freqSampleIndex = 0;
+                currState = State::CALIBRATING;
 
-        // handle first iteration of calibrating by finding the frequency in PITCH_FREQ array closest to the currently sampled frequency
-        if (prevAvgFreq == 0 && avgFreq != 0)
-        {
-            initialPitchIndex = arr_find_closest_float(const_cast<float *>(PITCH_FREQ), NUM_PITCH_FREQENCIES, avgFreq);
-            pitchIndex = initialPitchIndex;
-        }
-
-        float threshold = 0.1;
-
-        int dacIndex = pitchIndex - initialPitchIndex;
-
-        // if avgFreq is close enough to desired freq
-        if ((avgFreq <= PITCH_FREQ[pitchIndex] + threshold && avgFreq >= PITCH_FREQ[pitchIndex] - threshold) || calibrationAttemps > MAX_CALIB_ATTEMPTS)
-        {
-
-            // move to next pitch to be calibrated
-            if (pitchIndex < CALIBRATION_LENGTH + initialPitchIndex)
-            {
-                switch (dacIndex)
+                for (int i = 0; i < CALIBRATION_LENGTH; i++)
                 {
-                case 12:
-                    channel->setOctaveLed(0, TouchChannel::HIGH);
-                    break;
-                case 24:
-                    channel->setOctaveLed(1, TouchChannel::HIGH);
-                    break;
-                case 36:
-                    channel->setOctaveLed(2, TouchChannel::HIGH);
-                    break;
-                case 48:
-                    channel->setOctaveLed(3, TouchChannel::HIGH);
-                    break;
-                case 60:
-                    channel->setOctaveLed(0, TouchChannel::BLINK_ON);
-                    channel->setOctaveLed(1, TouchChannel::BLINK_ON);
-                    channel->setOctaveLed(2, TouchChannel::BLINK_ON);
-                    channel->setOctaveLed(3, TouchChannel::BLINK_ON);
-                    break;
-                default:
-                    break;
+                    uint16_t predictedVoltage = samples.predictVoltage(PITCH_FREQ[i + 6]);
+                    channel->dacVoltageValues[i] = predictedVoltage;
                 }
-                channel->setLed(CALIBRATION_LED_MAP[dacIndex == 0 ? 0 : dacIndex - 1], TouchChannel::LOW);
-                adjustment = DEFAULT_VOLTAGE_ADJMNT; // reset to default
-                calibrationAttemps = 0;
-                pitchIndex += 1; // increase note index by 1
+                
 
-                channel->setLed(CALIBRATION_LED_MAP[dacIndex], TouchChannel::HIGH);
-            }
-
-            else // finished calibrating
-            {
-                channel->generateDacVoltageMap(); // set dac map to use new calibrated values
-                this->disableCalibrationMode();
-            }
+                break;
+            
+            default:
+                break;
         }
-        else     // avgFreq not close enough
-        {
-            // every time avgFreq over/undershoots the desired frequency, decrement the 'adjustment' value by half.
-
-            uint16_t currVal = channel->dacVoltageValues[dacIndex]; // pre-calibrated value to be adjusted
-
-            if (avgFreq > PITCH_FREQ[pitchIndex] + threshold)
-            { // if overshoot
-                if (prevAvgFreq < PITCH_FREQ[pitchIndex] - threshold)
-                {
-                    overshoot = true;
-                    adjustment = (adjustment / 2) + 1; // + 1 so it never becomes zero
-                }
-                currVal -= adjustment;
-            }
-
-            else if (avgFreq < PITCH_FREQ[pitchIndex] - threshold)
-            { // if undershoot
-                if (prevAvgFreq > PITCH_FREQ[pitchIndex] + threshold)
-                {
-                    overshoot = false;
-                    adjustment = (adjustment / 2) + 1; // so it never becomes zero
-                }
-                currVal += adjustment;
-            }
-
-            prevAvgFreq = avgFreq;
-            channel->dacVoltageValues[dacIndex] = currVal > 65000 ? 65000 : currVal; // replace current DAC value with adjusted value (NOTE: must cap value or else it will roll over to zero)
-        }
-        
-        // output new voltage and reset calibration process
-        channel->dac->write(channel->dacChannel, channel->dacVoltageValues[dacIndex]);
-        wait_us(10000);           // give time for new voltage to 'settle'
-        freqSampleIndex = 0;
-        readyToCalibrate = false; // flag telling interupt routine to start sampling again
-        calibrationAttemps += 1;
     }
 }
 
@@ -180,10 +116,9 @@ float VCOCalibrator::calculateAverageFreq()
 */
 void VCOCalibrator::sampleVCOFrequency()
 {
-    if (!readyToCalibrate)
+    if (sampleVCO)
     {
         currVCOInputVal = channel->cvInput.read_u16();  // sample the ADC
-
         // NEGATIVE SLOPE
         if (currVCOInputVal >= (VCO_ZERO_CROSSING + VCO_ZERO_CROSS_THRESHOLD) && prevVCOInputVal < (VCO_ZERO_CROSSING + VCO_ZERO_CROSS_THRESHOLD) && slopeIsPositive)
         {
@@ -203,8 +138,8 @@ void VCOCalibrator::sampleVCOFrequency()
             }
             else
             {
-                readyToCalibrate = true;          // set flag to enable calibrateVCO() in main() loop
-                freqSampleIndex = 0;              // reset sample index
+                freqSampleIndex = 0;
+                sampleVCO = false;
             }
             slopeIsPositive = true;
         }
