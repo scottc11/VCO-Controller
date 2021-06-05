@@ -65,28 +65,8 @@ int main() {
   // globalCTRL.loadCalibrationDataFromFlash();
 
   while(1) {
-
     globalCTRL.poll();
-    channelA.poll();
-    channelB.poll();
-    channelC.poll();
-    channelD.poll();
-
-    // if (globalCTRL.mode == GlobalControl::CALIBRATING) {
-    //   if (globalCTRL.calibrator.calibrationFinished == false) {
-    //     globalCTRL.calibrator.calibrateVCO();
-    //   } else {
-    //     globalCTRL.saveCalibrationToFlash();
-    //     globalCTRL.mode = GlobalControl::DEFAULT;
-    //   }
-    // } else {
-    //   globalCTRL.poll();
-    //   channelA.poll();
-    //   channelB.poll();
-    //   channelC.poll();
-    //   channelD.poll();
-    // }
-    }
+  }
 }
 
 

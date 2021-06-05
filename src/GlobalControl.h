@@ -13,9 +13,11 @@
 
 class GlobalControl {
 public:
-  enum Mode {
+  enum Mode
+  {
     DEFAULT,
-    CALIBRATING
+    CALIBRATING_1VO,
+    CALIBRATING_BENDER
   };
 
   MCP23017 io;
@@ -64,6 +66,7 @@ public:
   void calibrateChannel(int chan);
   void saveCalibrationToFlash(bool reset=false);
   void loadCalibrationDataFromFlash();
+  void calibrateBenders();
 
   void handleDegreeChange();
   void handleFreeze(bool enable);
@@ -75,7 +78,7 @@ public:
   void handleTouch(int pad);
   void handleRelease(int pad);
   bool handleGesture();
-  void handleButtonPress();
+  void pollButtonPress();
   void handleOctaveTouched();
   void setChannelOctave(int pad);
   void setChannelLoopMultiplier(int pad);
@@ -109,10 +112,11 @@ private:
 
   enum Gestures
   {
-    CALIBRATE_A = 0xFF77,
+    CALIBRATE_A = 0xFF77, // SHIFT + CTRL_A
     CALIBRATE_B = 0xFF7B,
     CALIBRATE_C = 0xFF7D,
     CALIBRATE_D = 0xFF7E,
+    CALIBRATE_BENDER = 0xFF5F,
     BEND_MODE_A = 0x7FF7,
     BEND_MODE_B = 0x7FFB,
     BEND_MODE_C = 0x7FFD,

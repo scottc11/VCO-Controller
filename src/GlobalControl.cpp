@@ -26,7 +26,7 @@ void GlobalControl::init() {
   leds.setDirection(0x00);
   leds.setInterupt(0x00);
   leds.writePins(0x00);
-  leds.readPins(); // clear strat interputs
+  leds.readPins(); // clear stray interputs
   
   freezeLED.write(0);
   recLED.write(0);
@@ -47,14 +47,22 @@ void GlobalControl::tickChannels() {
 
 
 void GlobalControl::poll() {
-  
-  metronome->poll();
-  degrees->poll();
-  
-  if (buttonPressed) {
-    wait_us(2000);
-    handleButtonPress();
-    buttonPressed = false;
+  switch (mode) {
+    case CALIBRATING_1VO:
+      break;
+    case CALIBRATING_BENDER:
+      this->pollButtonPress();
+      this->calibrateBenders();
+      break;
+    case DEFAULT:
+      metronome->poll();
+      degrees->poll();
+      this->pollButtonPress();
+      channels[0]->poll();
+      channels[1]->poll();
+      channels[2]->poll();
+      channels[3]->poll();
+      break;
   }
 }
 
@@ -83,9 +91,14 @@ void GlobalControl::selectChannel(int channel) {
 /**
  * HANDLE TOUCH EVENT
 */
-void GlobalControl::handleButtonPress() {
-  uint16_t state = io.digitalReadAB();
-  this->handleTouch(state);
+void GlobalControl::pollButtonPress() {
+  if (buttonPressed)
+  {
+    wait_us(2000);
+    uint16_t state = io.digitalReadAB();
+    this->handleTouch(state);
+    buttonPressed = false;
+  }
 }
 
 
@@ -138,6 +151,13 @@ void GlobalControl::handleTouch(int pad) {
       break;
     case RESET:
       break;
+    case CALIBRATE_BENDER:
+      if (this->mode == CALIBRATING_BENDER) {
+        this->mode = DEFAULT;
+      } else {
+        this->mode = CALIBRATING_BENDER;
+      }
+      break;
     case BEND_MODE:
       break;
     case BEND_MODE_A:
@@ -153,10 +173,10 @@ void GlobalControl::handleTouch(int pad) {
       setChannelBenderMode(3);
       break;
     case PB_RANGE:
-      channels[0]->enableUIMode(TouchChannel::PB_RANGE_UI);
-      channels[1]->enableUIMode(TouchChannel::PB_RANGE_UI);
-      channels[2]->enableUIMode(TouchChannel::PB_RANGE_UI);
-      channels[3]->enableUIMode(TouchChannel::PB_RANGE_UI);
+      // channels[0]->enableUIMode(TouchChannel::PB_RANGE_UI);
+      // channels[1]->enableUIMode(TouchChannel::PB_RANGE_UI);
+      // channels[2]->enableUIMode(TouchChannel::PB_RANGE_UI);
+      // channels[3]->enableUIMode(TouchChannel::PB_RANGE_UI);
       break;
     case SEQ_LENGTH:
       channels[0]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
@@ -250,7 +270,7 @@ void GlobalControl::handleClockReset() {
 
 
 void GlobalControl::calibrateChannel(int chan) {
-  this->mode = Mode::CALIBRATING;
+  this->mode = Mode::CALIBRATING_1VO;
   calibrator.setChannel(channels[chan]);
   calibrator.enableCalibrationMode();
 }
@@ -302,3 +322,11 @@ void GlobalControl::enablePitchBendRangeUI() {
 void GlobalControl::disablePitchBendRangeUI() {
   // re-enable channel LED control after
 }
+
+void GlobalControl::calibrateBenders() {
+  for (int i = 0; i < 4; i++)
+  {
+    channels[i]->bender.calibrateMinMax();
+  }
+}
+

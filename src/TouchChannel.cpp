@@ -687,16 +687,16 @@ void TouchChannel::benderActiveCallback()
 {
   // if (mode == MONO_LOOP || mode == QUANTIZE_LOOP)
   // {
-  //   if (currReading > adcZero + this->debounceRange || currReading < adcZero - this->debounceRange)
+  //   if (currBend > adcZero + this->debounceRange || currBend < adcZero - this->debounceRange)
   //   {
   //     if (recordEnabled) // record pitch bend and use new value
   //     {
-  //       createPitchBendEvent(currPosition, currReading);
+  //       createPitchBendEvent(currPosition, currBend);
   //       setPitchBendOffset(events[currPosition].pitchBend);
   //     }
   //     else
   //     {
-  //       setPitchBendOffset(currReading);
+  //       setPitchBendOffset(currBend);
   //     }
   //   }
   //   else
@@ -706,7 +706,7 @@ void TouchChannel::benderActiveCallback()
   // }
   // else
   // {
-  //   setPitchBendOffset(currReading);
+  //   setPitchBendOffset(currBend);
   // }
 }
 
@@ -729,13 +729,13 @@ void TouchChannel::setPitchBendOffset(uint16_t value)
 {
   if (bender.isIdle()) // may be able to move this line into handlevalue()
   {
-    if (value > bender.idleValue && value < bender.maxBend)
+    if (value > bender.zeroBend && value < bender.maxBend)
     {
-      pbNoteOffset = ((pbOffsetRange / (bender.maxBend - bender.idleValue)) * (value - bender.idleValue)) * -1; // inverted
+      pbNoteOffset = ((pbOffsetRange / (bender.maxBend - bender.zeroBend)) * (value - bender.zeroBend)) * -1; // inverted
     }
-    else if (value < bender.idleValue && value > bender.minBend)
+    else if (value < bender.zeroBend && value > bender.minBend)
     {
-      pbNoteOffset = ((pbOffsetRange / (bender.minBend - bender.idleValue)) * (value - bender.idleValue)) * 1; // non-inverted
+      pbNoteOffset = ((pbOffsetRange / (bender.minBend - bender.zeroBend)) * (value - bender.zeroBend)) * 1; // non-inverted
     }
   }
   else

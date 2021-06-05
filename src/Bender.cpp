@@ -3,16 +3,17 @@
 
 void Bender::init() {
     dac->init();
-    calibrate();
+    calibrateIdle();
+    calibrateMinMax();
     updateDAC(0);
     this->mode = 0;
 }
 
-void Bender::calibrate()
+void Bender::calibrateIdle()
 {
     // NOTE: this calibration process is currently flawed, because in the off chance there is an erratic
     // sensor ready in the positive or negative direction, the min / max values used to determine the debounce
-    // value would be too far apart, giving a poor debounce value. Additionally, idleValue would also not be very accurate due to these
+    // value would be too far apart, giving a poor debounce value. Additionally, zeroBend would also not be very accurate due to these
     // readings. I actually think some DSP smoothing is necessary here, to remove the "noise". Or perhaps just adding debounce caps
     // on the hardware will help this problem.
 
@@ -51,18 +52,37 @@ void Bender::calibrate()
     this->idleDebounce = (max - min);
 
     // zero the sensor
-    idleValue = arr_average(filteredSignal + sampleWindow + 1, PB_CALIBRATION_RANGE - (sampleWindow * 2) - 2); // use the mean filtered signal
+    zeroBend = arr_average(filteredSignal + sampleWindow + 1, PB_CALIBRATION_RANGE - (sampleWindow * 2) - 2); // use the mean filtered signal
+}
 
-    int minMaxOffset = 10000;
-    maxBend = idleValue + minMaxOffset < 65000 ? idleValue + minMaxOffset : 65000;
-    minBend = idleValue - minMaxOffset < 500 ? idleValue - minMaxOffset : 500;
+/**
+ * chan A @ 220ohm gain: Max = 45211, Min = 27228, zero = 35432, debounce = 496
+ * chan B @ 220ohm gain: Max = XXXXX, Min = XXXXX, zero = 32931, debounce = 337
+ * chan C @ 220ohm gain: Max = 48276, Min = 28566, zero = 38468, debounce = 448
+ * chan D @ 220ohm gain: Max = 43002, Min = 25974, zero = 35851, debounce = 320
+*/
+void Bender::calibrateMinMax() {
+    currBend = adc.read_u16();
+    if (currBend > zeroBend + 1000) // bending upwards
+    {
+        if (currBend > maxBend) {
+            maxBend = currBend;
+        }
+    }
+    else if (currBend < zeroBend - 1000) // bending downwards
+    {
+        if (currBend < minBend) {
+            minBend = currBend;
+        }
+    }
+    prevBend = currBend;
 }
 
 
 void Bender::poll()
 {
-    prevReading = currReading;    // not sure what prevReading is for
-    currReading = adc.read_u16();
+    prevBend = currBend;    // not sure what prevBend is for
+    currBend = adc.read_u16();
     
     if (this->isIdle())
     {
@@ -72,10 +92,10 @@ void Bender::poll()
     else
     {
         // determine direction of bend
-        output = calculateOutput(currReading);
+        output = calculateOutput(currBend);
         updateDAC(output);
         
-        if (activeCallback) { activeCallback(currReading); }
+        if (activeCallback) { activeCallback(currBend); }
     }
 }
 
@@ -85,14 +105,17 @@ void Bender::poll()
 */
 int Bender::calculateOutput(uint16_t value)
 {
-    if (value > idleValue && value < maxBend)
+    if (value > zeroBend && value < maxBend)
     {
         // map the ADC reading within a range to be output through the DAC
-        return ((outputRange / (maxBend - idleValue)) * (value - idleValue)) * 1; // non-inverted
+        return ((dacOutputRange / (maxBend - zeroBend)) * (value - zeroBend)) * 1; // non-inverted
     }
-    else if (value < idleValue && value > minBend)
+    else if (value < zeroBend && value > minBend)
     {
-        return ((outputRange / (minBend - idleValue)) * (value - idleValue)) * -1; // inverted
+        return ((dacOutputRange / (minBend - zeroBend)) * (value - zeroBend)) * -1; // inverted
+    }
+    else {
+        return 0;
     }
 }
 
@@ -102,7 +125,7 @@ void Bender::updateDAC(uint16_t value)
 }
 
 bool Bender::isIdle() {
-    if (currReading > idleValue + idleDebounce || currReading < idleValue - idleDebounce) {
+    if (currBend > zeroBend + idleDebounce || currBend < zeroBend - idleDebounce) {
         return false;
     } else {
         return true;
