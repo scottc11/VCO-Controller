@@ -4,6 +4,8 @@ void GlobalControl::init() {
 
   metronome->init();
 
+  // this function is causing the calibration routine to crash the program
+  // try adding back mbedignore libraries and debug
   metronome->attachTickCallback(callback(this, &GlobalControl::tickChannels));
 
   degrees->init();
