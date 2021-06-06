@@ -78,7 +78,7 @@ public:
   void handleTouch(int pad);
   void handleRelease(int pad);
   bool handleGesture();
-  void pollButtonPress();
+  void pollButtons();
   void handleOctaveTouched();
   void setChannelOctave(int pad);
   void setChannelLoopMultiplier(int pad);

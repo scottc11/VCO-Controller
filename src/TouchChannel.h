@@ -156,7 +156,7 @@ class TouchChannel {
 
     float dacSemitone = 938.0;               // must be a float, as it gets divided down to a num between 0..1
     uint16_t dacVoltageMap[32][3];
-    uint16_t dacVoltageValues[CALIBRATION_LENGTH];               // pre/post calibrated 16-bit DAC values
+    uint16_t dacVoltageValues[DAC_1VO_ARR_SIZE];               // pre/post calibrated 16-bit DAC values
 
     int redLedPins[8] = { 14, 12, 10, 8, 6, 4, 2, 0 };    // hardcoded values to be passed to the 16 chan LED driver
     int greenLedPins[8] = { 15, 13, 11, 9, 7, 5, 3, 1 };  // hardcoded values to be passed to the 16 chan LED driver

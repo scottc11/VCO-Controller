@@ -158,9 +158,14 @@ const int MIDI_NOTE_MAP[8][3] = {
 const int DAC_OCTAVE_MAP[4] = { 0, 8, 16, 24 };
 const int MIDI_OCTAVE_MAP[4] = { 36, 48, 60, 72 };
 
-#define CALIBRATION_LENGTH   64
+#define DAC_1VO_ARR_SIZE   64
+#define BENDER_CALIBRATION_SIZE 2
+#define BENDER_MIN_CAL_INDEX DAC_1VO_ARR_SIZE
+#define BENDER_MAX_CAL_INDEX (DAC_1VO_ARR_SIZE + 1)
+#define CALIBRATION_ARR_SIZE (DAC_1VO_ARR_SIZE + BENDER_CALIBRATION_SIZE)
+#define NUM_FLASH_CHANNEL_BYTES (((CALIBRATION_ARR_SIZE * 4) * 16) / 8)  // number of bytes = CALIBRATION_ARR_SIZE * number of channels * 16 bits / 8 bits
 
-const int CALIBRATION_LED_MAP[CALIBRATION_LENGTH] = {
+const int CALIBRATION_LED_MAP[DAC_1VO_ARR_SIZE] = {
   0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7,
   0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7,
   0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7,
@@ -169,7 +174,7 @@ const int CALIBRATION_LED_MAP[CALIBRATION_LENGTH] = {
   0, 1, 2, 4
 };
 
-const int DAC_VOLTAGE_VALUES[CALIBRATION_LENGTH] = {
+const int DAC_VOLTAGE_VALUES[DAC_1VO_ARR_SIZE] = {
 // A     A#     B      C      C#     D      D#     E      F      F#     G      G#
   5630,  6568,  7506,   8445,  9383,  10321, 11260, 12198, 13137, 14075, 15013, 15952,
   16890, 17828, 18767,  19705, 20643, 21582, 22520, 23458, 24397, 25335, 26274, 27212,

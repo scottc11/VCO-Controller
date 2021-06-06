@@ -51,13 +51,13 @@ void GlobalControl::poll() {
     case CALIBRATING_1VO:
       break;
     case CALIBRATING_BENDER:
-      this->pollButtonPress();
+      this->pollButtons();
       this->calibrateBenders();
       break;
     case DEFAULT:
       metronome->poll();
       degrees->poll();
-      this->pollButtonPress();
+      this->pollButtons();
       channels[0]->poll();
       channels[1]->poll();
       channels[2]->poll();
@@ -91,7 +91,7 @@ void GlobalControl::selectChannel(int channel) {
 /**
  * HANDLE TOUCH EVENT
 */
-void GlobalControl::pollButtonPress() {
+void GlobalControl::pollButtons() {
   if (buttonPressed)
   {
     wait_us(2000);
@@ -153,6 +153,7 @@ void GlobalControl::handleTouch(int pad) {
       break;
     case CALIBRATE_BENDER:
       if (this->mode == CALIBRATING_BENDER) {
+        this->saveCalibrationToFlash();
         this->mode = DEFAULT;
       } else {
         this->mode = CALIBRATING_BENDER;
@@ -281,38 +282,45 @@ void GlobalControl::calibrateChannel(int chan) {
 */ 
 void GlobalControl::saveCalibrationToFlash(bool reset /* false */)
 {
-  
-  char16_t buffer[CALIBRATION_LENGTH * 4]; // create array of 16 bit chars to hold ALL 4 channels data
 
-  for (int chan = 0; chan < 4; chan++) {                                                   // iterate through each channel
-    for (int i = 0; i < CALIBRATION_LENGTH; i++)
+  char16_t buffer[CALIBRATION_ARR_SIZE * 4]; // create array of 16 bit chars to hold ALL 4 channels data
+
+  // iterate through each channel
+  for (int chan = 0; chan < 4; chan++) {
+    
+    // load 1VO calibration data into buffer
+    for (int i = 0; i < DAC_1VO_ARR_SIZE; i++) // leave the last two indexes for bender values
     {
-      int index = i + CALIBRATION_LENGTH * chan;                                           // determine falshData index position based on channel
+      int index = i + CALIBRATION_ARR_SIZE * chan;                                         // determine flash Data index position based on channel
       buffer[index] = reset ? DAC_VOLTAGE_VALUES[i] : channels[chan]->dacVoltageValues[i]; // either reset values to default, or using existing values saved to class
     }
+    // load max and min Bender calibration data into buffer (two 16bit chars)
+    buffer[BENDER_MIN_CAL_INDEX + CALIBRATION_ARR_SIZE * chan] = channels[chan]->bender.minBend;
+    buffer[BENDER_MAX_CAL_INDEX + CALIBRATION_ARR_SIZE * chan] = channels[chan]->bender.maxBend;
   }
   FlashIAP flash;
   flash.init();
   flash.erase(flashAddr, flash.get_sector_size(flashAddr));     // must erase all data before a write
-  flash.program(buffer, flashAddr, 512);                        // number of bytes = CALIBRATION_LENGTH * number of channels * 16 bits / 8 bits
+  flash.program(buffer, flashAddr, NUM_FLASH_CHANNEL_BYTES);
   flash.deinit();
 }
 
 void GlobalControl::loadCalibrationDataFromFlash() {
-  volatile uint16_t buffer[CALIBRATION_LENGTH * 4];
+  volatile uint16_t buffer[CALIBRATION_ARR_SIZE * 4];
   FlashIAP flash;
   flash.init();
-  flash.read((void *)buffer, flashAddr, 512);
+  flash.read((void *)buffer, flashAddr, NUM_FLASH_CHANNEL_BYTES);
   flash.deinit();
   for (int chan = 0; chan < 4; chan++) {
-    for (int i = 0; i < CALIBRATION_LENGTH; i++)
+    for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)
     {
-      int index = i + CALIBRATION_LENGTH * chan; // determine falshData index position based on channel
+      int index = i + CALIBRATION_ARR_SIZE * chan; // determine falshData index position based on channel
       channels[chan]->dacVoltageValues[i] = buffer[index];
     }
     channels[chan]->generateDacVoltageMap(); // must call this to map, once again, the above values to the 2 dimensional array
+    channels[chan]->bender.minBend = buffer[BENDER_MIN_CAL_INDEX + CALIBRATION_ARR_SIZE * chan];
+    channels[chan]->bender.maxBend = buffer[BENDER_MAX_CAL_INDEX + CALIBRATION_ARR_SIZE * chan];
   }
-
 }
 
 void GlobalControl::enablePitchBendRangeUI() {

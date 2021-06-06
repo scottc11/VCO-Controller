@@ -30,7 +30,7 @@ void VCOCalibrator::enableCalibrationMode()
     wait_us(5000);
     channel->setLed(0, TouchChannel::HIGH);
 
-    for (int i = 0; i < CALIBRATION_LENGTH; i++) {  // reset values to default
+    for (int i = 0; i < DAC_1VO_ARR_SIZE; i++) {  // reset values to default
         channel->dacVoltageValues[i] = DAC_VOLTAGE_VALUES[i];
     }
 
@@ -79,7 +79,7 @@ void VCOCalibrator::calibrateVCO()
                 freqSampleIndex = 0;
                 currState = State::CALIBRATING;
 
-                for (int i = 0; i < CALIBRATION_LENGTH; i++)
+                for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)
                 {
                     uint16_t predictedVoltage = samples.predictVoltage(PITCH_FREQ[i + 6]);
                     channel->dacVoltageValues[i] = predictedVoltage;
