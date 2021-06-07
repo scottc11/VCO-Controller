@@ -154,8 +154,6 @@ const int MIDI_NOTE_MAP[8][3] = {
   { 23, 24, 25 },
 };
 
-// const int DAC_OCTAVE_MAP[4] = {0, 13107, 26214, 39321 };
-const int DAC_OCTAVE_MAP[4] = { 0, 8, 16, 24 };
 const int MIDI_OCTAVE_MAP[4] = { 36, 48, 60, 72 };
 
 #define DAC_1VO_ARR_SIZE   64

@@ -2,11 +2,7 @@
 
 void TouchChannel::init() {
 
-  for (int i = 0; i < DAC_1VO_ARR_SIZE; i++) {                 // copy default pre-calibrated dac voltage values into class object member
-    dacVoltageValues[i] = DAC_VOLTAGE_VALUES[i];
-  }
-
-  this->generateDacVoltageMap();
+  output1V.init();
 
   this->initIOExpander();
 
@@ -15,11 +11,7 @@ void TouchChannel::init() {
   touchPads->attachCallbackReleased(callback(this, &TouchChannel::onRelease));
   touchPads->enable();
 
-  dac->init();
-
   bender.init();
-  
-  setPitchBendRange(1); // default to a whole tone
 
   initSequencer(); // must be done after pb calibration
 
@@ -94,7 +86,7 @@ void TouchChannel::poll() {
     if (tickerFlag) {                                                        // every PPQN, read ADCs and update
 
       bender.poll();
-
+      // pitchBend = bender.currBend
       // triggerNote(currNoteIndex, currOctave, BEND_PITCH);                    // HANDLE PITCH BEND
 
       // if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer)    // HANDLE CV QUANTIZATION
@@ -264,7 +256,7 @@ void TouchChannel::onTouch(uint8_t pad) {
         setLoopLength(pad + 1); // loop length is not zero indexed
         break;
       case PB_RANGE_UI:
-        setPitchBendRange(pad);
+        output1V.setPitchBendRange(pad);
         updatePitchBendRangeUI();
         break;
       }
@@ -553,7 +545,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
       currOctave = octave;
       setGate(HIGH);
       setGlobalGate(HIGH);
-      dac->write(dacChannel, calculateDACNoteValue(index, octave));
+      output1V.updateDAC(index, octave, degrees->switchStates[index], 0);
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
     case SUSTAIN:
@@ -562,7 +554,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
       currNoteIndex = index;
       currOctave = octave;
       setLed(index, HIGH);
-      dac->write(dacChannel, calculateDACNoteValue(index, octave));
+      output1V.updateDAC(index, octave, degrees->switchStates[index], 0);
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
     case OFF:
@@ -573,24 +565,14 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
       break;
     case PREV:
       setLed(index, HIGH);
-      dac->write(dacChannel, calculateDACNoteValue(index, octave));
+      output1V.updateDAC(index, octave, degrees->switchStates[index], 0);
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
     case BEND_PITCH:
-      dac->write(dacChannel, calculateDACNoteValue(index, octave));
+      output1V.updateDAC(index, octave, degrees->switchStates[index], 0);
       break;
   }
 }
-
-
-
-
-int TouchChannel::calculateDACNoteValue(int index, int octave)
-{
-  return dacVoltageMap[index + DAC_OCTAVE_MAP[octave]][degrees->switchStates[index]] + (bender.mode == PITCH_BEND ? pbNoteOffset : 0);
-}
-
-
 
 int TouchChannel::calculateMIDINoteValue(int index, int octave) {
   return MIDI_NOTE_MAP[index][degrees->switchStates[index]] + MIDI_OCTAVE_MAP[octave];
@@ -620,31 +602,6 @@ void TouchChannel::reset() {
     case MONO_LOOP:
       resetClock();
       break;
-  }
-}
-
-
-/**
- * this function takes a 1D array and converts it into a 2D array formatted as [[0, 1, 2], ...]
- * take the first 12 values from dacVoltageValues. find the difference dacVoltageValues[i]
-*/
-void TouchChannel::generateDacVoltageMap()
-{
-  int octaveIndexes[4] = {0, 12, 24, 36};
-  int multiplier = 1;
-
-  for (int oct = 0; oct < 4; oct++)
-  {
-    int index = octaveIndexes[oct];
-    int limit = 8 * multiplier;
-    for (int i = limit - 8; i < limit; i++)
-    {
-      dacVoltageMap[i][0] = dacVoltageValues[index];
-      dacVoltageMap[i][1] = dacVoltageValues[index + 1];
-      dacVoltageMap[i][2] = dacVoltageValues[index + 2];
-      index += 2;
-    }
-    multiplier += 1;
   }
 }
 
@@ -685,64 +642,13 @@ void TouchChannel::setGateLed(LedState state) {
 */
 void TouchChannel::benderActiveCallback()
 {
-  // if (mode == MONO_LOOP || mode == QUANTIZE_LOOP)
-  // {
-  //   if (currBend > adcZero + this->debounceRange || currBend < adcZero - this->debounceRange)
-  //   {
-  //     if (recordEnabled) // record pitch bend and use new value
-  //     {
-  //       createPitchBendEvent(currPosition, currBend);
-  //       setPitchBendOffset(events[currPosition].pitchBend);
-  //     }
-  //     else
-  //     {
-  //       setPitchBendOffset(currBend);
-  //     }
-  //   }
-  //   else
-  //   {
-  //     setPitchBendOffset(events[currPosition].pitchBend);
-  //   }
-  // }
-  // else
-  // {
-  //   setPitchBendOffset(currBend);
-  // }
+
 }
 
 void TouchChannel::benderIdleCallback() {
   
 }
 
-/**
- * Set the pitch bend range to be applied to 1v/o output
- * NOTE: There are 12 notes, but only 8 possible PB range options, meaning there are preset values for each PB range option via PB_RANGE_MAP global
- * value: num with range 0..7
-*/
-void TouchChannel::setPitchBendRange(int touchedIndex)
-{
-  // pbRangeIndex = touchedIndex;
-  // pbOffsetRange = dacSemitone * PB_RANGE_MAP[pbRangeIndex]; // map 0..7 ranged value to preset pitch bend ranges
-}
-
-void TouchChannel::setPitchBendOffset(uint16_t value)
-{
-  if (bender.isIdle()) // may be able to move this line into handlevalue()
-  {
-    if (value > bender.zeroBend && value < bender.maxBend)
-    {
-      pbNoteOffset = ((pbOffsetRange / (bender.maxBend - bender.zeroBend)) * (value - bender.zeroBend)) * -1; // inverted
-    }
-    else if (value < bender.zeroBend && value > bender.minBend)
-    {
-      pbNoteOffset = ((pbOffsetRange / (bender.minBend - bender.zeroBend)) * (value - bender.zeroBend)) * 1; // non-inverted
-    }
-  }
-  else
-  {
-    pbNoteOffset = 0;
-  }
-}
 
 int TouchChannel::setBenderMode(int targetMode /*0*/)
 {
