@@ -12,6 +12,8 @@ void TouchChannel::init() {
   touchPads->enable();
 
   bender.init();
+  bender.attachActiveCallback(callback(this, &TouchChannel::benderActiveCallback));
+  bender.attachIdleCallback(callback(this, &TouchChannel::benderIdleCallback));
 
   initSequencer(); // must be done after pb calibration
 
@@ -571,9 +573,6 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
       output1V.updateDAC(mappedIndex, 0);
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
-    case BEND_PITCH:
-      output1V.updateDAC(mappedIndex, 0);
-      break;
   }
 }
 
@@ -643,13 +642,23 @@ void TouchChannel::setGateLed(LedState state) {
 /**
  * apply the pitch bend by mapping the ADC value to a value between PB Range value and the current note being outputted
 */
-void TouchChannel::benderActiveCallback()
+void TouchChannel::benderActiveCallback(uint16_t value)
 {
-
+  uint16_t bend;
+  if (value > bender.zeroBend && value < bender.maxBend)
+  {
+    bend = output1V.calculatePitchBend(39999, bender.zeroBend, bender.maxBend);
+    output1V.setPitchBend(bend * -1); // should be inverted
+  }
+  else if (value < bender.zeroBend && value > bender.minBend)
+  {
+    bend = output1V.calculatePitchBend(value, bender.minBend, bender.zeroBend);
+    output1V.setPitchBend(bend); // should be non-inverted
+  }
 }
 
 void TouchChannel::benderIdleCallback() {
-  
+  output1V.setPitchBend(0);
 }
 
 

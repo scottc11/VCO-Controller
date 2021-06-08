@@ -15,7 +15,7 @@ public:
     DAC8554::Channels dacChan;       // which dac to address
     AnalogIn adc;                    // CV input via Instrumentation Amplifier
     Callback<void()> idleCallback;   // MBED Callback which gets called when the Bender is idle / not-active
-    Callback<void(uint16_t value)> activeCallback; // MBED Callback which gets called when the Bender is active / being bent
+    Callback<void(uint16_t bend)> activeCallback; // MBED Callback which gets called when the Bender is active / being bent
 
     int mode;
     int currBend;                       // 16 bit value (0..65,536)
@@ -42,8 +42,8 @@ public:
     bool isIdle();
     int setMode(int targetMode = 0);
     int calculateOutput(uint16_t value);
-    void attachActiveCallback();
-    void attachIdleCallback();
+    void attachIdleCallback(Callback<void()> func);
+    void attachActiveCallback(Callback<void(uint16_t bend)> func);
 };
 
 #endif

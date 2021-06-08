@@ -20,24 +20,11 @@ void VoltPerOctave::setPitchBendRange(int value)
     }
 }
 
-// void TouchChannel::setPitchBendOffset(uint16_t value)
-// {
-//     if (bender.isIdle()) // may be able to move this line into handlevalue()
-//     {
-//         if (value > bender.zeroBend && value < bender.maxBend)
-//         {
-//             pbNoteOffset = ((pbOffsetRange / (bender.maxBend - bender.zeroBend)) * (value - bender.zeroBend)) * -1; // inverted
-//         }
-//         else if (value < bender.zeroBend && value > bender.minBend)
-//         {
-//             pbNoteOffset = ((pbOffsetRange / (bender.minBend - bender.zeroBend)) * (value - bender.zeroBend)) * 1; // non-inverted
-//         }
-//     }
-//     else
-//     {
-//         pbNoteOffset = 0;
-//     }
-// }
+void VoltPerOctave::setPitchBend(uint16_t value)
+{
+    currPitchBend = value;
+    this->updateDAC(currNoteIndex, currPitchBend);
+}
 
 /**
  * Scale an input value to a number between 0 and maxPitchBend
@@ -47,8 +34,7 @@ void VoltPerOctave::setPitchBendRange(int value)
 */
 uint16_t VoltPerOctave::calculatePitchBend(int input, int min, int max)
 {
-    currPitchBend = scaleIntToRange(input, min, max, minPitchBend, maxPitchBend);
-    return currPitchBend;
+    return scaleIntToRange(input, min, max, minPitchBend, maxPitchBend);
 }
 
 /**
@@ -58,7 +44,8 @@ uint16_t VoltPerOctave::calculatePitchBend(int input, int min, int max)
 void VoltPerOctave::updateDAC(int index, uint16_t pitchBend)
 {
     if (index < DAC_1VO_ARR_SIZE) {
-        currOutput = dacVoltageMap[index] + pitchBend;
+        currNoteIndex = index;
+        currOutput = dacVoltageMap[currNoteIndex] + pitchBend;
         dac->write(dacChannel, currOutput);
     }
 }

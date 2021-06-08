@@ -131,3 +131,13 @@ bool Bender::isIdle() {
         return true;
     }
 }
+
+void Bender::attachIdleCallback(Callback<void()> func)
+{
+    idleCallback = func;
+}
+
+void Bender::attachActiveCallback(Callback<void(uint16_t bend)> func)
+{
+    activeCallback = func;
+}

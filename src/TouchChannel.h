@@ -222,7 +222,7 @@ class TouchChannel {
     void updateLeds(uint8_t touched);  // could be obsolete
 
     // BENDER
-    void benderActiveCallback();
+    void benderActiveCallback(uint16_t value);
     void benderIdleCallback();
     int setBenderMode(int targetMode = 0);
 
