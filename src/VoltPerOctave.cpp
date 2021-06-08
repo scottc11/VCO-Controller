@@ -57,8 +57,10 @@ uint16_t VoltPerOctave::calculatePitchBend(int input, int min, int max)
 */
 void VoltPerOctave::updateDAC(int index, uint16_t pitchBend)
 {
-    currOutput = dacVoltageMap[index] + pitchBend;
-    dac->write(dacChannel, currOutput);
+    if (index < DAC_1VO_ARR_SIZE) {
+        currOutput = dacVoltageMap[index] + pitchBend;
+        dac->write(dacChannel, currOutput);
+    }
 }
 
 void VoltPerOctave::resetVoltageMap() {
