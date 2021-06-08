@@ -531,6 +531,9 @@ void TouchChannel::updateLoopMultiplierLeds() {
 ---------------------------------------------------------------------------- */
  
 void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blinkLED /* false */) {
+  
+  int mappedIndex = DEGREE_INDEX_MAP[index] + DAC_OCTAVE_MAP[octave] + degrees->switchStates[index];
+
   switch (state) {
     case ON:
       if (mode == MONO || mode == MONO_LOOP) {
@@ -545,7 +548,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
       currOctave = octave;
       setGate(HIGH);
       setGlobalGate(HIGH);
-      output1V.updateDAC(index, octave, degrees->switchStates[index], 0);
+      output1V.updateDAC(mappedIndex, 0);
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
     case SUSTAIN:
@@ -554,7 +557,7 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
       currNoteIndex = index;
       currOctave = octave;
       setLed(index, HIGH);
-      output1V.updateDAC(index, octave, degrees->switchStates[index], 0);
+      output1V.updateDAC(mappedIndex, 0);
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
     case OFF:
@@ -565,11 +568,11 @@ void TouchChannel::triggerNote(int index, int octave, NoteState state, bool blin
       break;
     case PREV:
       setLed(index, HIGH);
-      output1V.updateDAC(index, octave, degrees->switchStates[index], 0);
+      output1V.updateDAC(mappedIndex, 0);
       midi->sendNoteOn(channel, calculateMIDINoteValue(index, octave), 100);
       break;
     case BEND_PITCH:
-      output1V.updateDAC(index, octave, degrees->switchStates[index], 0);
+      output1V.updateDAC(mappedIndex, 0);
       break;
   }
 }

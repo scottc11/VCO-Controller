@@ -25,6 +25,9 @@ static const int OCTAVE_LED_PINS[4] = { 3, 2, 1, 0 };               // io pin ma
 static const int CHAN_LED_PINS[8] = { 15, 14, 13, 12, 7, 6, 5, 4 }; // io pin map for channel LEDs
 static const int CHAN_TOUCH_PADS[12] = { 7, 6, 5, 4, 3, 2, 1, 0, 3, 2, 1, 0 };
 
+static const int DAC_OCTAVE_MAP[4] = {0, 12, 24, 36};
+static const int DEGREE_INDEX_MAP[8] = {0, 2, 4, 6, 8, 10, 12, 14};
+
 typedef struct QuantDegree {
   int threshold;
   int noteIndex;

@@ -2,13 +2,7 @@
 
 void VoltPerOctave::init() {
     
-    // copy default pre-calibrated dac voltage values into class object member
-    for (int i = 0; i < DAC_1VO_ARR_SIZE; i++) {
-        dacVoltageMap1D[i] = DAC_VOLTAGE_VALUES[i];
-    }
-    
     dac->init();
-    generate2DVoltageMap();
     setPitchBendRange(1); // default to a whole tone
 }
 
@@ -58,37 +52,19 @@ uint16_t VoltPerOctave::calculatePitchBend(int input, int min, int max)
 }
 
 /**
- * @param index target degree index value. range if 0..7
- * @param octave index for mapping target octave to DAC_OCTAVE_MAP. Range of 0..3 
- * @param degree switch state for corrosponding degree. Range of 0..2
+ * @param index index to be mapped to voltage map. ranging 0..DAC_1VO_ARR_SIZE
  * @param pitchBend DAC value corrosponing to the amount of pitch bend to apply to output. positive or negative
 */
-void VoltPerOctave::updateDAC(int index, int octave, int degree, uint16_t pitchBend)
+void VoltPerOctave::updateDAC(int index, uint16_t pitchBend)
 {
-    uint16_t value = dacVoltageMap2D[index + DAC_OCTAVE_MAP[octave]][degree] + pitchBend;
-    dac->write(dacChannel, value);
+    currOutput = dacVoltageMap[index] + pitchBend;
+    dac->write(dacChannel, currOutput);
 }
 
-/**
- * this function takes a 1D array and converts it into a 2D array formatted as [[0, 1, 2], ...]
- * take the first 12 values from dacVoltageValues. find the difference dacVoltageValues[i]
-*/
-void VoltPerOctave::generate2DVoltageMap()
-{
-    int octaveIndexes[4] = {0, 12, 24, 36};
-    int multiplier = 1;
-
-    for (int oct = 0; oct < 4; oct++)
+void VoltPerOctave::resetVoltageMap() {
+    // copy default pre-calibrated dac voltage values into class object member
+    for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)
     {
-        int index = octaveIndexes[oct];
-        int limit = 8 * multiplier;
-        for (int i = limit - 8; i < limit; i++)
-        {
-            dacVoltageMap2D[i][0] = dacVoltageMap1D[index];
-            dacVoltageMap2D[i][1] = dacVoltageMap1D[index + 1];
-            dacVoltageMap2D[i][2] = dacVoltageMap1D[index + 2];
-            index += 2;
-        }
-        multiplier += 1;
+        dacVoltageMap[i] = DAC_VOLTAGE_VALUES[i];
     }
 }

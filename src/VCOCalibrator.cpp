@@ -30,12 +30,10 @@ void VCOCalibrator::enableCalibrationMode()
     wait_us(5000);
     channel->setLed(0, TouchChannel::HIGH);
 
-    for (int i = 0; i < DAC_1VO_ARR_SIZE; i++) {  // reset values to default
-        channel->output1V.dacVoltageMap1D[i] = DAC_VOLTAGE_VALUES[i];
-    }
+    channel->output1V.resetVoltageMap();
 
     channel->setOctaveLed(0, TouchChannel::LOW);
-    channel->output1V.dac->write(channel->output1V.dacChannel, channel->output1V.dacVoltageMap1D[0]); // start at bottom most voltage.
+    channel->output1V.dac->write(channel->output1V.dacChannel, channel->output1V.dacVoltageMap[0]); // start at bottom most voltage.
 
     ticker.attach_us(callback(this, &VCOCalibrator::sampleVCOFrequency), VCO_SAMPLE_RATE_US);
 }
@@ -51,9 +49,9 @@ void VCOCalibrator::calibrateVCO()
             case SAMPLING_LOW:
                 channel->setOctaveLed(0, TouchChannel::LedState::HIGH);
                 samples.s1.frequency = this->calculateAverageFreq(); // determine the average frequency of all frewuency samples
-                samples.s1.voltage = channel->output1V.dacVoltageMap1D[0];
+                samples.s1.voltage = channel->output1V.dacVoltageMap[0];
                 // prepare sample s2
-                channel->output1V.dac->write(channel->output1V.dacChannel, channel->output1V.dacVoltageMap1D[24]);
+                channel->output1V.dac->write(channel->output1V.dacChannel, channel->output1V.dacVoltageMap[24]);
                 wait_us(100);
                 freqSampleIndex = 0;
                 currState = State::SAMPLING_MID;
@@ -63,9 +61,9 @@ void VCOCalibrator::calibrateVCO()
             case SAMPLING_MID:
                 channel->setOctaveLed(1, TouchChannel::LedState::HIGH);
                 samples.s2.frequency = this->calculateAverageFreq(); // determine the average frequency of all frewuency samples
-                samples.s2.voltage = channel->output1V.dacVoltageMap1D[24];
+                samples.s2.voltage = channel->output1V.dacVoltageMap[24];
                 // prepare sample s3
-                channel->output1V.dac->write(channel->output1V.dacChannel, channel->output1V.dacVoltageMap1D[60]);
+                channel->output1V.dac->write(channel->output1V.dacChannel, channel->output1V.dacVoltageMap[60]);
                 wait_us(100);
                 freqSampleIndex = 0;
                 currState = State::SAMPLING_HIGH;
@@ -75,14 +73,14 @@ void VCOCalibrator::calibrateVCO()
             case SAMPLING_HIGH:
                 channel->setOctaveLed(2, TouchChannel::LedState::HIGH);
                 samples.s3.frequency = this->calculateAverageFreq(); // determine the average frequency of all frewuency samples
-                samples.s3.voltage = channel->output1V.dacVoltageMap1D[60];
+                samples.s3.voltage = channel->output1V.dacVoltageMap[60];
                 freqSampleIndex = 0;
                 currState = State::CALIBRATING;
 
                 for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)
                 {
                     uint16_t predictedVoltage = samples.predictVoltage(PITCH_FREQ[i + 6]);
-                    channel->output1V.dacVoltageMap1D[i] = predictedVoltage;
+                    channel->output1V.dacVoltageMap[i] = predictedVoltage;
                 }
                 
 

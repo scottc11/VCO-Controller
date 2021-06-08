@@ -15,7 +15,7 @@ class Degrees {
     uint16_t currState;
     uint16_t prevState;
 
-    int switchStates[8];   // each toggle switch can be in 1 of 3 positions. This array holds the current position of all 8 toggle switchs 
+    int switchStates[8]; // holds the current position of all 8 toggle switchs in the form of a 0, 1, or 2
 
     Degrees(PinName ioIntPin, MCP23017 *io_ptr) : ioInterupt(ioIntPin, PullUp) {
       io = io_ptr;

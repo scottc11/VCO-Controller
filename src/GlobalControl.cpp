@@ -292,7 +292,7 @@ void GlobalControl::saveCalibrationToFlash(bool reset /* false */)
     for (int i = 0; i < DAC_1VO_ARR_SIZE; i++) // leave the last two indexes for bender values
     {
       int index = i + CALIBRATION_ARR_SIZE * chan;                                         // determine flash Data index position based on channel
-      buffer[index] = reset ? DAC_VOLTAGE_VALUES[i] : channels[chan]->output1V.dacVoltageMap1D[i]; // either reset values to default, or using existing values saved to class
+      buffer[index] = reset ? DAC_VOLTAGE_VALUES[i] : channels[chan]->output1V.dacVoltageMap[i]; // either reset values to default, or using existing values saved to class
     }
     // load max and min Bender calibration data into buffer (two 16bit chars)
     buffer[BENDER_MIN_CAL_INDEX + CALIBRATION_ARR_SIZE * chan] = channels[chan]->bender.minBend;
@@ -315,9 +315,8 @@ void GlobalControl::loadCalibrationDataFromFlash() {
     for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)
     {
       int index = i + CALIBRATION_ARR_SIZE * chan; // determine falshData index position based on channel
-      channels[chan]->output1V.dacVoltageMap1D[i] = buffer[index];
+      channels[chan]->output1V.dacVoltageMap[i] = buffer[index];
     }
-    channels[chan]->output1V.generate2DVoltageMap(); // must call this to map, once again, the above values to the 2 dimensional array
     channels[chan]->bender.minBend = buffer[BENDER_MIN_CAL_INDEX + CALIBRATION_ARR_SIZE * chan];
     channels[chan]->bender.maxBend = buffer[BENDER_MAX_CAL_INDEX + CALIBRATION_ARR_SIZE * chan];
   }
