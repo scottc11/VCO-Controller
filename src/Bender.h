@@ -15,15 +15,16 @@ public:
     DAC8554 *dac;                    // pointer to Pitch Bends DAC
     DAC8554::Channels dacChan;       // which dac to address
     AnalogIn adc;                    // CV input via Instrumentation Amplifier
-    ExpoFilter filter;               //
+    ExpoFilter inputFilter;               //
+    ExpoFilter outputFilter;
     Callback<void()> idleCallback;   // MBED Callback which gets called when the Bender is idle / not-active
     Callback<void(uint16_t bend)> activeCallback; // MBED Callback which gets called when the Bender is active / being bent
 
     int mode;
-    int currBend;                       // 16 bit value (0..65,536)
-    int prevBend;                       // 16 bit value (0..65,536)
-    float dacOutputRange = 32767;             // range in which the DAC can output (in either direction)
-    int output;                            // the amount of Control Voltage to apply Pitch Bend DAC
+    int currBend;                                 // 16 bit value (0..65,536)
+    int prevBend;                                 // 16 bit value (0..65,536)
+    float dacOutputRange = 32767;                 // range in which the DAC can output (in either direction)
+    int dacOutput;                                // the amount of Control Voltage to apply Pitch Bend DAC
     int calibrationSamples[PB_CALIBRATION_RANGE]; // an array which gets populated during initialization phase to determine a debounce value + zeroing
 
     uint16_t zeroBend;                          // the average ADC value when pitch bend is idle

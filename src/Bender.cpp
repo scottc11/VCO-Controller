@@ -3,6 +3,8 @@
 
 void Bender::init() {
     dac->init();
+    outputFilter.setAlpha(0.05);
+    outputFilter.setInitial(this->dacOutputRange); // set initial value to middle of DAC (0V)
     calibrateIdle();
     updateDAC(0);
     this->mode = 0;
@@ -11,7 +13,7 @@ void Bender::init() {
 void Bender::calibrateIdle()
 {
     // must set initial value for digital filter 
-    filter.setInitial(adc.read_u16());
+    inputFilter.setInitial(adc.read_u16());
 
     // populate calibration array
     for (int i = 0; i < PB_CALIBRATION_RANGE; i++)
@@ -68,27 +70,28 @@ void Bender::poll()
     else
     {
         // determine direction of bend
-        output = calculateOutput(currBend);
-        updateDAC(output);
-        
+        updateDAC(calculateOutput(currBend));
+
         if (activeCallback) { activeCallback(currBend); }
     }
 }
 
 /**
  * Map the ADC input to a greater range so the DAC can make use of all 16-bits
+ * 
+ * Two formulas are needed because the zero to max range and the min to zero range are usually different
+ * additionally apply a slew filter to the output
  * Output will be between 0V and 2.5V, centered at 2.5V/2
 */
 int Bender::calculateOutput(uint16_t value)
 {
     if (value > zeroBend && value < maxBend)
     {
-        // map the ADC reading within a range to be output through the DAC
-        return ((dacOutputRange / (maxBend - zeroBend)) * (value - zeroBend)) * 1; // non-inverted
+        return ((dacOutputRange / (maxBend - zeroBend)) * (value - zeroBend)) * -1; // inverted
     }
     else if (value < zeroBend && value > minBend)
     {
-        return ((dacOutputRange / (minBend - zeroBend)) * (value - zeroBend)) * -1; // inverted
+        return ((dacOutputRange / (minBend - zeroBend)) * (value - zeroBend)) * 1; // non-inverted
     }
     else {
         return 0;
@@ -97,7 +100,8 @@ int Bender::calculateOutput(uint16_t value)
 
 void Bender::updateDAC(uint16_t value)
 {
-    dac->write(dacChan, 32767 + value);
+    dacOutput = outputFilter(32767 + value);
+    dac->write(dacChan, dacOutput);
 }
 
 bool Bender::isIdle() {
@@ -119,6 +123,6 @@ void Bender::attachActiveCallback(Callback<void(uint16_t bend)> func)
 }
 
 uint16_t Bender::read() {
-    currBend = filter(adc.read_u16());
+    currBend = inputFilter(adc.read_u16());
     return currBend;
 }

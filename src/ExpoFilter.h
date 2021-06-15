@@ -29,7 +29,7 @@ public:
         return output;
     }
 
-    void setAlph(float a) {
+    void setAlpha(float a) {
         alpha = a;
     }
 
