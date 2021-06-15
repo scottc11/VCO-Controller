@@ -25,7 +25,7 @@ void Bender::calibrateIdle()
     // find min/max value from calibration results
     int max = arr_max(calibrationSamples, PB_CALIBRATION_RANGE);
     int min = arr_min(calibrationSamples, PB_CALIBRATION_RANGE);
-    this->idleDebounce = (max - min);
+    this->idleDebounce = (max - min) + 25;
 
     // zero the sensor
     this->zeroBend = arr_average(calibrationSamples, PB_CALIBRATION_RANGE);
