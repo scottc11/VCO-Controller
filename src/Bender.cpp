@@ -52,14 +52,12 @@ void Bender::calibrateMinMax() {
             minBend = currBend;
         }
     }
-    prevBend = currBend;
 }
 
 // polling should no longer check if the bender is idle. It should just update the DAC and call the activeCallback
 // there are no cycles being saved either way.
 void Bender::poll()
 {
-    prevBend = currBend;    // not sure what prevBend is for
     this->read();
     
     if (this->isIdle())
