@@ -3,6 +3,7 @@
 
 #include "main.h"
 #include "DAC8554.h"
+#include "ExpoFilter.h"
 
 #define PB_CALIBRATION_RANGE 64
 #define DEFAULT_MAX_BEND 40000
@@ -14,6 +15,7 @@ public:
     DAC8554 *dac;                    // pointer to Pitch Bends DAC
     DAC8554::Channels dacChan;       // which dac to address
     AnalogIn adc;                    // CV input via Instrumentation Amplifier
+    ExpoFilter filter;               //
     Callback<void()> idleCallback;   // MBED Callback which gets called when the Bender is idle / not-active
     Callback<void(uint16_t bend)> activeCallback; // MBED Callback which gets called when the Bender is active / being bent
 
@@ -36,6 +38,7 @@ public:
     };
     void init();
     void poll();
+    uint16_t read();
     void calibrateIdle();
     void calibrateMinMax();
     void updateDAC(uint16_t value);
