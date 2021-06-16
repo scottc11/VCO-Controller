@@ -416,10 +416,10 @@ void TouchChannel::updateDegrees() {
 void TouchChannel::setAllLeds(int state) {
   switch (state) {
     case HIGH:
-      io->writeBankB(0x00);
+      for (int i = 0; i < 8; i++) setLed(i, HIGH);
       break;
     case LOW:
-      io->writeBankB(0xFF);
+      for (int i = 0; i < 8; i++) setLed(i, LOW);
       break;
     case DIM_LOW:
       for (int i = 0; i < 8; i++) setLed(i, DIM_LOW);

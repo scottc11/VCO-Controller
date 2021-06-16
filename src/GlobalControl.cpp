@@ -18,6 +18,8 @@ void GlobalControl::init() {
   io.setInterupt(MCP23017_PORTB, 0xff);
   io.setPullUp(MCP23017_PORTA, 0xff);
   io.setPullUp(MCP23017_PORTB, 0xff);
+  io.setInputPolarity(MCP23017_PORTA, 0xff);
+  io.setInputPolarity(MCP23017_PORTB, 0xff);
   io.digitalReadAB(); // clear any stray interupts
   
   leds.init();
@@ -88,20 +90,6 @@ void GlobalControl::selectChannel(int channel) {
   channels[selectedChannel]->isSelected = true;
 }
 
-/**
- * HANDLE TOUCH EVENT
-*/
-void GlobalControl::pollButtons() {
-  if (buttonPressed)
-  {
-    wait_us(2000);
-    uint16_t state = io.digitalReadAB();
-    this->handleTouch(state);
-    buttonPressed = false;
-  }
-}
-
-
 void GlobalControl::setChannelLoopMultiplier(int pad) {
   switch (pad) {
     case 0:  channels[2]->setLoopMultiplier(1); break;
@@ -140,10 +128,42 @@ void GlobalControl::setChannelBenderMode() {
 }
 
 /**
+ * Poll IO and see if any buttons have been either pressed or released
+*/
+void GlobalControl::pollButtons()
+{
+  if (buttonPressed)
+  {
+    wait_us(2000);
+    currIOState = io.digitalReadAB();
+    if (currIOState != prevIOState)
+    {
+      for (int i = 0; i < 16; i++)
+      {
+        // if state went HIGH and was LOW before
+        if (bitRead(currIOState, i) && !bitRead(prevIOState, i))
+        {
+          this->handleButtonPress(currIOState);
+        }
+        // if state went LOW and was HIGH before
+        if (!bitRead(currIOState, i) && bitRead(prevIOState, i))
+        {
+          this->handleButtonRelease(prevIOState);
+        }
+      }
+    }
+
+    // reset polling
+    prevIOState = currIOState;
+    buttonPressed = false;
+  }
+}
+
+/**
  * HANDLE TOUCH TOUCHED
  * 
 */
-void GlobalControl::handleTouch(int pad) {
+void GlobalControl::handleButtonPress(int pad) {
     
   switch (pad) {
     case FREEZE:
@@ -174,16 +194,16 @@ void GlobalControl::handleTouch(int pad) {
       setChannelBenderMode(3);
       break;
     case PB_RANGE:
-      // channels[0]->enableUIMode(TouchChannel::PB_RANGE_UI);
-      // channels[1]->enableUIMode(TouchChannel::PB_RANGE_UI);
-      // channels[2]->enableUIMode(TouchChannel::PB_RANGE_UI);
-      // channels[3]->enableUIMode(TouchChannel::PB_RANGE_UI);
+      channels[0]->enableUIMode(TouchChannel::PB_RANGE_UI);
+      channels[1]->enableUIMode(TouchChannel::PB_RANGE_UI);
+      channels[2]->enableUIMode(TouchChannel::PB_RANGE_UI);
+      channels[3]->enableUIMode(TouchChannel::PB_RANGE_UI);
       break;
     case SEQ_LENGTH:
-      channels[0]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
-      channels[1]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
-      channels[2]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
-      channels[3]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
+      // channels[0]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
+      // channels[1]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
+      // channels[2]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
+      // channels[3]->enableUIMode(TouchChannel::LOOP_LENGTH_UI);
       break;
     case RECORD:
       if (!recordEnabled) {
@@ -208,7 +228,8 @@ void GlobalControl::handleTouch(int pad) {
 /**
  * HANDLE TOUCH RELEASE
 */
-void GlobalControl::handleRelease(int pad) {
+void GlobalControl::handleButtonRelease(int pad)
+{
   switch (pad) {
     case FREEZE:
       handleFreeze(false);

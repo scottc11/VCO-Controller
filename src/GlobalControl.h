@@ -21,6 +21,8 @@ public:
   };
 
   MCP23017 io;
+  uint16_t currIOState;
+  uint16_t prevIOState;
   MCP23008 leds;
   uint8_t ledStates = 0x00;          // || chan D || chan C || chan B || chan A ||
   Metronome *metronome;
@@ -75,8 +77,9 @@ public:
   void enablePitchBendRangeUI();
   void disablePitchBendRangeUI();
 
-  void handleTouch(int pad);
-  void handleRelease(int pad);
+  void handleStateChange(int currState, int prevState);
+  void handleButtonPress(int pad);
+  void handleButtonRelease(int pad);
   bool handleGesture();
   void pollButtons();
   void handleOctaveTouched();
@@ -93,48 +96,42 @@ public:
 private:
   enum PadNames
   {                  // integers correlate to 8-bit index position
-    SEQ_LENGTH = 0xFFBF,
-    PB_RANGE =   0xFFDF,
-    RECORD =     0xEFFF,
-    CLEAR_SEQ =  0xBFFF,
-    CLEAR_BEND = 0xDFFF,
-    BEND_MODE =  0x7FFF,
-    RESET =      0xFEFF,
-    FREEZE =     0xFBFF,
-    QUANTIZE_SEQ = 0xFDFF,
-    QUANTIZE_AMOUNT = 0xFFEF,
-    SHIFT =      0xFF7F,
-    CTRL_A =     0xFFF7,
-    CTRL_B =     0xFFFB,
-    CTRL_C =     0xFFFD,
-    CTRL_D =     0xFFFE
+    SEQ_LENGTH = 0x0040,
+    PB_RANGE =   0x0020,
+    RECORD =     0x1000,
+    CLEAR_SEQ =  0x4000,
+    CLEAR_BEND = 0x2000,
+    BEND_MODE =  0x8000,
+    RESET =      0x0100,
+    FREEZE =     0x0400,
+    QUANTIZE_SEQ = 0x0200,
+    QUANTIZE_AMOUNT = 0x0010,
+    SHIFT =      0x0080,
+    CTRL_A =     0x0008,
+    CTRL_B =     0x0004,
+    CTRL_C =     0x0002,
+    CTRL_D =     0x0001
   };
 
   enum Gestures
   {
-    CALIBRATE_A = 0xFF77, // SHIFT + CTRL_A
-    CALIBRATE_B = 0xFF7B,
-    CALIBRATE_C = 0xFF7D,
-    CALIBRATE_D = 0xFF7E,
-    CALIBRATE_BENDER = 0xFF5F,
-    BEND_MODE_A = 0x7FF7,
-    BEND_MODE_B = 0x7FFB,
-    BEND_MODE_C = 0x7FFD,
-    BEND_MODE_D = 0x7FFE,
-    RESET_LOOP_A = 0b10100000,            // CHANNEL + RESET
-    RESET_LOOP_B = 0b10010000,            // CHANNEL + RESET
-    RESET_LOOP_C = 0b10001000,            // CHANNEL + RESET
-    RESET_LOOP_D = 0b10000100,            // CHANNEL + RESET
-    CLEAR_CH_A_LOOP = 0b0001000001000000, // CLEAR_SEQ + CHANNEL
-    CLEAR_CH_B_LOOP = 0b0010000001000000,
-    CLEAR_CH_C_LOOP = 0b0100000001000000,
-    CLEAR_CH_D_LOOP = 0b1000000001000000,
-    CLEAR_CH_A_PB = 0b0001000010000000, // CLEAR_BEND + CHANNEL
-    CLEAR_CH_B_PB = 0b0010000010000000,
-    CLEAR_CH_C_PB = 0b0100000010000000,
-    CLEAR_CH_D_PB = 0b1000000010000000,
-    CLEAR_SEQ_ALL = 0b0000100001000000,
-    RESET_CALIBRATION = 0b0000100000001000 // CTRL_ALL + CALIBRATE
+    CALIBRATE_A = 0x0088, // SHIFT + CTRL_A
+    CALIBRATE_B = 0x0084,
+    CALIBRATE_C = 0x0082,
+    CALIBRATE_D = 0x0081,
+    CALIBRATE_BENDER = 0x00A0,
+    BEND_MODE_A = 0x8008,
+    BEND_MODE_B = 0x8004,
+    BEND_MODE_C = 0x8002,
+    BEND_MODE_D = 0x8001,
+    CLEAR_SEQ_A = 0x4008,
+    CLEAR_SEQ_B = 0x4004,
+    CLEAR_SEQ_C = 0x4002,
+    CLEAR_SEQ_D = 0x4001,
+    CLEAR_BEND_SEQ_A = 0x2008,
+    CLEAR_BEND_SEQ_B = 0x2004,
+    CLEAR_BEND_SEQ_C = 0x2002,
+    CLEAR_BEND_SEQ_D = 0x2001
   };
 };
 
