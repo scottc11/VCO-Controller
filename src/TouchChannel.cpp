@@ -645,15 +645,17 @@ void TouchChannel::setGateLed(LedState state) {
 void TouchChannel::benderActiveCallback(uint16_t value)
 {
   uint16_t bend;
+  // Pitch Bend UP
   if (value > bender.zeroBend && value < bender.maxBend)
   {
-    bend = output1V.calculatePitchBend(39999, bender.zeroBend, bender.maxBend);
-    output1V.setPitchBend(bend * -1); // should be inverted
+    bend = output1V.calculatePitchBend(value, bender.zeroBend, bender.maxBend);
+    output1V.setPitchBend(bend); // non-inverted
   }
+  // Pitch Bend DOWN
   else if (value < bender.zeroBend && value > bender.minBend)
   {
-    bend = output1V.calculatePitchBend(value, bender.minBend, bender.zeroBend);
-    output1V.setPitchBend(bend); // should be non-inverted
+    bend = output1V.calculatePitchBend(value, bender.zeroBend, bender.minBend); // NOTE: inverted mapping
+    output1V.setPitchBend(bend * -1); // inverted
   }
 }
 
