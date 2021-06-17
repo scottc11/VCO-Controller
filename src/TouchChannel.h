@@ -143,8 +143,6 @@ class TouchChannel {
     int loopMultiplier;        // number between 1 and 4 based on Octave Leds of channel
 
     // quantizer variables
-    bool quantizerHasBeenInitialized;
-    bool enableQuantizer;                 // by default set to true, only ever changes with a 'freeze' event
     int activeDegrees;                    // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
     int activeOctaves;                    // 4-bits to represent which octaves external CV will get mapped to (active = 1, inactive= 0)
     int numActiveDegrees;                 // number of degrees which are active (to quantize voltage input)
@@ -218,7 +216,6 @@ class TouchChannel {
     void setAllLeds(int state);
     void updateOctaveLeds(int octave);
     void updateLoopMultiplierLeds();
-    void updateActiveDegreeLeds();
     void updateLeds(uint8_t touched);  // could be obsolete
 
     // BENDER
@@ -269,9 +266,10 @@ class TouchChannel {
     void handleSequence(int position);
 
     // QUANTIZER METHODS
-    void initQuantizerMode();
-    void handleCVInput(int value);
+    void initQuantizer();
+    void handleCVInput();
     void setActiveDegrees(int degrees);
+    void updateActiveDegreeLeds(uint8_t degrees);
     void setActiveDegreeLimit(int value);
     void setActiveOctaves(int octave);
     

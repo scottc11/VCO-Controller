@@ -15,18 +15,17 @@ void TouchChannel::init() {
   bender.attachActiveCallback(callback(this, &TouchChannel::benderActiveCallback));
   bender.attachIdleCallback(callback(this, &TouchChannel::benderIdleCallback));
 
-  initSequencer(); // must be done after pb calibration
-
-  handleIOInterupt();
+  this->initSequencer(); // must be done after pb calibration
+  this->initQuantizer();
 
   // initialize default variables
   currNoteIndex = 0;
   currOctave = 0;
   touched = 0;
   prevTouched = 0;
-  enableQuantizer = false;
   mode = MONO;
   uiMode = DEFAULT_UI;
+  
   setModeLed(LOW);
   this->setOctave(currOctave);
   setGate(LOW);
@@ -74,34 +73,21 @@ void TouchChannel::poll() {
     // after 3 seconds, call a function which takes the currTouched variable and applies it to the activeDegreeLimit.
     // then disable timer poll flag.
 
-    // if (uiMode == LOOP_LENGTH_UI) {
-    //   handleLoopLengthUI();
-    // }
-
-    // if (modeChangeDetected) {
-    //   this->handleIOInterupt();
-    //   modeChangeDetected = false;
-    // }
+    if (modeChangeDetected) {
+      this->handleIOInterupt();
+      modeChangeDetected = false;
+    }
 
     touchPads->poll();
 
-    if (tickerFlag) {                                                        // every PPQN, read ADCs and update
+    if (tickerFlag) {    // every PPQN, read ADCs and update
 
       bender.poll();
-      // pitchBend = bender.currBend
-      // triggerNote(currNoteIndex, currOctave, BEND_PITCH);                    // HANDLE PITCH BEND
 
-      // if ((mode == QUANTIZE || mode == QUANTIZE_LOOP) && enableQuantizer)    // HANDLE CV QUANTIZATION
-      // {
-      //   currCVInputValue = cvInput.read_u16();
-      //   if (gateState == HIGH) setGate(LOW);   // We only want trigger events in quantizer mode, so if the gate gets set HIGH, make sure to set it back to low the very next tick
-
-      //   if (currCVInputValue >= prevCVInputValue + CV_QUANT_BUFFER || currCVInputValue <= prevCVInputValue - CV_QUANT_BUFFER)
-      //   {
-      //     handleCVInput(currCVInputValue);
-      //     prevCVInputValue = currCVInputValue;
-      //   }
-      // }
+      if ((mode == QUANTIZE || mode == QUANTIZE_LOOP))    // HANDLE CV QUANTIZATION
+      {
+        this->handleCVInput();
+      }
 
       
       // if ((mode == MONO_LOOP || mode == QUANTIZE_LOOP) && enableLoop)        // HANDLE SEQUENCE
@@ -237,6 +223,7 @@ void TouchChannel::onTouch(uint8_t pad) {
        * RESET will now reset activeDegreeLimit to its max value of 8
       */
         setActiveDegrees(bitWrite(activeDegrees, pad, !bitRead(activeDegrees, pad)));
+        updateActiveDegreeLeds(activeDegrees);
         break;
       case QUANTIZE_LOOP:
         // every touch detected, take a snapshot of all active degree values and apply them to a EventNode
@@ -309,13 +296,11 @@ void TouchChannel::onRelease(uint8_t pad) {
  * still needs to be written to handle 3-stage toggle switch.
 **/
 void TouchChannel::handleIOInterupt() {
-  if (io->digitalRead(CHANNEL_IO_MODE_PIN) == HIGH) {
-    if (mode == MONO || mode == MONO_LOOP) {
-      setMode(QUANTIZE);
-    }
-    else {
-      setMode(MONO);
-    }
+  if (mode == MONO || mode == MONO_LOOP) {
+    setMode(QUANTIZE);
+  }
+  else {
+    setMode(MONO);
   }
 }
 
@@ -325,7 +310,6 @@ void TouchChannel::setMode(ChannelMode targetMode)
   switch (targetMode) {
     case MONO:
       enableLoop = false;
-      enableQuantizer = false;
       mode = MONO;
       setAllLeds(LOW);               // I think this is just a "start from a clean slate" kinda thing
       setAllLeds(DIM_HIGH);
@@ -335,7 +319,6 @@ void TouchChannel::setMode(ChannelMode targetMode)
       break;
     case MONO_LOOP:
       enableLoop = true;
-      enableQuantizer = false;
       mode = MONO_LOOP;
       setAllLeds(LOW);
       setAllLeds(DIM_LOW);
@@ -344,24 +327,21 @@ void TouchChannel::setMode(ChannelMode targetMode)
       triggerNote(currNoteIndex, currOctave, SUSTAIN);
       break;
     case QUANTIZE:
-      if (!quantizerHasBeenInitialized) { initQuantizerMode(); }
       enableLoop = false;
-      enableQuantizer = true;
       mode = QUANTIZE;
       setAllLeds(LOW);
       setAllLeds(DIM_HIGH);
-      updateActiveDegreeLeds();
+      updateActiveDegreeLeds(activeDegrees);
       updateOctaveLeds(activeOctaves);
       setModeLed(LOW);
       triggerNote(currNoteIndex, currOctave, OFF);
       break;
     case QUANTIZE_LOOP:
       enableLoop = true;
-      enableQuantizer = true;
       mode = QUANTIZE_LOOP;
       setAllLeds(LOW);
       setAllLeds(DIM_LOW);
-      updateActiveDegreeLeds();
+      updateActiveDegreeLeds(activeDegrees);
       setModeLed(HIGH);
       triggerNote(currNoteIndex, currOctave, OFF);
       break;
@@ -386,9 +366,11 @@ void TouchChannel::setOctave(int value) {
       break;
     case QUANTIZE:
       setActiveOctaves(value);
+      updateOctaveLeds(activeOctaves);
       break;
     case QUANTIZE_LOOP:
       setActiveOctaves(value);
+      updateOctaveLeds(activeOctaves);
       break;
   }
 
@@ -503,12 +485,9 @@ void TouchChannel::updateOctaveLeds(int octave) {
       }
     }
   } else {
-    numActiveOctaves = 0;
     for (int i = 0; i < OCTAVE_COUNT; i++) {
       if (bitRead(activeOctaves, i)) {
         setOctaveLed(i, HIGH);
-        activeOctaveValues[numActiveOctaves].octave = i;
-        numActiveOctaves += 1;
       } else {
         setOctaveLed(i, LOW);
       }
