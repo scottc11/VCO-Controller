@@ -125,7 +125,7 @@ class TouchChannel {
     Bender bender;
 
     // SEQUENCER variables
-    SequenceNode events[PPQN * MAX_SEQ_STEPS];
+    SequenceNode events[PPQN * MAX_SEQ_LENGTH];
     QuantizeMode timeQuantizationMode;
     int prevEventIndex; // index for disabling the last "triggered" event in the loop
     bool sequenceContainsEvents;

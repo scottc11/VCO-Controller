@@ -2,7 +2,7 @@
 
 void TouchChannel::initSequencer()
 {
-    numLoopSteps = DEFAULT_CHANNEL_LOOP_STEPS;
+    numLoopSteps = DEFAULT_SEQ_LENGTH;
     loopMultiplier = 1;
     timeQuantizationMode = QUANT_NONE;
     currStep = 0;
@@ -74,7 +74,7 @@ void TouchChannel::handleSequence(int position)
 void TouchChannel::clearEventSequence()
 {
     // deactivate all events in list
-    for (int i = 0; i < PPQN * MAX_SEQ_STEPS; i++)
+    for (int i = 0; i < PPQN * MAX_SEQ_LENGTH; i++)
     {
         clearEvent(i);
     }
@@ -84,7 +84,7 @@ void TouchChannel::clearEventSequence()
 void TouchChannel::clearPitchBendSequence()
 {
     // deactivate all events in list
-    for (int i = 0; i < PPQN * MAX_SEQ_STEPS; i++)
+    for (int i = 0; i < PPQN * MAX_SEQ_LENGTH; i++)
     {
         // events[i].pitchBend = pbZero;
     }

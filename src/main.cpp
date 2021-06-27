@@ -46,7 +46,7 @@ TouchChannel channelB(1, &timer, &ticker, &globalGate, GATE_OUT_B, IO_INT_PIN_B,
 TouchChannel channelC(2, &timer, &ticker, &globalGate, GATE_OUT_C, IO_INT_PIN_C, ADC_C, PB_ADC_C, &touchPadC, &ioC, &degrees, &midi, &dac1, DAC8554::CHAN_C, &dac2, DAC8554::CHAN_C);
 TouchChannel channelD(3, &timer, &ticker, &globalGate, GATE_OUT_D, IO_INT_PIN_D, ADC_D, PB_ADC_D, &touchPadD, &ioD, &degrees, &midi, &dac1, DAC8554::CHAN_D, &dac2, DAC8554::CHAN_D);
 
-Metronome metronome(TEMPO_LED, TEMPO_POT, INT_CLOCK_OUTPUT, PPQN, DEFAULT_CHANNEL_LOOP_STEPS);
+Metronome metronome(TEMPO_LED, TEMPO_POT, INT_CLOCK_OUTPUT, PPQN, DEFAULT_SEQ_LENGTH);
 
 GlobalControl globalCTRL(&metronome, &degrees, &i2c1, &channelA, &channelB, &channelC, &channelD);
 

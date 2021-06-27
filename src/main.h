@@ -78,11 +78,12 @@
 // DEFAULT INITIALIZATION VALUES
 #define DEGREE_COUNT                   8
 #define OCTAVE_COUNT                   4
-#define DEFAULT_CHANNEL_LOOP_STEPS     8
 #define EVENT_END_BUFFER               4
 #define CV_QUANT_BUFFER                1000
 #define SLEW_CV_BUFFER                 1000
-#define MAX_SEQ_STEPS                 32
+
+#define DEFAULT_SEQ_LENGTH     8
+#define MAX_SEQ_LENGTH         32
 
 #define DEFAULT_VOLTAGE_ADJMNT      200
 #define MAX_CALIB_ATTEMPTS          20
