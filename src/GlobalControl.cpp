@@ -343,14 +343,6 @@ void GlobalControl::loadCalibrationDataFromFlash() {
   }
 }
 
-void GlobalControl::enablePitchBendRangeUI() {
-  // disable all channels LED control
-  
-}
-void GlobalControl::disablePitchBendRangeUI() {
-  // re-enable channel LED control after
-}
-
 void GlobalControl::calibrateBenders() {
   for (int i = 0; i < 4; i++)
   {

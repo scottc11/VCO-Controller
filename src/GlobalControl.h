@@ -74,8 +74,6 @@ public:
   void handleFreeze(bool enable);
   void handleClockReset();
   void enableLoopLengthUI();
-  void enablePitchBendRangeUI();
-  void disablePitchBendRangeUI();
 
   void handleStateChange(int currState, int prevState);
   void handleButtonPress(int pad);
