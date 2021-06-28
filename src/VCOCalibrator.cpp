@@ -5,30 +5,13 @@ void VCOCalibrator::setChannel(TouchChannel *chan)
     channel = chan;
 }
 
-void VCOCalibrator::enableCalibrationMode()
+void VCOCalibrator::startCalibration()
 {
-    calibrationFinished = false;
-    calibrationAttemps = 0;
-    pitchIndex = 0;
-    initialPitchIndex = 0;
     freqSampleIndex = 0;
     numSamplesTaken = 0;
     avgFreq = 0;
-    prevAvgFreq = 0;
-    calLedIndex = 0;
     sampleVCO = true;
     currState = SAMPLING_LOW;
-    adjustment = DEFAULT_VOLTAGE_ADJMNT;
-
-    channel->setAllLeds(TouchChannel::HIGH);
-    wait_us(5000);
-    channel->setAllLeds(TouchChannel::LOW);
-    wait_us(5000);
-    channel->setAllLeds(TouchChannel::HIGH);
-    wait_us(5000);
-    channel->setAllLeds(TouchChannel::LOW);
-    wait_us(5000);
-    channel->setLed(0, TouchChannel::HIGH);
 
     channel->output1V.resetVoltageMap();
 
@@ -48,7 +31,7 @@ void VCOCalibrator::calibrateVCO()
             
             case SAMPLING_LOW:
                 channel->setOctaveLed(0, TouchChannel::LedState::HIGH);
-                samples.s1.frequency = this->calculateAverageFreq(); // determine the average frequency of all frewuency samples
+                samples.s1.frequency = this->calculateAverageFreq(); // determine the average frequency of all frequency samples
                 samples.s1.voltage = channel->output1V.dacVoltageMap[0];
                 // prepare sample s2
                 channel->output1V.dac->write(channel->output1V.dacChannel, channel->output1V.dacVoltageMap[24]);

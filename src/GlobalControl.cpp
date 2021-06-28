@@ -51,6 +51,7 @@ void GlobalControl::tickChannels() {
 void GlobalControl::poll() {
   switch (mode) {
     case CALIBRATING_1VO:
+      calibrator.calibrateVCO();
       break;
     case CALIBRATING_BENDER:
       this->pollButtons();
@@ -170,6 +171,14 @@ void GlobalControl::handleButtonPress(int pad) {
       handleFreeze(true);
       break;
     case RESET:
+      break;
+    case CALIBRATE_A:
+      if (this->mode == CALIBRATING_1VO) {
+        // save calibration
+        this->mode = Mode::DEFAULT;
+      } else {
+        calibrateChannel(0);
+      }
       break;
     case CALIBRATE_BENDER:
       if (this->mode == CALIBRATING_BENDER) {
@@ -294,7 +303,7 @@ void GlobalControl::handleClockReset() {
 void GlobalControl::calibrateChannel(int chan) {
   this->mode = Mode::CALIBRATING_1VO;
   calibrator.setChannel(channels[chan]);
-  calibrator.enableCalibrationMode();
+  calibrator.startCalibration();
 }
 
 /**
